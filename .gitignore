@@ -1,1 +1,4 @@
 .vscode/
+target/
+bug-report-api/target/
+bug-report-domain/target/
