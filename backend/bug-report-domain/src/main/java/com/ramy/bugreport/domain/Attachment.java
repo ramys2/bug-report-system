@@ -1,0 +1,53 @@
+package com.ramy.bugreport.domain;
+
+import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+public class Attachment {
+    private UUID id;
+    private UUID bugReportId;
+    private UUID uploaderId;
+    private String fileName;
+    private String contentType;
+    private Path storagePath;
+    private LocalDateTime uploadedAt;
+
+    public Attachment(UUID id, UUID bugReportId, UUID uploaderId, String fileName, String contentType, Path storagePath, LocalDateTime uploadedAt) {
+        this.id = id;
+        this.bugReportId = bugReportId;
+        this.uploaderId = uploaderId;
+        this.fileName = fileName;
+        this.contentType = contentType;
+        this.storagePath = storagePath;
+        this.uploadedAt = uploadedAt;
+    }
+
+    public UUID getId() {
+        return id;
+    }
+
+    public UUID getBugReportId() {
+        return bugReportId;
+    }
+
+    public UUID getUploaderId() {
+        return uploaderId;
+    }
+
+    public String getFileName() {
+        return fileName;
+    }
+
+    public String getContentType() {
+        return contentType;
+    }
+
+    public Path getStoragePath() {
+        return storagePath;
+    }
+
+    public LocalDateTime getUploadedAt() {
+        return uploadedAt;
+    }
+}
