@@ -1,15 +1,27 @@
 package com.ramy.bugreport.domain;
 import java.util.UUID;
 
-public class User {
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+
+@Entity
+public class UserAccount {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
     private String name;
     private String emailAddress;
     private String passwordHash;
     private EUserRole role;
 
-    public User(UUID id, String name, String emailAddress, String passwordHash, EUserRole role) {
-        this.id = id;
+    protected UserAccount() {
+        // Required by JPA
+    }
+
+    public UserAccount(String name, String emailAddress, String passwordHash, EUserRole role) {
         this.name = name;
         this.emailAddress = emailAddress;
         this.passwordHash = passwordHash;
@@ -34,5 +46,10 @@ public class User {
 
     public EUserRole getRole() {
         return role;
+    }
+
+    @Override
+    public String toString() {
+        return "User[id=%s, name=%s, email=%s, role=%s]".formatted(id, name, emailAddress, role);
     }
 }
