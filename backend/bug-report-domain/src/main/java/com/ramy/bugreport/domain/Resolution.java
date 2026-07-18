@@ -1,11 +1,9 @@
 package com.ramy.bugreport.domain;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
 import java.util.UUID;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -24,17 +22,15 @@ public class Resolution {
     private String description;
     private LocalDateTime resolvedAt;
 
-    @Convert(converter = OptionalStringConverter.class)
-    private Optional<String> fixedVersion;
+    private String fixedVersion;
 
-    @Convert(converter = OptionalStringConverter.class)
-    private Optional<String> commitUrl;
+    private String commitUrl;
 
     protected Resolution() {
         // Required by JPA
     }
 
-    public Resolution(UUID bugReportId, String description, LocalDateTime resolvedAt, Optional<String> fixedVersion, Optional<String> commitUrl) {
+    public Resolution(UUID bugReportId, String description, LocalDateTime resolvedAt, String fixedVersion, String commitUrl) {
         this.bugReportId = bugReportId;
         this.description = description;
         this.resolvedAt = resolvedAt;
@@ -58,11 +54,11 @@ public class Resolution {
         return resolvedAt;
     }
 
-    public Optional<String> getFixedVersion() {
+    public String getFixedVersion() {
         return fixedVersion;
     }
 
-    public Optional<String> getCommitUrl() {
+    public String getCommitUrl() {
         return commitUrl;
     }
 }

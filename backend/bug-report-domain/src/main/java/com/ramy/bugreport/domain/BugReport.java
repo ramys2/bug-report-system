@@ -1,12 +1,11 @@
 package com.ramy.bugreport.domain;
 import java.time.LocalDateTime;
-import java.util.Optional;
 import java.util.UUID;
 
 public class BugReport {
     private UUID id;
     private UUID reporterId;
-    private Optional<UUID> assigneeId;
+    private UUID assigneeId;
     private UUID projectId;
     private UUID componentId; 
     private String title;
@@ -18,9 +17,9 @@ public class BugReport {
     private EBugStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    private Optional<Resolution> resolution;
+    private Resolution resolution;
 
-    public BugReport(UUID id, UUID reporterId, Optional<UUID> assigneeId, UUID projectId, UUID componentId, String title, String description, String stepsToReproduce, String expectedBehavior, String actualBehavior, EBugSeverity severity, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public BugReport(UUID id, UUID reporterId, UUID assigneeId, UUID projectId, UUID componentId, String title, String description, String stepsToReproduce, String expectedBehavior, String actualBehavior, EBugSeverity severity, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.reporterId = reporterId;
         this.assigneeId = assigneeId;
@@ -35,7 +34,7 @@ public class BugReport {
         this.status = EBugStatus.OPEN; // Set the initial status to OPEN
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
-        this.resolution = Optional.empty();
+        this.resolution = null;
     }
 
     public UUID getId() {
@@ -46,7 +45,7 @@ public class BugReport {
         return reporterId;
     }
 
-    public Optional<UUID> getAssigneeId() {
+    public UUID getAssigneeId() {
         return assigneeId;
     }
 
@@ -94,12 +93,12 @@ public class BugReport {
         return updatedAt;
     }
 
-    public Optional<Resolution> getResolution() {
+    public Resolution getResolution() {
         return resolution;
     }
 
     public void setAssigneeId(UUID assigneeId) {
-        this.assigneeId = Optional.of(assigneeId);
+        this.assigneeId = assigneeId;
     }
 
     public void setStatus(EBugStatus status) {
@@ -107,6 +106,6 @@ public class BugReport {
     }
 
     public void setResolution(Resolution resolution) {
-        this.resolution = Optional.of(resolution);
+        this.resolution = resolution;
     }
 }

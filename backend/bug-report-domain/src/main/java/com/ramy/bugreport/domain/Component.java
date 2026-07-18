@@ -1,10 +1,8 @@
 package com.ramy.bugreport.domain;
 
-import java.util.Optional;
 import java.util.UUID;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -22,14 +20,13 @@ public class Component {
 
     private String description;
 
-    @Convert(converter = OptionalUuidConverter.class)
-    private Optional<UUID> responsibleDeveloperId = Optional.empty();
+    private UUID responsibleDeveloperId;
 
     protected Component() {
         // Required by JPA
     }
 
-    public Component(String name, String description, Optional<UUID> responsibleDeveloperId) {
+    public Component(String name, String description, UUID responsibleDeveloperId) {
         this.name = name;
         this.description = description;
         this.responsibleDeveloperId = responsibleDeveloperId;
@@ -47,12 +44,12 @@ public class Component {
         return description;
     }
 
-    public Optional<UUID> getResponsibleDeveloperId() {
+    public UUID getResponsibleDeveloperId() {
         return responsibleDeveloperId;
     }
 
     public void setResponsibleDeveloperId(UUID responsibleDeveloperId) {
-        this.responsibleDeveloperId = Optional.ofNullable(responsibleDeveloperId);
+        this.responsibleDeveloperId = responsibleDeveloperId;
     }
 
 }
