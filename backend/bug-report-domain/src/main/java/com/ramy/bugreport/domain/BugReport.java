@@ -1,40 +1,83 @@
 package com.ramy.bugreport.domain;
+
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.UUID;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
+
+@Entity
 public class BugReport {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+
+    @Column(nullable = false)
     private UUID reporterId;
+
     private UUID assigneeId;
+
+    @Column(nullable = false)
     private UUID projectId;
-    private UUID componentId; 
+
+    @Column(nullable = false)
+    private UUID componentId;
+
+    @Column(nullable = false)
     private String title;
+
     private String description;
     private String stepsToReproduce;
     private String expectedBehavior;
     private String actualBehavior;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private EBugSeverity severity;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private EBugStatus status;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "resolution_id", unique = true)
     private Resolution resolution;
 
-    public BugReport(UUID id, UUID reporterId, UUID assigneeId, UUID projectId, UUID componentId, String title, String description, String stepsToReproduce, String expectedBehavior, String actualBehavior, EBugSeverity severity, LocalDateTime createdAt, LocalDateTime updatedAt) {
-        this.id = id;
-        this.reporterId = reporterId;
-        this.assigneeId = assigneeId;
-        this.projectId = projectId;
-        this.componentId = componentId;
-        this.title = title;
-        this.description = description;
-        this.stepsToReproduce = stepsToReproduce;
-        this.expectedBehavior = expectedBehavior;
-        this.actualBehavior = actualBehavior;
-        this.severity = severity;
-        this.status = EBugStatus.OPEN; // Set the initial status to OPEN
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-        this.resolution = null;
+    protected BugReport() {
+        // Required by JPA
+    }
+
+    private BugReport(Builder builder) {
+        reporterId = builder.reporterId;
+        assigneeId = builder.assigneeId;
+        projectId = builder.projectId;
+        componentId = builder.componentId;
+        title = builder.title;
+        description = builder.description;
+        stepsToReproduce = builder.stepsToReproduce;
+        expectedBehavior = builder.expectedBehavior;
+        actualBehavior = builder.actualBehavior;
+        severity = builder.severity;
+        status = EBugStatus.OPEN;
+        createdAt = builder.createdAt;
+        updatedAt = builder.updatedAt;
+    }
+
+    public static Builder builder(UUID reporterId, UUID projectId, UUID componentId, String title, EBugSeverity severity) {
+        return new Builder(reporterId, projectId, componentId, title, severity);
     }
 
     public UUID getId() {
@@ -107,5 +150,67 @@ public class BugReport {
 
     public void setResolution(Resolution resolution) {
         this.resolution = resolution;
+    }
+
+    public static final class Builder {
+        private final UUID reporterId;
+        private final UUID projectId;
+        private final UUID componentId;
+        private final String title;
+        private final EBugSeverity severity;
+        private UUID assigneeId;
+        private String description;
+        private String stepsToReproduce;
+        private String expectedBehavior;
+        private String actualBehavior;
+        private LocalDateTime createdAt;
+        private LocalDateTime updatedAt;
+
+        private Builder(UUID reporterId, UUID projectId, UUID componentId, String title, EBugSeverity severity) {
+            this.reporterId = Objects.requireNonNull(reporterId, "reporterId is required");
+            this.projectId = Objects.requireNonNull(projectId, "projectId is required");
+            this.componentId = Objects.requireNonNull(componentId, "componentId is required");
+            this.title = Objects.requireNonNull(title, "title is required");
+            this.severity = Objects.requireNonNull(severity, "severity is required");
+        }
+
+        public Builder assigneeId(UUID assigneeId) {
+            this.assigneeId = assigneeId;
+            return this;
+        }
+
+        public Builder description(String description) {
+            this.description = description;
+            return this;
+        }
+
+        public Builder stepsToReproduce(String stepsToReproduce) {
+            this.stepsToReproduce = stepsToReproduce;
+            return this;
+        }
+
+        public Builder expectedBehavior(String expectedBehavior) {
+            this.expectedBehavior = expectedBehavior;
+            return this;
+        }
+
+        public Builder actualBehavior(String actualBehavior) {
+            this.actualBehavior = actualBehavior;
+            return this;
+        }
+
+        public Builder createdAt(LocalDateTime createdAt) {
+            this.createdAt = createdAt;
+            return this;
+        }
+
+        public Builder updatedAt(LocalDateTime updatedAt) {
+            this.updatedAt = updatedAt;
+            return this;
+        }
+
+        public BugReport build() {
+            return new BugReport(this);
+        }
     }
 }
