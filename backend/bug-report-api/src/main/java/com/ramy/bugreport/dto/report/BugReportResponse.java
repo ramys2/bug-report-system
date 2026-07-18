@@ -1,6 +1,6 @@
 package com.ramy.bugreport.dto.report;
 
-import java.util.List;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import com.ramy.bugreport.domain.BugReport;
@@ -11,11 +11,18 @@ import com.ramy.bugreport.domain.Resolution;
 public record BugReportResponse(
     UUID id,
     UUID reporterId,
+    UUID assigneeId,
     UUID projectId,
     UUID componentId,
     String title,
+    String description,
+    String stepsToReproduce,
+    String expectedBehavior,
+    String actualBehavior,
     EBugSeverity severity,
     EBugStatus status,
+    LocalDateTime createdAt,
+    LocalDateTime updatedAt,
     Resolution resolution
 ) {
 
@@ -23,11 +30,18 @@ public record BugReportResponse(
         return new BugReportResponse(
             report.getId(),
             report.getReporterId(),
+            report.getAssigneeId(),
             report.getProjectId(),
             report.getComponentId(),
             report.getTitle(),
+            report.getDescription(),
+            report.getStepsToReproduce(),
+            report.getExpectedBehavior(),
+            report.getActualBehavior(),
             report.getSeverity(),
             report.getStatus(),
+            report.getCreatedAt(),
+            report.getUpdatedAt(),
             report.getResolution()
         );
     }
