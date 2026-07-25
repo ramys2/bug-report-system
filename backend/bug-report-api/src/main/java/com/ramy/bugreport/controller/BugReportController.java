@@ -4,10 +4,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ramy.bugreport.dto.report.BugReportResponse;
-import com.ramy.bugreport.dto.report.CloseReportRequest;
-import com.ramy.bugreport.dto.report.CloseReportResponse;
+import com.ramy.bugreport.dto.report.CloseBugReportRequest;
+import com.ramy.bugreport.dto.report.CloseBugReportResponse;
 import com.ramy.bugreport.dto.report.CreateBugReportRequest;
 import com.ramy.bugreport.dto.report.CreateBugReportResponse;
+import com.ramy.bugreport.dto.report.UpdateBugReportRequest;
+import com.ramy.bugreport.dto.report.UpdateBugReportResponse;
 import com.ramy.bugreport.service.BugReportService;
 
 import jakarta.validation.Valid;
@@ -21,6 +23,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
 
@@ -79,9 +82,9 @@ public class BugReportController {
             .body(response);
     }
     
-    public ResponseEntity<CloseReportResponse> close(
+    public ResponseEntity<CloseBugReportResponse> close(
             @PathVariable UUID reportId,
-            @Valid @RequestBody CloseReportRequest request
+            @Valid @RequestBody CloseBugReportRequest request
     ) {
         var response = reportService.close(reportId, request);
         
@@ -98,6 +101,16 @@ public class BugReportController {
     * ============================================
     */
     
-    
+    @RequestMapping(method = RequestMethod.PATCH)
+    public ResponseEntity<UpdateBugReportResponse> update(
+            @PathVariable UUID reportId,
+            @Valid @RequestBody UpdateBugReportRequest request
+    ) {
+        var response = reportService.update(reportId, request);
+        
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(response);
+    }
     
 }

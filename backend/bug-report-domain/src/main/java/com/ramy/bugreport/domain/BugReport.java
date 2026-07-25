@@ -153,6 +153,54 @@ public class BugReport {
         this.resolution = resolution;
     }
 
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
+    public void setReporterId(UUID reporterId) {
+        this.reporterId = reporterId;
+    }
+
+    public void setProjectId(UUID projectId) {
+        this.projectId = projectId;
+    }
+
+    public void setComponentId(UUID componentId) {
+        this.componentId = componentId;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setStepsToReproduce(String stepsToReproduce) {
+        this.stepsToReproduce = stepsToReproduce;
+    }
+
+    public void setExpectedBehavior(String expectedBehavior) {
+        this.expectedBehavior = expectedBehavior;
+    }
+
+    public void setActualBehavior(String actualBehavior) {
+        this.actualBehavior = actualBehavior;
+    }
+
+    public void setSeverity(EBugSeverity severity) {
+        this.severity = severity;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
+
     public static final class Builder {
         private final UUID reporterId;
         private final UUID projectId;

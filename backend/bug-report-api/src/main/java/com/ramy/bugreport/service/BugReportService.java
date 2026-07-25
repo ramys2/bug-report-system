@@ -8,10 +8,12 @@ import org.springframework.stereotype.Service;
 import com.ramy.bugreport.domain.BugReport;
 import com.ramy.bugreport.domain.Resolution;
 import com.ramy.bugreport.dto.report.BugReportResponse;
-import com.ramy.bugreport.dto.report.CloseReportRequest;
-import com.ramy.bugreport.dto.report.CloseReportResponse;
+import com.ramy.bugreport.dto.report.CloseBugReportRequest;
+import com.ramy.bugreport.dto.report.CloseBugReportResponse;
 import com.ramy.bugreport.dto.report.CreateBugReportRequest;
 import com.ramy.bugreport.dto.report.CreateBugReportResponse;
+import com.ramy.bugreport.dto.report.UpdateBugReportRequest;
+import com.ramy.bugreport.dto.report.UpdateBugReportResponse;
 import com.ramy.bugreport.exception.ResourceNotFoundException;
 import com.ramy.bugreport.repository.IBugReportRepository;
 import com.ramy.bugreport.repository.IComponentRepository;
@@ -126,7 +128,7 @@ public class BugReportService {
     }
     
     @Transactional
-    public CloseReportResponse close(UUID reportId, CloseReportRequest request) {
+    public CloseBugReportResponse close(UUID reportId, CloseBugReportRequest request) {
         BugReport report = bugReportRepository.findById(reportId)
                 .orElseThrow(() -> new ResourceNotFoundException("Report with id: %s".formatted(reportId)));
         
@@ -136,7 +138,7 @@ public class BugReportService {
         
         bugReportRepository.save(report);
         
-        return new CloseReportResponse(resolution.getId(), "Task has been closed successfully!");
+        return new CloseBugReportResponse(resolution.getId(), "Task has been closed successfully!");
     }
     
     /*
@@ -146,4 +148,43 @@ public class BugReportService {
     *
     * ============================================
     */
+    
+    @Transactional
+    public UpdateBugReportResponse update(UUID reportId, UpdateBugReportRequest request) {
+        BugReport report = bugReportRepository.findById(reportId)
+                .orElseThrow(() -> new ResourceNotFoundException("Report with id: %s".formatted(reportId)));
+        
+        var assigneedId = request.assigneeId();
+        if (assigneedId != null) {
+            if (!userAccountRepository.existsById(assigneedId)) {
+                throw new ResourceNotFoundException(
+                        "User with id=%s does not exist!".formatted(assigneedId)
+                );
+            }
+
+            report.setAssigneeId(request.assigneeId());
+        }
+        
+        if (request.description() != null) {
+            report.setDescription(request.description());
+        }
+        
+        if (request.stepsToReproduce() != null) {
+            report.setStepsToReproduce(request.stepsToReproduce());
+        }
+        
+        if (request.expectedBehavior() != null) {
+            report.setExpectedBehavior(request.expectedBehavior());
+        }
+        
+        if (request.actualBehavior() != null) {
+            report.setActualBehavior(request.actualBehavior());
+        }
+        
+        if (request.bugStatus() != null) {
+            report.setStatus(request.bugStatus());
+        }
+        
+        return new UpdateBugReportResponse(report.getId(), "Bug report updated successfully!");
+    }
 }
