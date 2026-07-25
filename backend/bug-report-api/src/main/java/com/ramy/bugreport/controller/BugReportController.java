@@ -4,6 +4,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ramy.bugreport.dto.report.BugReportResponse;
+import com.ramy.bugreport.dto.report.CloseReportRequest;
+import com.ramy.bugreport.dto.report.CloseReportResponse;
 import com.ramy.bugreport.dto.report.CreateBugReportRequest;
 import com.ramy.bugreport.dto.report.CreateBugReportResponse;
 import com.ramy.bugreport.service.BugReportService;
@@ -31,20 +33,18 @@ public class BugReportController {
     public BugReportController(BugReportService bugReportService) {
         reportService = bugReportService;
     }
+    
+    /*
+    * ============================================
+    *
+    * GET Mappings
+    *
+    * ============================================
+    */
 
     @GetMapping
     public List<BugReportResponse> getAll() {
         return reportService.getAll();
-    }
-
-    @PostMapping
-    public ResponseEntity<CreateBugReportResponse> create(
-        @Valid @RequestBody CreateBugReportRequest request
-    ) {
-        var response = reportService.create(request);
-        return ResponseEntity
-            .status(HttpStatus.CREATED)
-            .body(response);
     }
     
     @GetMapping
@@ -60,5 +60,44 @@ public class BugReportController {
     ) {
         return reportService.getReportsByReporter(reporterId);
     }
+    
+    /*
+    * ============================================
+    *
+    * POST Mappings
+    *
+    * ============================================
+    */
+
+    @PostMapping
+    public ResponseEntity<CreateBugReportResponse> create(
+            @Valid @RequestBody CreateBugReportRequest request
+    ) {
+        var response = reportService.create(request);
+        return ResponseEntity
+            .status(HttpStatus.CREATED)
+            .body(response);
+    }
+    
+    public ResponseEntity<CloseReportResponse> close(
+            @PathVariable UUID reportId,
+            @Valid @RequestBody CloseReportRequest request
+    ) {
+        var response = reportService.close(reportId, request);
+        
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(response);
+    }
+    
+    /*
+    * ============================================
+    *
+    * PATCH Mappings
+    *
+    * ============================================
+    */
+    
+    
     
 }

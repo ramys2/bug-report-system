@@ -6,7 +6,10 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.ramy.bugreport.domain.BugReport;
+import com.ramy.bugreport.domain.Resolution;
 import com.ramy.bugreport.dto.report.BugReportResponse;
+import com.ramy.bugreport.dto.report.CloseReportRequest;
+import com.ramy.bugreport.dto.report.CloseReportResponse;
 import com.ramy.bugreport.dto.report.CreateBugReportRequest;
 import com.ramy.bugreport.dto.report.CreateBugReportResponse;
 import com.ramy.bugreport.exception.ResourceNotFoundException;
@@ -36,6 +39,14 @@ public class BugReportService {
         this.softwareProjectRepository = softwareProjectRepository;
         this.componentRepository = componentRepository;
     }
+    
+    /*
+    * ============================================
+    *
+    * GET
+    *
+    * ============================================
+    */
 
     public List<BugReportResponse> getAll() {
         return bugReportRepository.findAll()
@@ -65,6 +76,15 @@ public class BugReportService {
                 .toList();
     }
 
+    
+    /*
+    * ============================================
+    *
+    * POST
+    *
+    * ============================================
+    */
+    
     @Transactional
     public CreateBugReportResponse create(CreateBugReportRequest request) {
         var reporterId = request.reporterId();
@@ -104,4 +124,26 @@ public class BugReportService {
 
         return new CreateBugReportResponse(report.getId(), "Successfully created!");
     }
+    
+    @Transactional
+    public CloseReportResponse close(UUID reportId, CloseReportRequest request) {
+        BugReport report = bugReportRepository.findById(reportId)
+                .orElseThrow(() -> new ResourceNotFoundException("Report with id: %s".formatted(reportId)));
+        
+        var resolution = new Resolution(request.description(), LocalDateTime.now(), request.fixedVersion(), request.commitUrl());
+        
+        report.setResolution(resolution);
+        
+        bugReportRepository.save(report);
+        
+        return new CloseReportResponse(resolution.getId(), "Task has been closed successfully!");
+    }
+    
+    /*
+    * ============================================
+    *
+    * PATCH
+    *
+    * ============================================
+    */
 }

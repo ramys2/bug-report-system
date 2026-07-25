@@ -1,5 +1,6 @@
 package com.ramy.bugreport.domain;
 
+import jakarta.persistence.CascadeType;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
@@ -52,7 +53,7 @@ public class BugReport {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "resolution_id", unique = true)
     private Resolution resolution;
 
