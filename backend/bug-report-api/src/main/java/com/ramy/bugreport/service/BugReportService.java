@@ -16,6 +16,7 @@ import com.ramy.bugreport.repository.ISoftwareProjectRepository;
 import com.ramy.bugreport.repository.IUserAccountRepository;
 
 import jakarta.transaction.Transactional;
+import java.util.UUID;
 
 @Service
 public class BugReportService {
@@ -41,6 +42,13 @@ public class BugReportService {
             .stream()
             .map(BugReportResponse::from)
             .toList();
+    }
+    
+    public BugReportResponse getReport(UUID reportId) {
+        BugReport report = bugReportRepository.findById(reportId)
+                .orElseThrow(() -> new ResourceNotFoundException("Report with id: %s".formatted(reportId)));
+        
+        return BugReportResponse.from(report);
     }
 
     @Transactional
