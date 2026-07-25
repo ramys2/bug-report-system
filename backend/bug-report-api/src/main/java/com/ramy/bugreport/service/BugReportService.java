@@ -50,6 +50,20 @@ public class BugReportService {
         
         return BugReportResponse.from(report);
     }
+    
+    public List<BugReportResponse> getReportsByReporter(UUID reporterId) {
+        return bugReportRepository.findByReporterId(reporterId)
+                .stream()
+                .map(BugReportResponse::from)
+                .toList();
+    }
+    
+    public List<BugReportResponse> getReportsByAssignee(UUID assigneeId) {
+        return bugReportRepository.findbyAssigneeId(assigneeId)
+                .stream()
+                .map(BugReportResponse::from)
+                .toList();
+    }
 
     @Transactional
     public CreateBugReportResponse create(CreateBugReportRequest request) {
