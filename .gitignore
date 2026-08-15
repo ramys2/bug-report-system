@@ -2,3 +2,6 @@
 target/
 bug-report-api/target/
 bug-report-domain/target/
+*.settings*
+*.project*
+*.classpath*
