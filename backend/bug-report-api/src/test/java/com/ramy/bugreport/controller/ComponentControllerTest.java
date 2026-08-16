@@ -1,0 +1,73 @@
+package com.ramy.bugreport.controller;
+
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.util.Map;
+import java.util.UUID;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import com.ramy.bugreport.dto.component.CreateComponentRequest;
+import com.ramy.bugreport.dto.component.CreateComponentResponse;
+import com.ramy.bugreport.service.ComponentService;
+
+@ExtendWith(MockitoExtension.class)
+class ComponentControllerTest {
+
+    @Mock
+    private ComponentService componentService;
+
+    private MockMvc mockMvc;
+
+    @BeforeEach
+    void setUp() {
+        mockMvc = MockMvcBuilders
+                .standaloneSetup(new ComponentController(componentService))
+                .build();
+    }
+
+    @Test
+    void getAllUsesComponentsRoute() throws Exception {
+        var componentId = UUID.randomUUID();
+        when(componentService.getAll()).thenReturn(Map.of(componentId, "API"));
+
+        mockMvc.perform(get("/api/components"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$['%s']".formatted(componentId)).value("API"));
+
+        verify(componentService).getAll();
+    }
+
+    @Test
+    void createAcceptsMissingOptionalFieldsAndReturnsCreated() throws Exception {
+        var request = new CreateComponentRequest("API", null, null);
+        var componentId = UUID.randomUUID();
+        when(componentService.create(request))
+                .thenReturn(new CreateComponentResponse(componentId, "Successfully created!"));
+
+        mockMvc.perform(post("/api/components")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "API"
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(componentId.toString()))
+                .andExpect(jsonPath("$.message").value("Successfully created!"));
+
+        verify(componentService).create(request);
+    }
+}
