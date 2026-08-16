@@ -1,0 +1,73 @@
+package com.ramy.bugreport.controller;
+
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.util.Map;
+import java.util.UUID;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import com.ramy.bugreport.dto.project.CreateSoftwareProjectRequest;
+import com.ramy.bugreport.dto.project.CreateSoftwareProjectResponse;
+import com.ramy.bugreport.service.SoftwareProjectService;
+
+@ExtendWith(MockitoExtension.class)
+class SoftwareProjectControllerTest {
+
+    @Mock
+    private SoftwareProjectService softwareProjectService;
+
+    private MockMvc mockMvc;
+
+    @BeforeEach
+    void setUp() {
+        mockMvc = MockMvcBuilders
+                .standaloneSetup(new SoftwareProjectController(softwareProjectService))
+                .build();
+    }
+
+    @Test
+    void getAllUsesProjectsRoute() throws Exception {
+        var projectId = UUID.randomUUID();
+        when(softwareProjectService.getAll()).thenReturn(Map.of(projectId, "Bug Report System"));
+
+        mockMvc.perform(get("/api/projects"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$['%s']".formatted(projectId)).value("Bug Report System"));
+
+        verify(softwareProjectService).getAll();
+    }
+
+    @Test
+    void createAcceptsMissingOptionalDescriptionAndReturnsCreated() throws Exception {
+        var request = new CreateSoftwareProjectRequest("Bug Report System", null);
+        var projectId = UUID.randomUUID();
+        when(softwareProjectService.create(request))
+                .thenReturn(new CreateSoftwareProjectResponse(projectId, "Successfully created!"));
+
+        mockMvc.perform(post("/api/projects")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "name": "Bug Report System"
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(projectId.toString()))
+                .andExpect(jsonPath("$.message").value("Successfully created!"));
+
+        verify(softwareProjectService).create(request);
+    }
+}
