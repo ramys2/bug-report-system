@@ -9,6 +9,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.ramy.bugreport.domain.Attachment;
 import com.ramy.bugreport.domain.BugReport;
@@ -45,7 +46,8 @@ public class BugReportApplication {
             IBugReportRepository bugReportRepository,
             ICommentRepository commentRepository,
             IAttachementRepository attachmentRepository,
-            IResolutionRepository resolutionRepository) {
+            IResolutionRepository resolutionRepository,
+            PasswordEncoder passwordEncoder) {
         return args -> {
             if (userRepository.count() > 0) {
                 logger.info("Demo data already exists; skipping initialization.");
@@ -54,14 +56,19 @@ public class BugReportApplication {
 
             LocalDateTime now = LocalDateTime.now();
 
+            // These accounts exist only in the in-memory demo database.
+            String adminPassword = "Admin123!";
+            String developerPassword = "Developer123!";
+            String reporterPassword = "Reporter123!";
+
             UserAccount admin = userRepository.save(new UserAccount(
-                    "Alice Admin", "admin@bugreport.local", "Admin123!", EUserRole.ADMIN));
+                    "Alice Admin", "admin@bugreport.local", passwordEncoder.encode(adminPassword), EUserRole.ADMIN));
             UserAccount backendDeveloper = userRepository.save(new UserAccount(
-                    "Daniel Developer", "developer@bugreport.local", "Developer123!", EUserRole.DEVELOPER));
+                    "Daniel Developer", "developer@bugreport.local", passwordEncoder.encode(developerPassword), EUserRole.DEVELOPER));
             UserAccount frontendDeveloper = userRepository.save(new UserAccount(
-                    "Fiona Frontend", "frontend@bugreport.local", "Frontend123!", EUserRole.DEVELOPER));
+                    "Fiona Frontend", "frontend@bugreport.local", passwordEncoder.encode(developerPassword), EUserRole.DEVELOPER));
             UserAccount reporter = userRepository.save(new UserAccount(
-                    "Rachel Reporter", "reporter@bugreport.local", "Reporter123!", EUserRole.REPORTER));
+                    "Rachel Reporter", "reporter@bugreport.local", passwordEncoder.encode(reporterPassword), EUserRole.REPORTER));
 
             SoftwareProject bugTracker = projectRepository.save(new SoftwareProject(
                     "Bug Report System", "Application for reporting and resolving software defects."));
@@ -139,6 +146,12 @@ public class BugReportApplication {
                     userRepository.count(), projectRepository.count(), componentRepository.count(),
                     bugReportRepository.count(), commentRepository.count(), attachmentRepository.count(),
                     resolutionRepository.count());
+            logger.info("""
+                    Test API credentials for curl:
+                      ADMIN: admin@bugreport.local / {}
+                      DEVELOPER: developer@bugreport.local / {}
+                      REPORTER: reporter@bugreport.local / {}
+                    """, adminPassword, developerPassword, reporterPassword);
         };
     }
 }
