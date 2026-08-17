@@ -1,7 +1,58 @@
-.vscode/
+# =========================
+# Backend - Maven / Java
+# =========================
+
 target/
-bug-report-api/target/
-bug-report-domain/target/
-*.settings*
-*.project*
-*.classpath*
+*.class
+
+# Maven
+.mvn/timing.properties
+
+# =========================
+# Frontend - Vite / React
+# =========================
+
+node_modules/
+dist/
+dist-ssr/
+
+# Vite
+*.local
+
+# =========================
+# Environment / secrets
+# =========================
+
+.env
+.env.*
+!.env.example
+
+# =========================
+# IDEs / Editors
+# =========================
+
+.idea/
+*.iml
+
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# =========================
+# OS files
+# =========================
+
+.DS_Store
+Thumbs.db
+
+# =========================
+# Logs
+# =========================
+
+*.log
+logs/

@@ -22,7 +22,8 @@ public class UserAccountDetailsService implements UserDetailsService {
 				.orElseThrow(() -> new UsernameNotFoundException("User not found"));
 		
 		return User.builder()
-				.username(account.getName())
+				// Email is the form-login identifier and should remain the authenticated principal name.
+				.username(account.getEmailAddress())
 				.password(account.getPasswordHash())
 				.roles(account.getRole().name())
 				.build();

@@ -3,7 +3,6 @@ package com.ramy.bugreport.security;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -20,7 +19,7 @@ public class SecurityConfig {
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http
-			// This is a stateless REST API, so browser CSRF protection is not needed.
+			// The current SPA client does not send CSRF tokens with its form posts.
 			.csrf(csrf -> csrf.disable())
 			.authorizeHttpRequests(auth -> auth
 					// Anyone may register; only admins can view all accounts.
@@ -56,15 +55,21 @@ public class SecurityConfig {
 					// Reject any endpoint that has not been explicitly allowed above.
 					.anyRequest().denyAll()
 			)
-			// Use HTTP Basic authentication for this small API.
-			.httpBasic(Customizer.withDefaults());
+			.formLogin(form -> form
+					// The client submits email/password, not Spring Security's default username/password.
+					.usernameParameter("email")
+					.passwordParameter("password")
+					// The client logs in through Ajax and expects a response rather than a redirect.
+					.successHandler((request, response, authentication) -> response.setStatus(200))
+					.failureHandler((request, response, exception) -> response.sendError(401))
+					.permitAll());
 		
 		return http.build();
 	}
 
 	@Bean
 	public UserDetailsService userDetailsService(IUserAccountRepository userRepository) {
-		// Authenticate HTTP Basic credentials against application accounts.
+		// Authenticate form-login credentials against application accounts.
 		return new UserAccountDetailsService(userRepository);
 	}
 	
