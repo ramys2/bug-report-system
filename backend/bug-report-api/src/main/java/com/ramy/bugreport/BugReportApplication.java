@@ -85,9 +85,9 @@ public class BugReportApplication {
             loginBug.setStatus(EBugStatus.IN_PROGRESS);
             loginBug = bugReportRepository.save(loginBug);
 
-            Resolution resolution = resolutionRepository.save(new Resolution(
+            Resolution resolution = new Resolution(
                     "Handle an absent optional avatar before constructing the user response.",
-                    now.minusDays(1), "0.1.1", "https://example.invalid/commits/7a21c9d"));
+                    now.minusDays(1), "0.1.1", "https://example.invalid/commits/7a21c9d");
 
             BugReport profileBug = BugReport.builder(
                             reporter.getId(), bugTracker.getId(), web.getId(),

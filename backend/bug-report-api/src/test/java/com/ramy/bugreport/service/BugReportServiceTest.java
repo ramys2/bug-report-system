@@ -103,7 +103,7 @@ class BugReportServiceTest {
     void getReportsByAssigneeMapsRepositoryResult() {
         var assigneeId = UUID.randomUUID();
         var report = report(UUID.randomUUID());
-        when(bugReportRepository.findbyAssigneeId(assigneeId)).thenReturn(List.of(report));
+        when(bugReportRepository.findByAssigneeId(assigneeId)).thenReturn(List.of(report));
 
         assertThat(service.getReportsByAssignee(assigneeId))
                 .extracting(response -> response.id())

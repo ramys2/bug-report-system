@@ -72,7 +72,7 @@ public class BugReportService {
     }
     
     public List<BugReportResponse> getReportsByAssignee(UUID assigneeId) {
-        return bugReportRepository.findbyAssigneeId(assigneeId)
+        return bugReportRepository.findByAssigneeId(assigneeId)
                 .stream()
                 .map(BugReportResponse::from)
                 .toList();
