@@ -3,12 +3,16 @@ package com.ramy.bugreport.security;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 
 import com.ramy.bugreport.repository.IUserAccountRepository;
 
@@ -19,12 +23,13 @@ public class SecurityConfig {
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http
-			// The current SPA client does not send CSRF tokens with its form posts.
+			// TODO: Enable CSRF once the React client supports CSRF tokens.
 			.csrf(csrf -> csrf.disable())
 			.authorizeHttpRequests(auth -> auth
 					// Anyone may register; only admins can view all accounts.
 					.requestMatchers(HttpMethod.POST, "/api/accounts")
 					.permitAll()
+
 					.requestMatchers(HttpMethod.GET, "/api/accounts")
 					.hasRole("ADMIN")
 
@@ -55,14 +60,15 @@ public class SecurityConfig {
 					// Reject any endpoint that has not been explicitly allowed above.
 					.anyRequest().denyAll()
 			)
-			.formLogin(form -> form
-					// The client submits email/password, not Spring Security's default username/password.
-					.usernameParameter("email")
-					.passwordParameter("password")
-					// The client logs in through Ajax and expects a response rather than a redirect.
-					.successHandler((request, response, authentication) -> response.setStatus(200))
-					.failureHandler((request, response, exception) -> response.sendError(401))
-					.permitAll());
+			.formLogin((form) -> form
+					.loginProcessingUrl("/login")
+					.permitAll()
+			)
+			.exceptionHandling((exception) -> exception
+					.authenticationEntryPoint(
+							new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)
+					)
+			);
 		
 		return http.build();
 	}
