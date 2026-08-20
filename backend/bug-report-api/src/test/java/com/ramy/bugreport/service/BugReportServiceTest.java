@@ -65,6 +65,7 @@ class BugReportServiceTest {
 
         assertThat(result).extracting(response -> response.id())
                 .containsExactly(first.getId(), second.getId());
+        verify(bugReportRepository).findAll();
     }
 
     @Test
@@ -76,6 +77,7 @@ class BugReportServiceTest {
 
         assertThat(result.id()).isEqualTo(report.getId());
         assertThat(result.title()).isEqualTo(report.getTitle());
+        verify(bugReportRepository).findById(report.getId());
     }
 
     @Test
@@ -97,6 +99,7 @@ class BugReportServiceTest {
         assertThat(service.getReportsByReporter(reporterId))
                 .extracting(response -> response.id())
                 .containsExactly(report.getId());
+        verify(bugReportRepository).findByReporterId(reporterId);
     }
 
     @Test
@@ -108,6 +111,7 @@ class BugReportServiceTest {
         assertThat(service.getReportsByAssignee(assigneeId))
                 .extracting(response -> response.id())
                 .containsExactly(report.getId());
+        verify(bugReportRepository).findByAssigneeId(assigneeId);
     }
 
     @Test
@@ -127,6 +131,9 @@ class BugReportServiceTest {
         var result = service.create(request);
 
         var reportCaptor = ArgumentCaptor.forClass(BugReport.class);
+        verify(userAccountRepository).existsById(request.reporterId());
+        verify(softwareProjectRepository).existsById(request.projectId());
+        verify(componentRepository).existsById(request.componentId());
         verify(bugReportRepository).save(reportCaptor.capture());
         var savedReport = reportCaptor.getValue();
         assertThat(savedReport.getReporterId()).isEqualTo(request.reporterId());
@@ -153,6 +160,7 @@ class BugReportServiceTest {
         assertThatThrownBy(() -> service.create(request))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("User with id=%s does not exist!".formatted(request.reporterId()));
+        verify(userAccountRepository).existsById(request.reporterId());
         verifyNoInteractions(softwareProjectRepository, componentRepository, bugReportRepository);
     }
 
@@ -165,6 +173,8 @@ class BugReportServiceTest {
         assertThatThrownBy(() -> service.create(request))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Project with id=%s does not exist!".formatted(request.projectId()));
+        verify(userAccountRepository).existsById(request.reporterId());
+        verify(softwareProjectRepository).existsById(request.projectId());
         verifyNoInteractions(componentRepository, bugReportRepository);
     }
 
@@ -178,6 +188,9 @@ class BugReportServiceTest {
         assertThatThrownBy(() -> service.create(request))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Component with id=%s does not exist!".formatted(request.componentId()));
+        verify(userAccountRepository).existsById(request.reporterId());
+        verify(softwareProjectRepository).existsById(request.projectId());
+        verify(componentRepository).existsById(request.componentId());
         verify(bugReportRepository, never()).save(any());
     }
 
@@ -195,7 +208,9 @@ class BugReportServiceTest {
         assertThat(report.getResolution().getFixedVersion()).isEqualTo(request.fixedVersion());
         assertThat(report.getResolution().getCommitUrl()).isEqualTo(request.commitUrl());
         assertThat(report.getResolution().getResolvedAt()).isBetween(before, LocalDateTime.now());
+        assertThat(result.reportId()).isEqualTo(report.getResolution().getId());
         assertThat(result.message()).isEqualTo("Task has been closed successfully!");
+        verify(bugReportRepository).findById(report.getId());
         verify(bugReportRepository).save(report);
     }
 
@@ -235,6 +250,9 @@ class BugReportServiceTest {
         assertThat(report.getStatus()).isEqualTo(request.bugStatus());
         assertThat(result.id()).isEqualTo(report.getId());
         assertThat(result.message()).isEqualTo("Bug report updated successfully!");
+        verify(bugReportRepository).findById(report.getId());
+        verify(userAccountRepository).existsById(assigneeId);
+        verify(bugReportRepository, never()).save(any());
     }
 
     @Test
@@ -248,7 +266,9 @@ class BugReportServiceTest {
 
         assertThat(report.getDescription()).isEqualTo(originalDescription);
         assertThat(report.getStatus()).isEqualTo(EBugStatus.OPEN);
+        verify(bugReportRepository).findById(report.getId());
         verifyNoInteractions(userAccountRepository);
+        verify(bugReportRepository, never()).save(any());
     }
 
     @Test
@@ -262,6 +282,9 @@ class BugReportServiceTest {
         assertThatThrownBy(() -> service.update(report.getId(), request))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("User with id=%s does not exist!".formatted(assigneeId));
+        verify(bugReportRepository).findById(report.getId());
+        verify(userAccountRepository).existsById(assigneeId);
+        verify(bugReportRepository, never()).save(any());
     }
 
     @Test
@@ -273,6 +296,8 @@ class BugReportServiceTest {
         assertThatThrownBy(() -> service.update(reportId, request))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Report with id: %s".formatted(reportId));
+        verify(bugReportRepository).findById(reportId);
+        verifyNoInteractions(userAccountRepository);
     }
 
     private static CreateBugReportRequest createRequest() {

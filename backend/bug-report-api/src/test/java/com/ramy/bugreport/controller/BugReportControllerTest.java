@@ -17,6 +17,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -29,6 +32,7 @@ import com.ramy.bugreport.dto.report.CreateBugReportRequest;
 import com.ramy.bugreport.dto.report.CreateBugReportResponse;
 import com.ramy.bugreport.dto.report.UpdateBugReportRequest;
 import com.ramy.bugreport.dto.report.UpdateBugReportResponse;
+import com.ramy.bugreport.security.UserAccountDetails;
 import com.ramy.bugreport.service.BugReportService;
 
 @ExtendWith(MockitoExtension.class)
@@ -43,7 +47,9 @@ class BugReportControllerTest {
     void setUp() {
         mockMvc = MockMvcBuilders
                 .standaloneSetup(new BugReportController(reportService))
+                .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
                 .build();
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -71,17 +77,35 @@ class BugReportControllerTest {
     }
 
     @Test
-    void getReportsByReporterUsesReporterIdQueryParameter() throws Exception {
+    void getReportedUsesAuthenticatedAccountId() throws Exception {
         var reporterId = UUID.randomUUID();
         var reportId = UUID.randomUUID();
         when(reportService.getReportsByReporter(reporterId))
                 .thenReturn(List.of(reportResponse(reportId)));
 
-        mockMvc.perform(get("/api/reports").param("reporterId", reporterId.toString()))
+        authenticate(reporterId);
+
+        mockMvc.perform(get("/api/reports/reproted"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(reportId.toString()));
 
         verify(reportService).getReportsByReporter(reporterId);
+    }
+
+    @Test
+    void getAssignedUsesAuthenticatedAccountId() throws Exception {
+        var assigneeId = UUID.randomUUID();
+        var reportId = UUID.randomUUID();
+        when(reportService.getReportsByAssignee(assigneeId))
+                .thenReturn(List.of(reportResponse(reportId)));
+
+        authenticate(assigneeId);
+
+        mockMvc.perform(get("/api/reports/assigned"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(reportId.toString()));
+
+        verify(reportService).getReportsByAssignee(assigneeId);
     }
 
     @Test
@@ -213,5 +237,12 @@ class BugReportControllerTest {
                 null,
                 null,
                 null);
+    }
+
+    private static void authenticate(UUID accountId) {
+        var account = org.mockito.Mockito.mock(UserAccountDetails.class);
+        when(account.getId()).thenReturn(accountId);
+        var authentication = new UsernamePasswordAuthenticationToken(account, null, account.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 }

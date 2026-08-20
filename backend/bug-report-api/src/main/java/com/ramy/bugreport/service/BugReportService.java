@@ -20,7 +20,6 @@ import com.ramy.bugreport.repository.IBugReportRepository;
 import com.ramy.bugreport.repository.IComponentRepository;
 import com.ramy.bugreport.repository.ISoftwareProjectRepository;
 import com.ramy.bugreport.repository.IUserAccountRepository;
-
 import jakarta.transaction.Transactional;
 import java.util.UUID;
 
@@ -130,7 +129,7 @@ public class BugReportService {
     
     @Transactional
     @PreAuthorize(
-    	"hasRole('ADMIN') or @bugReportAuthorizer.canClose(#reportId, authentication)"
+    	"hasRole('ADMIN') or @bugReportAuthorizer.canUpdate(#reportId, authentication)"
     )
     public CloseBugReportResponse close(UUID reportId, CloseBugReportRequest request) {
         BugReport report = bugReportRepository.findById(reportId)
@@ -154,6 +153,9 @@ public class BugReportService {
     */
     
     @Transactional
+    @PreAuthorize(
+    		"hasRole('ADMIN') or @butReportAuthorizer.canUpdate(#reportId, authentication)"
+    )
     public UpdateBugReportResponse update(UUID reportId, UpdateBugReportRequest request) {
         BugReport report = bugReportRepository.findById(reportId)
                 .orElseThrow(() -> new ResourceNotFoundException("Report with id: %s".formatted(reportId)));

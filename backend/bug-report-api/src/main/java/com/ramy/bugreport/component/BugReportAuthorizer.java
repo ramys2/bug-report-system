@@ -6,7 +6,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 import com.ramy.bugreport.domain.BugReport;
-import com.ramy.bugreport.domain.UserAccount;
 import com.ramy.bugreport.exception.ResourceNotFoundException;
 import com.ramy.bugreport.repository.IBugReportRepository;
 import com.ramy.bugreport.security.UserAccountDetails;
@@ -20,7 +19,7 @@ public class BugReportAuthorizer {
 		this.reportRepository = reportRepository;
 	}
 	
-	public boolean canClose(UUID reportId, Authentication auth) {
+	public boolean canUpdate(UUID reportId, Authentication auth) {
         BugReport report = this.reportRepository.findById(reportId)
                 .orElseThrow(() ->
                     new ResourceNotFoundException(
