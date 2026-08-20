@@ -1,6 +1,5 @@
 package com.ramy.bugreport.security;
 
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -21,12 +20,7 @@ public class UserAccountDetailsService implements UserDetailsService {
 		UserAccount account = this.userRepository.findByEmailAddress(username)
 				.orElseThrow(() -> new UsernameNotFoundException("User not found"));
 		
-		return User.builder()
-				// Email is the form-login identifier and should remain the authenticated principal name.
-				.username(account.getEmailAddress())
-				.password(account.getPasswordHash())
-				.roles(account.getRole().name())
-				.build();
+		return new UserAccountDetails(account);
 	}
 
 }

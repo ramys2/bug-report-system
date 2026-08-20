@@ -3,6 +3,7 @@ package com.ramy.bugreport.service;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import com.ramy.bugreport.domain.BugReport;
@@ -128,6 +129,9 @@ public class BugReportService {
     }
     
     @Transactional
+    @PreAuthorize(
+    	"hasRole('ADMIN') or @bugReportAuthorizer.canClose(#reportId, authentication)"
+    )
     public CloseBugReportResponse close(UUID reportId, CloseBugReportRequest request) {
         BugReport report = bugReportRepository.findById(reportId)
                 .orElseThrow(() -> new ResourceNotFoundException("Report with id: %s".formatted(reportId)));
