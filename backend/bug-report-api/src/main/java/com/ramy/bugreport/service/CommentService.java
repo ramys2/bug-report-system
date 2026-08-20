@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import com.ramy.bugreport.domain.Comment;
@@ -91,6 +92,9 @@ public class CommentService {
     */
 
     @Transactional
+    @PreAuthorize(
+    		"hasRole('ADMIN') or @commentActionAuthorizer(#commentId, authentication)"
+    )
     public void delete(UUID commentId) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Comment with id: %s".formatted(commentId)));
