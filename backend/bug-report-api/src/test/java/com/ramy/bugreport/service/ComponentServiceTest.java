@@ -67,4 +67,21 @@ class ComponentServiceTest {
         assertThat(result.id()).isEqualTo(componentId);
         assertThat(result.message()).isEqualTo("Successfully created!");
     }
+
+    @Test
+    void createAllowsMissingOptionalFields() {
+        var request = new CreateComponentRequest("API", null, null);
+        var componentId = UUID.randomUUID();
+        var savedComponent = org.mockito.Mockito.mock(Component.class);
+        when(componentRepository.save(any(Component.class))).thenReturn(savedComponent);
+        when(savedComponent.getId()).thenReturn(componentId);
+
+        var result = service.create(request);
+
+        var componentCaptor = ArgumentCaptor.forClass(Component.class);
+        verify(componentRepository).save(componentCaptor.capture());
+        assertThat(componentCaptor.getValue().getDescription()).isNull();
+        assertThat(componentCaptor.getValue().getResponsibleDeveloperId()).isNull();
+        assertThat(result.id()).isEqualTo(componentId);
+    }
 }

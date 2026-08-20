@@ -73,31 +73,32 @@ class CommentServiceTest {
     @Test
     void createValidatesReferencesBuildsAndSavesComment() {
         var reportId = UUID.randomUUID();
-        var request = new CreateCommentRequest(UUID.randomUUID(), "Working on a fix.");
+        var authorId = UUID.randomUUID();
+        var request = new CreateCommentRequest("Working on a fix.");
         var commentId = UUID.randomUUID();
         var savedComment = org.mockito.Mockito.mock(Comment.class);
         var author = org.mockito.Mockito.mock(UserAccount.class);
         when(bugReportRepository.existsById(reportId)).thenReturn(true);
-        when(userAccountRepository.findById(request.authorId())).thenReturn(Optional.of(author));
+        when(userAccountRepository.findById(authorId)).thenReturn(Optional.of(author));
         when(commentRepository.save(any(Comment.class))).thenReturn(savedComment);
         when(savedComment.getId()).thenReturn(commentId);
-        when(savedComment.getAuthorId()).thenReturn(request.authorId());
+        when(savedComment.getAuthorId()).thenReturn(authorId);
         when(savedComment.getContent()).thenReturn(request.content());
         when(savedComment.getCreatedAt()).thenReturn(LocalDateTime.now());
         when(author.getName()).thenReturn("Ramy");
         var before = LocalDateTime.now();
 
-        var result = service.create(reportId, request);
+        var result = service.create(reportId, authorId, request);
 
         var commentCaptor = ArgumentCaptor.forClass(Comment.class);
         verify(commentRepository).save(commentCaptor.capture());
         var saved = commentCaptor.getValue();
         assertThat(saved.getBugReportId()).isEqualTo(reportId);
-        assertThat(saved.getAuthorId()).isEqualTo(request.authorId());
+        assertThat(saved.getAuthorId()).isEqualTo(authorId);
         assertThat(saved.getContent()).isEqualTo(request.content());
         assertThat(saved.getCreatedAt()).isBetween(before, LocalDateTime.now());
         assertThat(result.id()).isEqualTo(commentId);
-        assertThat(result.authorId()).isEqualTo(request.authorId());
+        assertThat(result.authorId()).isEqualTo(authorId);
         assertThat(result.authorName()).isEqualTo("Ramy");
         assertThat(result.content()).isEqualTo(request.content());
         assertThat(result.createdAt()).isNotNull();
@@ -106,10 +107,11 @@ class CommentServiceTest {
     @Test
     void createThrowsWhenReportDoesNotExist() {
         var reportId = UUID.randomUUID();
-        var request = new CreateCommentRequest(UUID.randomUUID(), "Working on a fix.");
+        var authorId = UUID.randomUUID();
+        var request = new CreateCommentRequest("Working on a fix.");
         when(bugReportRepository.existsById(reportId)).thenReturn(false);
 
-        assertThatThrownBy(() -> service.create(reportId, request))
+        assertThatThrownBy(() -> service.create(reportId, authorId, request))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Report with id: %s".formatted(reportId));
         verifyNoInteractions(userAccountRepository, commentRepository);
@@ -118,13 +120,14 @@ class CommentServiceTest {
     @Test
     void createThrowsWhenAuthorDoesNotExist() {
         var reportId = UUID.randomUUID();
-        var request = new CreateCommentRequest(UUID.randomUUID(), "Working on a fix.");
+        var authorId = UUID.randomUUID();
+        var request = new CreateCommentRequest("Working on a fix.");
         when(bugReportRepository.existsById(reportId)).thenReturn(true);
-        when(userAccountRepository.findById(request.authorId())).thenReturn(Optional.empty());
+        when(userAccountRepository.findById(authorId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.create(reportId, request))
+        assertThatThrownBy(() -> service.create(reportId, authorId, request))
                 .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessage("User with id=%s does not exist!".formatted(request.authorId()));
+                .hasMessage("User with id=%s does not exist!".formatted(authorId));
         verifyNoInteractions(commentRepository);
     }
 

@@ -63,19 +63,19 @@ public class CommentService {
     */
 
     @Transactional
-    public CreateCommentResponse create(UUID reportId, CreateCommentRequest request) {
+    public CreateCommentResponse create(UUID reportId, UUID authorId, CreateCommentRequest request) {
         if (!bugReportRepository.existsById(reportId)) {
             throw new ResourceNotFoundException("Report with id: %s".formatted(reportId));
         }
 
-        UserAccount author = userAccountRepository.findById(request.authorId())
+        UserAccount author = userAccountRepository.findById(authorId)
                 .orElseThrow(() -> new ResourceNotFoundException(
-                        "User with id=%s does not exist!".formatted(request.authorId())
+                        "User with id=%s does not exist!".formatted(authorId)
                 ));
 
         Comment comment = new Comment(
                 reportId,
-                request.authorId(),
+                authorId,
                 request.content(),
                 LocalDateTime.now());
         comment = commentRepository.save(comment);
@@ -93,7 +93,7 @@ public class CommentService {
 
     @Transactional
     @PreAuthorize(
-    		"hasRole('ADMIN') or @commentActionAuthorizer(#commentId, authentication)"
+    		"hasRole('ADMIN') or @commentAuthorizer.canDelete(#commentId, authentication)"
     )
     public void delete(UUID commentId) {
         Comment comment = commentRepository.findById(commentId)

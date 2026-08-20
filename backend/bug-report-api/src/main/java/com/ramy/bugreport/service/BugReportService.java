@@ -88,8 +88,7 @@ public class BugReportService {
     */
     
     @Transactional
-    public CreateBugReportResponse create(CreateBugReportRequest request) {
-        var reporterId = request.reporterId();
+    public CreateBugReportResponse create(UUID reporterId, CreateBugReportRequest request) {
         var projectId = request.projectId();
         var componentId = request.componentId();
         var title = request.title();
@@ -154,7 +153,7 @@ public class BugReportService {
     
     @Transactional
     @PreAuthorize(
-    		"hasRole('ADMIN') or @butReportAuthorizer.canUpdate(#reportId, authentication)"
+    		"hasRole('ADMIN') or @bugReportAuthorizer.canUpdate(#reportId, authentication)"
     )
     public UpdateBugReportResponse update(UUID reportId, UpdateBugReportRequest request) {
         BugReport report = bugReportRepository.findById(reportId)

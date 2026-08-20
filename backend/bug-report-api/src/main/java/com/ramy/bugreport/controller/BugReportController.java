@@ -58,7 +58,7 @@ public class BugReportController {
         return reportService.getReport(reportId);
     }
 
-    @GetMapping("/reproted")
+    @GetMapping("/reported")
     public List<BugReportResponse> getReported(
     		@AuthenticationPrincipal UserAccountDetails account
     ) {
@@ -82,9 +82,10 @@ public class BugReportController {
 
     @PostMapping
     public ResponseEntity<CreateBugReportResponse> create(
-            @Valid @RequestBody CreateBugReportRequest request
+            @Valid @RequestBody CreateBugReportRequest request,
+            @AuthenticationPrincipal UserAccountDetails account
     ) {
-        var response = reportService.create(request);
+        var response = reportService.create(account.getId(), request);
         return ResponseEntity
             .status(HttpStatus.CREATED)
             .body(response);

@@ -8,7 +8,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 public record CreateBugReportRequest(
-    @NotNull UUID reporterId,
     UUID assigneeId,
     @NotNull UUID projectId,
     @NotNull UUID componentId,

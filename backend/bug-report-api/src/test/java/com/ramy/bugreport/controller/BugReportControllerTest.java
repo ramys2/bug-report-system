@@ -85,7 +85,7 @@ class BugReportControllerTest {
 
         authenticate(reporterId);
 
-        mockMvc.perform(get("/api/reports/reproted"))
+        mockMvc.perform(get("/api/reports/reported"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(reportId.toString()));
 
@@ -111,9 +111,12 @@ class BugReportControllerTest {
     @Test
     void createUsesCollectionRouteAndReturnsCreated() throws Exception {
         var request = createRequest();
+        var reporterId = UUID.randomUUID();
         var reportId = UUID.randomUUID();
-        when(reportService.create(request))
+        when(reportService.create(reporterId, request))
                 .thenReturn(new CreateBugReportResponse(reportId, "Successfully created!"));
+
+        authenticate(reporterId);
 
         mockMvc.perform(post("/api/reports")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -122,7 +125,7 @@ class BugReportControllerTest {
                 .andExpect(jsonPath("$.id").value(reportId.toString()))
                 .andExpect(jsonPath("$.message").value("Successfully created!"));
 
-        verify(reportService).create(request);
+        verify(reportService).create(reporterId, request);
     }
 
     @Test
@@ -190,7 +193,6 @@ class BugReportControllerTest {
                 UUID.randomUUID(),
                 UUID.randomUUID(),
                 UUID.randomUUID(),
-                UUID.randomUUID(),
                 "Application crashes",
                 "Description",
                 "Steps",
@@ -202,7 +204,6 @@ class BugReportControllerTest {
     private static String createRequestJson(CreateBugReportRequest request) {
         return """
                 {
-                  "reporterId": "%s",
                   "assigneeId": "%s",
                   "projectId": "%s",
                   "componentId": "%s",
@@ -214,7 +215,6 @@ class BugReportControllerTest {
                   "severity": "HIGH"
                 }
                 """.formatted(
-                request.reporterId(),
                 request.assigneeId(),
                 request.projectId(),
                 request.componentId());

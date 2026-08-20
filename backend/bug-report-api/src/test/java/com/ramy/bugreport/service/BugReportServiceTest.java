@@ -117,8 +117,9 @@ class BugReportServiceTest {
     @Test
     void createValidatesReferencesBuildsAndSavesReport() {
         var request = createRequest();
+        var reporterId = UUID.randomUUID();
         var savedId = UUID.randomUUID();
-        when(userAccountRepository.existsById(request.reporterId())).thenReturn(true);
+        when(userAccountRepository.existsById(reporterId)).thenReturn(true);
         when(softwareProjectRepository.existsById(request.projectId())).thenReturn(true);
         when(componentRepository.existsById(request.componentId())).thenReturn(true);
         when(bugReportRepository.save(any(BugReport.class))).thenAnswer(invocation -> {
@@ -128,15 +129,15 @@ class BugReportServiceTest {
         });
         var before = LocalDateTime.now();
 
-        var result = service.create(request);
+        var result = service.create(reporterId, request);
 
         var reportCaptor = ArgumentCaptor.forClass(BugReport.class);
-        verify(userAccountRepository).existsById(request.reporterId());
+        verify(userAccountRepository).existsById(reporterId);
         verify(softwareProjectRepository).existsById(request.projectId());
         verify(componentRepository).existsById(request.componentId());
         verify(bugReportRepository).save(reportCaptor.capture());
         var savedReport = reportCaptor.getValue();
-        assertThat(savedReport.getReporterId()).isEqualTo(request.reporterId());
+        assertThat(savedReport.getReporterId()).isEqualTo(reporterId);
         assertThat(savedReport.getAssigneeId()).isEqualTo(request.assigneeId());
         assertThat(savedReport.getProjectId()).isEqualTo(request.projectId());
         assertThat(savedReport.getComponentId()).isEqualTo(request.componentId());
@@ -155,25 +156,27 @@ class BugReportServiceTest {
     @Test
     void createThrowsWhenReporterDoesNotExist() {
         var request = createRequest();
-        when(userAccountRepository.existsById(request.reporterId())).thenReturn(false);
+        var reporterId = UUID.randomUUID();
+        when(userAccountRepository.existsById(reporterId)).thenReturn(false);
 
-        assertThatThrownBy(() -> service.create(request))
+        assertThatThrownBy(() -> service.create(reporterId, request))
                 .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessage("User with id=%s does not exist!".formatted(request.reporterId()));
-        verify(userAccountRepository).existsById(request.reporterId());
+                .hasMessage("User with id=%s does not exist!".formatted(reporterId));
+        verify(userAccountRepository).existsById(reporterId);
         verifyNoInteractions(softwareProjectRepository, componentRepository, bugReportRepository);
     }
 
     @Test
     void createThrowsWhenProjectDoesNotExist() {
         var request = createRequest();
-        when(userAccountRepository.existsById(request.reporterId())).thenReturn(true);
+        var reporterId = UUID.randomUUID();
+        when(userAccountRepository.existsById(reporterId)).thenReturn(true);
         when(softwareProjectRepository.existsById(request.projectId())).thenReturn(false);
 
-        assertThatThrownBy(() -> service.create(request))
+        assertThatThrownBy(() -> service.create(reporterId, request))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Project with id=%s does not exist!".formatted(request.projectId()));
-        verify(userAccountRepository).existsById(request.reporterId());
+        verify(userAccountRepository).existsById(reporterId);
         verify(softwareProjectRepository).existsById(request.projectId());
         verifyNoInteractions(componentRepository, bugReportRepository);
     }
@@ -181,14 +184,15 @@ class BugReportServiceTest {
     @Test
     void createThrowsWhenComponentDoesNotExist() {
         var request = createRequest();
-        when(userAccountRepository.existsById(request.reporterId())).thenReturn(true);
+        var reporterId = UUID.randomUUID();
+        when(userAccountRepository.existsById(reporterId)).thenReturn(true);
         when(softwareProjectRepository.existsById(request.projectId())).thenReturn(true);
         when(componentRepository.existsById(request.componentId())).thenReturn(false);
 
-        assertThatThrownBy(() -> service.create(request))
+        assertThatThrownBy(() -> service.create(reporterId, request))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Component with id=%s does not exist!".formatted(request.componentId()));
-        verify(userAccountRepository).existsById(request.reporterId());
+        verify(userAccountRepository).existsById(reporterId);
         verify(softwareProjectRepository).existsById(request.projectId());
         verify(componentRepository).existsById(request.componentId());
         verify(bugReportRepository, never()).save(any());
@@ -302,7 +306,6 @@ class BugReportServiceTest {
 
     private static CreateBugReportRequest createRequest() {
         return new CreateBugReportRequest(
-                UUID.randomUUID(),
                 UUID.randomUUID(),
                 UUID.randomUUID(),
                 UUID.randomUUID(),

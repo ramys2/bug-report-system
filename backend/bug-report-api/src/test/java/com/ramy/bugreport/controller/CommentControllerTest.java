@@ -18,6 +18,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -38,7 +41,9 @@ class CommentControllerTest {
     void setUp() {
         mockMvc = MockMvcBuilders
                 .standaloneSetup(new CommentController(commentService))
+                .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
                 .build();
+        SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -62,19 +67,20 @@ class CommentControllerTest {
         var authorId = UUID.randomUUID();
         var commentId = UUID.randomUUID();
         var createdAt = LocalDateTime.now();
-        var request = new CreateCommentRequest(authorId, "Working on a fix.");
-        when(commentService.create(reportId, request))
+        var request = new CreateCommentRequest("Working on a fix.");
+        when(commentService.create(reportId, authorId, request))
                 .thenReturn(new CreateCommentResponse(
                         commentId, authorId, "Ramy", request.content(), createdAt));
+
+        authenticate(authorId);
 
         mockMvc.perform(post("/api/reports/{reportId}/comments", reportId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "authorId": "%s",
                                   "content": "Working on a fix."
                                 }
-                """.formatted(authorId)))
+                """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(commentId.toString()))
                 .andExpect(jsonPath("$.authorId").value(authorId.toString()))
@@ -82,7 +88,7 @@ class CommentControllerTest {
                 .andExpect(jsonPath("$.content").value(request.content()))
                 .andExpect(jsonPath("$.createdAt").isNotEmpty());
 
-        verify(commentService).create(reportId, request);
+        verify(commentService).create(reportId, authorId, request);
     }
 
     @Test
@@ -102,5 +108,12 @@ class CommentControllerTest {
                 UUID.randomUUID(),
                 "Working on a fix.",
                 LocalDateTime.now());
+    }
+
+    private static void authenticate(UUID accountId) {
+        var account = org.mockito.Mockito.mock(com.ramy.bugreport.security.UserAccountDetails.class);
+        when(account.getId()).thenReturn(accountId);
+        var authentication = new UsernamePasswordAuthenticationToken(account, null, account.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 }
