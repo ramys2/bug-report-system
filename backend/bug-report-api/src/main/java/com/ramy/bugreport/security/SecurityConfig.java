@@ -23,11 +23,14 @@ public class SecurityConfig {
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 		http
 			// TODO: Enable CSRF once the React client supports CSRF tokens.
-			.csrf(csrf -> csrf.disable())
 			.authorizeHttpRequests(auth -> auth
+					.requestMatchers(HttpMethod.GET, "/csrf")
+					.permitAll()
+
 					// Anyone may register; only admins can view all accounts.
 					.requestMatchers(HttpMethod.POST, "/api/accounts")
 					.permitAll()
+					
 
 					.requestMatchers(HttpMethod.GET, "/api/accounts")
 					.hasRole("ADMIN")
