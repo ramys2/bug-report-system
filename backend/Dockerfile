@@ -1,8 +1,16 @@
-FROM maven:3.9.16-amazoncorretto-21-debian-trixie as build
+FROM maven:3.9.16-amazoncorretto-21-debian-trixie AS build
 
-COPY ./ /tmp/bug-report-build/
+WORKDIR /build
 
-WORKDIR /tmp/bug-report-build/
+COPY . .
 
 RUN mvn package
-RUN mv ./bug-report-api/target/bug-report-api-0.1.0-SNAPSHOT.jar ./
+
+
+FROM eclipse-temurin:21-jre-ubi10-minimal AS runtime
+
+WORKDIR /opt/app
+
+COPY --from=build /build/bug-report-api/target/bug-report-api-0.1.0-SNAPSHOT.jar ./app.jar
+
+CMD ["java", "-jar", "app.jar"]
