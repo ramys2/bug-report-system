@@ -2,6 +2,7 @@ package com.ramy.bugreport.controller;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -25,6 +26,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import com.ramy.bugreport.domain.EBugSeverity;
 import com.ramy.bugreport.domain.EBugStatus;
+import com.ramy.bugreport.dto.report.BugReportBriefResponse;
 import com.ramy.bugreport.dto.report.BugReportResponse;
 import com.ramy.bugreport.dto.report.CloseBugReportRequest;
 import com.ramy.bugreport.dto.report.CloseBugReportResponse;
@@ -55,11 +57,15 @@ class BugReportControllerTest {
     @Test
     void getAllUsesCollectionRoute() throws Exception {
         var reportId = UUID.randomUUID();
-        when(reportService.getAll()).thenReturn(List.of(reportResponse(reportId)));
+        when(reportService.getAll()).thenReturn(List.of(briefResponse(reportId)));
 
         mockMvc.perform(get("/api/reports"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(reportId.toString()));
+                .andExpect(jsonPath("$[0].report_id").value(reportId.toString()))
+                .andExpect(jsonPath("$[0].author").value("Leo Tester"))
+                .andExpect(jsonPath("$[0].assignee").value(nullValue()))
+                .andExpect(jsonPath("$[0].status").value("open"))
+                .andExpect(jsonPath("$[0].created_at").value("13-07-2026 12:05"));
 
         verify(reportService).getAll();
     }
@@ -81,13 +87,13 @@ class BugReportControllerTest {
         var reporterId = UUID.randomUUID();
         var reportId = UUID.randomUUID();
         when(reportService.getReportsByReporter(reporterId))
-                .thenReturn(List.of(reportResponse(reportId)));
+                .thenReturn(List.of(briefResponse(reportId)));
 
         authenticate(reporterId);
 
         mockMvc.perform(get("/api/reports/reported"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(reportId.toString()));
+                .andExpect(jsonPath("$[0].report_id").value(reportId.toString()));
 
         verify(reportService).getReportsByReporter(reporterId);
     }
@@ -97,13 +103,13 @@ class BugReportControllerTest {
         var assigneeId = UUID.randomUUID();
         var reportId = UUID.randomUUID();
         when(reportService.getReportsByAssignee(assigneeId))
-                .thenReturn(List.of(reportResponse(reportId)));
+                .thenReturn(List.of(briefResponse(reportId)));
 
         authenticate(assigneeId);
 
         mockMvc.perform(get("/api/reports/assigned"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(reportId.toString()));
+                .andExpect(jsonPath("$[0].report_id").value(reportId.toString()));
 
         verify(reportService).getReportsByAssignee(assigneeId);
     }
@@ -237,6 +243,17 @@ class BugReportControllerTest {
                 null,
                 null,
                 null);
+    }
+
+    private static BugReportBriefResponse briefResponse(UUID reportId) {
+        return new BugReportBriefResponse(
+                reportId,
+                "Application crashes",
+                "Leo Tester",
+                null,
+                "open",
+                "high",
+                "13-07-2026 12:05");
     }
 
     private static void authenticate(UUID accountId) {

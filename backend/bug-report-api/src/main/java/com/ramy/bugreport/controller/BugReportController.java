@@ -3,6 +3,7 @@ package com.ramy.bugreport.controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.ramy.bugreport.dto.report.BugReportBriefResponse;
 import com.ramy.bugreport.dto.report.BugReportResponse;
 import com.ramy.bugreport.dto.report.CloseBugReportRequest;
 import com.ramy.bugreport.dto.report.CloseBugReportResponse;
@@ -47,7 +48,7 @@ public class BugReportController {
     */
 
     @GetMapping
-    public List<BugReportResponse> getAll() {
+    public List<BugReportBriefResponse> getAll() {
         return reportService.getAll();
     }
     
@@ -59,14 +60,14 @@ public class BugReportController {
     }
 
     @GetMapping("/reported")
-    public List<BugReportResponse> getReported(
+    public List<BugReportBriefResponse> getReported(
     		@AuthenticationPrincipal UserAccountDetails account
     ) {
         return reportService.getReportsByReporter(account.getId());
     }
     
     @GetMapping("/assigned")
-    public List<BugReportResponse> getAssigned(
+    public List<BugReportBriefResponse> getAssigned(
     		@AuthenticationPrincipal UserAccountDetails account
     ) {
         return reportService.getReportsByAssignee(account.getId());

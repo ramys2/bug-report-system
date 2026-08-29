@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -23,6 +24,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.ramy.bugreport.domain.BugReport;
 import com.ramy.bugreport.domain.EBugSeverity;
 import com.ramy.bugreport.domain.EBugStatus;
+import com.ramy.bugreport.domain.UserAccount;
 import com.ramy.bugreport.dto.report.CloseBugReportRequest;
 import com.ramy.bugreport.dto.report.CreateBugReportRequest;
 import com.ramy.bugreport.dto.report.UpdateBugReportRequest;
@@ -56,15 +58,20 @@ class BugReportServiceTest {
     }
 
     @Test
-    void getAllMapsReportsToResponses() {
+    void getAllMapsReportsToBriefResponses() {
         var first = report(UUID.randomUUID());
         var second = report(UUID.randomUUID());
+        first.setCreatedAt(LocalDateTime.of(2026, 7, 13, 12, 5));
+        stubUsers(first, second);
         when(bugReportRepository.findAll()).thenReturn(List.of(first, second));
 
         var result = service.getAll();
 
-        assertThat(result).extracting(response -> response.id())
+        assertThat(result).extracting(response -> response.reportId())
                 .containsExactly(first.getId(), second.getId());
+        assertThat(result.getFirst())
+                .extracting("title", "author", "assignee", "status", "severity", "createdAt")
+                .containsExactly("Application crashes", "Reporter", "Assignee", "open", "high", "13-07-2026 12:05");
         verify(bugReportRepository).findAll();
     }
 
@@ -94,10 +101,11 @@ class BugReportServiceTest {
     void getReportsByReporterMapsRepositoryResult() {
         var reporterId = UUID.randomUUID();
         var report = report(UUID.randomUUID());
+        stubUsers(report);
         when(bugReportRepository.findByReporterId(reporterId)).thenReturn(List.of(report));
 
         assertThat(service.getReportsByReporter(reporterId))
-                .extracting(response -> response.id())
+                .extracting(response -> response.reportId())
                 .containsExactly(report.getId());
         verify(bugReportRepository).findByReporterId(reporterId);
     }
@@ -106,10 +114,11 @@ class BugReportServiceTest {
     void getReportsByAssigneeMapsRepositoryResult() {
         var assigneeId = UUID.randomUUID();
         var report = report(UUID.randomUUID());
+        stubUsers(report);
         when(bugReportRepository.findByAssigneeId(assigneeId)).thenReturn(List.of(report));
 
         assertThat(service.getReportsByAssignee(assigneeId))
-                .extracting(response -> response.id())
+                .extracting(response -> response.reportId())
                 .containsExactly(report.getId());
         verify(bugReportRepository).findByAssigneeId(assigneeId);
     }
@@ -333,5 +342,21 @@ class BugReportServiceTest {
                 .build();
         report.setId(id);
         return report;
+    }
+
+    private void stubUsers(BugReport... reports) {
+        var users = java.util.Arrays.stream(reports)
+                .flatMap(report -> java.util.stream.Stream.of(
+                        user(report.getReporterId(), "Reporter"),
+                        user(report.getAssigneeId(), "Assignee")))
+                .toList();
+        when(userAccountRepository.findAllById(any())).thenReturn(users);
+    }
+
+    private static UserAccount user(UUID id, String name) {
+        var user = mock(UserAccount.class);
+        when(user.getId()).thenReturn(id);
+        when(user.getName()).thenReturn(name);
+        return user;
     }
 }

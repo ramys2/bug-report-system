@@ -1,13 +1,19 @@
 package com.ramy.bugreport.service;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.function.Function;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import com.ramy.bugreport.domain.BugReport;
 import com.ramy.bugreport.domain.Resolution;
+import com.ramy.bugreport.domain.UserAccount;
+import com.ramy.bugreport.dto.report.BugReportBriefResponse;
 import com.ramy.bugreport.dto.report.BugReportResponse;
 import com.ramy.bugreport.dto.report.CloseBugReportRequest;
 import com.ramy.bugreport.dto.report.CloseBugReportResponse;
@@ -21,7 +27,6 @@ import com.ramy.bugreport.repository.IComponentRepository;
 import com.ramy.bugreport.repository.ISoftwareProjectRepository;
 import com.ramy.bugreport.repository.IUserAccountRepository;
 import jakarta.transaction.Transactional;
-import java.util.UUID;
 
 @Service
 public class BugReportService {
@@ -50,11 +55,8 @@ public class BugReportService {
     * ============================================
     */
 
-    public List<BugReportResponse> getAll() {
-        return bugReportRepository.findAll()
-            .stream()
-            .map(BugReportResponse::from)
-            .toList();
+    public List<BugReportBriefResponse> getAll() {
+        return mapToBriefResponses(bugReportRepository.findAll());
     }
     
     public BugReportResponse getReport(UUID reportId) {
@@ -64,18 +66,39 @@ public class BugReportService {
         return BugReportResponse.from(report);
     }
     
-    public List<BugReportResponse> getReportsByReporter(UUID reporterId) {
-        return bugReportRepository.findByReporterId(reporterId)
-                .stream()
-                .map(BugReportResponse::from)
-                .toList();
+    public List<BugReportBriefResponse> getReportsByReporter(UUID reporterId) {
+        return mapToBriefResponses(bugReportRepository.findByReporterId(reporterId));
     }
     
-    public List<BugReportResponse> getReportsByAssignee(UUID assigneeId) {
-        return bugReportRepository.findByAssigneeId(assigneeId)
-                .stream()
-                .map(BugReportResponse::from)
+    public List<BugReportBriefResponse> getReportsByAssignee(UUID assigneeId) {
+        return mapToBriefResponses(bugReportRepository.findByAssigneeId(assigneeId));
+    }
+
+    private List<BugReportBriefResponse> mapToBriefResponses(List<BugReport> reports) {
+        var userIds = reports.stream()
+                .flatMap(report -> java.util.stream.Stream.of(report.getReporterId(), report.getAssigneeId()))
+                .filter(Objects::nonNull)
+                .distinct()
                 .toList();
+        Map<UUID, UserAccount> usersById = userAccountRepository.findAllById(userIds).stream()
+                .collect(java.util.stream.Collectors.toMap(UserAccount::getId, Function.identity()));
+
+        return reports.stream()
+                .map(report -> BugReportBriefResponse.from(
+                        report,
+                        requiredUser(usersById, report.getReporterId()),
+                        report.getAssigneeId() == null
+                                ? null
+                                : requiredUser(usersById, report.getAssigneeId())))
+                .toList();
+    }
+
+    private UserAccount requiredUser(Map<UUID, UserAccount> usersById, UUID userId) {
+        var user = usersById.get(userId);
+        if (user == null) {
+            throw new ResourceNotFoundException("User with id=%s does not exist!".formatted(userId));
+        }
+        return user;
     }
 
     
