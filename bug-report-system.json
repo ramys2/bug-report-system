@@ -7,12 +7,6 @@
       "name": "To Do",
       "tasks": [
         {
-          "id": "task-10287bd8-fd54-42f9-a5ee-53d8f3ad1e9e",
-          "title": "Implement login page",
-          "description": "- frontend\n- api\n- reroute to home page",
-          "color": "#4a9270"
-        },
-        {
           "id": "task-8eeb43bc-d9ea-4ea9-a0f9-de099a8d9985",
           "title": "Implement home page",
           "description": "- researcher how to render navbar's redirects buttons based on user's role",
@@ -35,7 +29,14 @@
     {
       "id": "column-da59c649-0c7a-4a74-81fa-4780384d990a",
       "name": "In progress",
-      "tasks": []
+      "tasks": [
+        {
+          "id": "task-10287bd8-fd54-42f9-a5ee-53d8f3ad1e9e",
+          "title": "Implement login page",
+          "description": "- frontend\n- api\n- reroute to home page",
+          "color": "#4a9270"
+        }
+      ]
     },
     {
       "id": "column-14e7a403-192c-4f53-950b-80997c07901c",

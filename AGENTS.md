@@ -33,7 +33,7 @@ When making changes, prioritize maintainability and simplicity. Code should rema
 
 ### Infrastructure
 
-- Docker - planned, not yet implemented
+- Docker
 - Database - not yet implemented
 
 ## Learning and Explanations
