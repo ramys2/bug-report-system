@@ -1,17 +1,19 @@
 import { useState } from "react";
 import { login } from "../api/auth";
 import "./LoginForm.css";
+import { useNavigate } from "react-router";
 
 function LoginForm() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const navigate = useNavigate();
 
     function handleSubmit(event) {
         event.preventDefault();
 
         login(email, password)
             .done((data, textStatus, xhr) => {
-                console.log("Login successful:", xhr.status);
+                navigate("/");
             })
             .fail((xhr) => {
                 console.log("Login failed");

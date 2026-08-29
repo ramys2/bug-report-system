@@ -20,6 +20,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.ramy.bugreport.repository.IUserAccountRepository;
 
+import jakarta.servlet.http.HttpServletResponse;
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -70,6 +72,12 @@ public class SecurityConfig {
 			)
 			.formLogin((form) -> form
 					.loginProcessingUrl("/api/auth/login")
+					.successHandler((request, response, authentication) -> {
+						response.setStatus(HttpServletResponse.SC_OK);
+					})
+					.failureHandler((request, response, exception) -> {
+						response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+					})
 					.permitAll()
 			)
 			.logout((logout) -> logout
