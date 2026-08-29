@@ -82,6 +82,9 @@ public class SecurityConfig {
 			)
 			.logout((logout) -> logout
 					.logoutUrl("/api/auth/logout")
+					.logoutSuccessHandler((request, response, authentication) -> {
+						response.setStatus(HttpServletResponse.SC_OK);
+					})
 			)
 			.exceptionHandling((exception) -> exception
 					.authenticationEntryPoint(

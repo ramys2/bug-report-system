@@ -12,7 +12,7 @@ function LoginForm() {
         event.preventDefault();
 
         login(email, password)
-            .done((data, textStatus, xhr) => {
+            .done(() => {
                 navigate("/");
             })
             .fail((xhr) => {

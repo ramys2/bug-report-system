@@ -9,6 +9,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import com.ramy.bugreport.domain.EUserRole;
 import com.ramy.bugreport.domain.UserAccount;
 
 public class UserAccountDetails implements UserDetails {
@@ -40,6 +41,14 @@ public class UserAccountDetails implements UserDetails {
 	
 	public UUID getId() {
 		return this.userAccount.getId();
+	}
+
+	public String getName() {
+		return this.userAccount.getName();
+	}
+
+	public EUserRole getRole() {
+		return this.userAccount.getRole();
 	}
 
 }
