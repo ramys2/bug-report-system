@@ -30,7 +30,7 @@ public class SecurityConfig {
 		http
 			.cors(Customizer.withDefaults())
 			.authorizeHttpRequests(auth -> auth
-					.requestMatchers(HttpMethod.GET, "/csrf")
+					.requestMatchers(HttpMethod.GET, "/api/csrf")
 					.permitAll()
 
 					// Anyone may register; only admins can view all accounts.
@@ -69,8 +69,11 @@ public class SecurityConfig {
 					.anyRequest().denyAll()
 			)
 			.formLogin((form) -> form
-					.loginProcessingUrl("/login")
+					.loginProcessingUrl("/api/auth/login")
 					.permitAll()
+			)
+			.logout((logout) -> logout
+					.logoutUrl("/api/auth/logout")
 			)
 			.exceptionHandling((exception) -> exception
 					.authenticationEntryPoint(
