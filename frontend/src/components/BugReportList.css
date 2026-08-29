@@ -1,0 +1,3 @@
+.bug-report-list {
+    max-height: calc(100svh - 10rem);
+}

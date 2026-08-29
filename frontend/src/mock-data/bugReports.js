@@ -1,0 +1,58 @@
+const bugReports = [
+    {
+        report_id: "ee87c2df-22a6-4511-9c03-a70022aa5ee3",
+        title: "Login form does not show validation feedback",
+        author: "Mia Chen",
+        assignee: "Ava Patel",
+        status: "open",
+        severity: "medium",
+        created_at: "15-08-2026 09:30",
+    },
+    {
+        report_id: "75be1d49-5e74-440b-a24b-f293f5df9af8",
+        title: "Users can submit the same report twice",
+        author: "Noah Wilson",
+        assignee: "Ethan Moore",
+        status: "assigned",
+        severity: "high",
+        created_at: "16-08-2026 14:10",
+    },
+    {
+        report_id: "ed8dbb87-fd82-4de4-96d7-4b00a2538b31",
+        title: "Report details page has an empty title",
+        author: "Sofia Martinez",
+        assignee: null,
+        status: "needs_information",
+        severity: "low",
+        created_at: "17-08-2026 11:45",
+    },
+    {
+        report_id: "82f10d17-38d7-488a-b6fe-10c21a09995d",
+        title: "Closed reports remain in the active list",
+        author: "Liam Brown",
+        assignee: "Ava Patel",
+        status: "reviewing",
+        severity: "medium",
+        created_at: "18-08-2026 16:20",
+    },
+    {
+        report_id: "3fe1ee93-d192-4774-a190-190f5f8aa4ae",
+        title: "Attachment upload fails for large files",
+        author: "Olivia Davis",
+        assignee: "Ethan Moore",
+        status: "in_progress",
+        severity: "critical",
+        created_at: "19-08-2026 08:05",
+    },
+    {
+        report_id: "bb59ac6c-7415-49f7-b732-66288615408c",
+        title: "The report filter resets after refreshing",
+        author: "James Taylor",
+        assignee: null,
+        status: "rejected",
+        severity: "low",
+        created_at: "20-08-2026 13:55",
+    },
+];
+
+export default bugReports;
