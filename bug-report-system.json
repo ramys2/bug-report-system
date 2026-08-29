@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "name": "Bug Report System",
+  "columns": [
+    {
+      "id": "column-9fcd8eca-be29-450a-b3de-84406ae1e282",
+      "name": "To Do",
+      "tasks": [
+        {
+          "id": "task-10287bd8-fd54-42f9-a5ee-53d8f3ad1e9e",
+          "title": "Implement login page",
+          "description": "- frontend\n- api\n- reroute to home page",
+          "color": "#4a9270"
+        },
+        {
+          "id": "task-8eeb43bc-d9ea-4ea9-a0f9-de099a8d9985",
+          "title": "Implement home page",
+          "description": "- researcher how to render navbar's redirects buttons based on user's role",
+          "color": "#4a9270"
+        },
+        {
+          "id": "task-d6d1101b-53d0-48e3-8f7a-62fc98bc96f0",
+          "title": "Add possibility to hot-swap java code without rebuilding the image",
+          "description": "",
+          "color": "#7a5ab5"
+        },
+        {
+          "id": "task-754b8d21-38b0-4f75-8c4b-b39d37096d21",
+          "title": "Refactor Dockerfile for frontend",
+          "description": "Refactor Dockerfile for frontend so it is possible to build the application and run it over 'nginx'.",
+          "color": "#4f78c4"
+        }
+      ]
+    },
+    {
+      "id": "column-da59c649-0c7a-4a74-81fa-4780384d990a",
+      "name": "In progress",
+      "tasks": []
+    },
+    {
+      "id": "column-14e7a403-192c-4f53-950b-80997c07901c",
+      "name": "Done",
+      "tasks": [
+        {
+          "id": "task-f6af3fb3-3dfe-40d7-bfbb-ad6130214068",
+          "title": "Implement docker compose for building the application",
+          "description": "",
+          "color": "#4f78c4"
+        },
+        {
+          "id": "task-2f9290aa-2233-42d3-92b6-c66021f01a7a",
+          "title": "Implement Dockerfile for backend",
+          "description": "",
+          "color": "#4f78c4"
+        },
+        {
+          "id": "task-0711c672-fb75-4397-a3b8-180ec4c185de",
+          "title": "Implement Dockerfile for frontend",
+          "description": "",
+          "color": "#4f78c4"
+        }
+      ]
+    }
+  ]
+}

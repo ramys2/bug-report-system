@@ -1,0 +1,12 @@
+services:
+  backend:
+    build: ./backend
+    image: bug-report-backend
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build: ./frontend
+    image: bug-report-frontend
+    ports:
+      - "5173:5173"
