@@ -7,10 +7,52 @@
       "name": "To Do",
       "tasks": [
         {
-          "id": "task-8eeb43bc-d9ea-4ea9-a0f9-de099a8d9985",
-          "title": "Implement home page",
-          "description": "- researcher how to render navbar's redirects buttons based on user's role",
+          "id": "task-48a03bb1-faf4-4a94-980c-87a3257e79a3",
+          "title": "Implement single Report Page",
+          "description": "",
           "color": "#4a9270"
+        },
+        {
+          "id": "task-182682fa-110e-4e4a-a6a2-672fff13fbc5",
+          "title": "Create modal form for creating new bug report",
+          "description": "",
+          "color": "#4a9270"
+        },
+        {
+          "id": "task-217f9f55-feae-46f4-b43b-1625829ce032",
+          "title": "Implement Project admin page",
+          "description": "",
+          "color": "#4a9270"
+        },
+        {
+          "id": "task-6c3d399b-1e46-4e0d-b811-b480db3dc63e",
+          "title": "Implement Component admin page",
+          "description": "",
+          "color": "#4a9270"
+        },
+        {
+          "id": "task-fca510bc-1af6-4558-83ac-23155cce2e29",
+          "title": "Implement User admin page",
+          "description": "",
+          "color": "#4a9270"
+        },
+        {
+          "id": "task-4cd99be2-be6f-4806-8893-601e3a6b3480",
+          "title": "Explore differences between PostgreSQL and MySQL",
+          "description": "",
+          "color": "#d18b35"
+        },
+        {
+          "id": "task-4d73c2ab-aacd-479e-b199-aaecf5ceff16",
+          "title": "Explore Authetication apps and how to connect them to the app",
+          "description": "",
+          "color": "#d18b35"
+        },
+        {
+          "id": "task-754b8d21-38b0-4f75-8c4b-b39d37096d21",
+          "title": "Refactor Dockerfile for frontend",
+          "description": "Refactor Dockerfile for frontend so it is possible to build the application and run it over 'nginx'.",
+          "color": "#4f78c4"
         },
         {
           "id": "task-d6d1101b-53d0-48e3-8f7a-62fc98bc96f0",
@@ -19,10 +61,10 @@
           "color": "#7a5ab5"
         },
         {
-          "id": "task-754b8d21-38b0-4f75-8c4b-b39d37096d21",
-          "title": "Refactor Dockerfile for frontend",
-          "description": "Refactor Dockerfile for frontend so it is possible to build the application and run it over 'nginx'.",
-          "color": "#4f78c4"
+          "id": "task-82206794-fb7f-4267-a4fc-074e04c87613",
+          "title": "Add fake email client",
+          "description": "",
+          "color": "#c45b62"
         }
       ]
     },
@@ -31,9 +73,15 @@
       "name": "In progress",
       "tasks": [
         {
+          "id": "task-8eeb43bc-d9ea-4ea9-a0f9-de099a8d9985",
+          "title": "Implement home page",
+          "description": "- render redirect links based on user role\n- implement fetching Bug Reports\n- implement Quick filters",
+          "color": "#4a9270"
+        },
+        {
           "id": "task-10287bd8-fd54-42f9-a5ee-53d8f3ad1e9e",
           "title": "Implement login page",
-          "description": "- frontend\n- api\n- reroute to home page",
+          "description": "- frontend\n- api\n- reroute to home page\n- implement storing new csrf token after successful login",
           "color": "#4a9270"
         }
       ]
