@@ -5,7 +5,7 @@ function BugReportRow({ report }) {
         <article className="border rounded-4 px-3 py-3">
             <div className="row g-3 align-items-center">
                 <div className="col-12 col-md-3">
-                    <a href={`#${report.report_id}`} className="link-dark fw-semibold">
+                    <a href={`api/reports/${report.report_id}`} className="link-dark fw-semibold">
                         {report.title}
                     </a>
                 </div>

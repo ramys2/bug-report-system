@@ -1,10 +1,24 @@
+import { useEffect, useState } from "react";
 import BugReportList from "../components/BugReportList";
 import Navbar from "../components/Navbar";
 import QuickFilters from "../components/QuickFilters";
-import bugReports from "../mock-data/bugReports";
+// import bugReports from "../mock-data/bugReports";
 import "./HomePage.css";
+import { getAllReports } from "../api/bug-report";
 
 function HomePage() {
+    const [bugReports, setBugReports] = useState([]);
+
+    useEffect(() => {
+        getAllReports()
+            .done((data) => {
+                setBugReports(data);
+            })
+            .fail(() => {
+                alert("Failed to fetch bug reports!");
+            })
+    }, []);
+
     return (
         <div className="home-page d-flex flex-column">
             <Navbar />
