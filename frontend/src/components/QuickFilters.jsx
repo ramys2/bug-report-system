@@ -1,21 +1,25 @@
 import "./QuickFilters.css";
 
-function QuickFilters() {
+function QuickFilters({ onReportedByMe, onAssignedToMe }) {
     return (
         <div className="d-flex align-items-center gap-3 mb-3">
             <span>Quick filters:</span>
-            <a
-                href="#reported-by-me"
-                className="link-secondary link-underline-opacity-0 link-underline-opacity-100-hover"
+
+            <button
+                type="button"
+                className="btn btn-link link-secondary p-0"
+                onClick={onReportedByMe}
             >
                 Reported by me
-            </a>
-            <a
-                href="#assigned-to-me"
-                className="link-secondary link-underline-opacity-0 link-underline-opacity-100-hover"
+            </button>
+
+            <button
+                type="button"
+                className="btn btn-link link-secondary p-0"
+                onClick={onAssignedToMe}
             >
                 Assigned to me
-            </a>
+            </button>
         </div>
     );
 }
