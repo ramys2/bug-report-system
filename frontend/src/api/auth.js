@@ -1,11 +1,10 @@
 import $ from "jquery";
-import { requestCsrfToken } from "./csrf";
+import { cleanCsrfToken, getCsrfToken, loadCsrfToken } from "./csrf";
 
 export function login(email, password) {
-    return requestCsrfToken()
-        .then((csrf) => {
-            return performLogin(email, password, csrf);
-        });
+    return loadCsrfToken()
+        .then(() => performLogin(email, password, getCsrfToken()))
+        .then(() => loadCsrfToken());
 }
 
 export function getCurrentUser() {
@@ -16,19 +15,20 @@ export function getCurrentUser() {
 }
 
 export function logout() {
-    return requestCsrfToken()
-        .then((csrf) => {
+    return loadCsrfToken()
+        .then(() => {
+            const csrfToken = getCsrfToken();
+
             return $.ajax({
                 method: "POST",
                 url: "/api/auth/logout",
                 headers: {
-                    [csrf.headerName]: csrf.token
+                    [csrfToken.headerName]: csrfToken.token
                 }
             });
-        });
+        })
+        .then(() => cleanCsrfToken());
 }
-
-
 
 function performLogin(email, password, csrf) {
     return $.ajax({
