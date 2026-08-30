@@ -42,6 +42,8 @@ public class SecurityConfig {
 
 					.requestMatchers(HttpMethod.GET, "/api/accounts")
 					.hasRole("ADMIN")
+					.requestMatchers(HttpMethod.GET, "/api/accounts/developers")
+					.authenticated()
 
 					// Only admins create projects; admins and developers create components.
 					.requestMatchers(HttpMethod.POST, "/api/projects")

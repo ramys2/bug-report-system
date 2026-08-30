@@ -22,6 +22,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import com.ramy.bugreport.domain.EUserRole;
 import com.ramy.bugreport.dto.account.CreateUserAccountRequest;
 import com.ramy.bugreport.dto.account.CreateUserAccountResponse;
+import com.ramy.bugreport.dto.account.DeveloperResponse;
 import com.ramy.bugreport.dto.account.UserAccountResponse;
 import com.ramy.bugreport.service.UserAccountService;
 
@@ -54,6 +55,20 @@ class UserAccountControllerTest {
                 .andExpect(jsonPath("$[0].role").value("REPORTER"));
 
         verify(userAccountService).getAll();
+    }
+
+    @Test
+    void getDevelopersUsesDevelopersRoute() throws Exception {
+        var developerId = UUID.randomUUID();
+        when(userAccountService.getDevelopers())
+                .thenReturn(List.of(new DeveloperResponse(developerId, "Ada Lovelace")));
+
+        mockMvc.perform(get("/api/accounts/developers"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(developerId.toString()))
+                .andExpect(jsonPath("$[0].name").value("Ada Lovelace"));
+
+        verify(userAccountService).getDevelopers();
     }
 
     @Test

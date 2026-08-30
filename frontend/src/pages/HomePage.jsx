@@ -5,15 +5,18 @@ import CreateBugReportForm from "../components/CreateBugReportForm";
 import Modal from "../components/Modal";
 import Navbar from "../components/Navbar";
 import QuickFilters from "../components/QuickFilters";
-import { components, developers, projects } from "../mock-data/createBugReportOptions";
 import "./HomePage.css";
 import { getAllReports, getAssigned, getReported } from "../api/bug-report";
+import { getComponents, getDevelopers, getProjects } from "../api/create-bug-report-options";
 
 const createBugReportModalId = "create-bug-report-modal";
 
 function HomePage() {
     const [bugReports, setBugReports] = useState([]);
     const [isQuickFilterActive, setIsQuickFilterActive] = useState(false);
+    const [developers, setDevelopers] = useState([]);
+    const [projects, setProjects] = useState([]);
+    const [components, setComponents] = useState([]);
 
     function loadAllReports() {
         getAllReports()
@@ -27,6 +30,20 @@ function HomePage() {
 
     useEffect(() => {
         loadAllReports();
+    }, []);
+
+    useEffect(() => {
+        getDevelopers()
+            .done(setDevelopers)
+            .fail(() => alert("Failed to fetch developers."));
+
+        getProjects()
+            .done(setProjects)
+            .fail(() => alert("Failed to fetch projects."));
+
+        getComponents()
+            .done(setComponents)
+            .fail(() => alert("Failed to fetch components."));
     }, []);
 
     function onReportedByMe() {

@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.ramy.bugreport.dto.account.CreateUserAccountRequest;
 import com.ramy.bugreport.dto.account.CreateUserAccountResponse;
+import com.ramy.bugreport.dto.account.DeveloperResponse;
 import com.ramy.bugreport.dto.account.UserAccountResponse;
 import com.ramy.bugreport.service.UserAccountService;
 
@@ -37,6 +38,11 @@ public class UserAccountController {
     @GetMapping
     public List<UserAccountResponse> getAll() {
         return userAccountService.getAll();
+    }
+
+    @GetMapping("/developers")
+    public List<DeveloperResponse> getDevelopers() {
+        return userAccountService.getDevelopers();
     }
 
     /*
