@@ -1,4 +1,5 @@
 import $ from "jquery"
+import { getCsrfToken } from "./csrf";
 
 export function getAllReports() {
     return $.ajax({
@@ -19,4 +20,18 @@ export function getAssigned() {
         method: "GET",
         "url": "/api/reports/assigned"
     })
+}
+
+export function createReport(report) {
+    const csrfToken = getCsrfToken();
+
+    return $.ajax({
+        method: "POST",
+        url: "/api/reports",
+        contentType: "application/json",
+        data: JSON.stringify(report),
+        headers: {
+            [csrfToken.headerName]: csrfToken.token
+        }
+    });
 }

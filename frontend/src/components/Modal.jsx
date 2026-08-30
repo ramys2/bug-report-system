@@ -1,7 +1,7 @@
 function Modal({ children, id }) {
     return (
         <div id={id} className="modal" tabIndex={-1}>
-            <div className="modal-dialog modal-fullscreen">
+            <div className="modal-dialog modal-fullscreen modal-dialog-scrollable">
                 <div className="modal-content">
                     {children}
                 </div>
