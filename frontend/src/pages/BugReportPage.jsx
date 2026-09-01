@@ -4,10 +4,14 @@ import { getCurrentUser } from "../api/auth";
 import {
     getReport,
     updateAssignee,
+    updateActualBehavior,
     updateComponent,
+    updateDescription,
+    updateExpectedBehavior,
     updateProject,
     updateSeverity,
     updateStatus,
+    updateStepsToReproduce,
 } from "../api/bug-report";
 import { getComments } from "../api/comment";
 import Navbar from "../components/Navbar";
@@ -28,11 +32,85 @@ function ReportDetail({ label, value }) {
     );
 }
 
-function ReportSection({ title, children }) {
+function EditableReportSection({
+    title,
+    reportId,
+    value,
+    updateValue,
+    onValueSaved,
+}) {
+    const [isEditing, setIsEditing] = useState(false);
+    const [draftValue, setDraftValue] = useState("");
+    const [isSaving, setIsSaving] = useState(false);
+
+    function startEditing() {
+        setDraftValue(value ?? "");
+        setIsEditing(true);
+    }
+
+    function cancelEditing() {
+        setIsEditing(false);
+    }
+
+    function saveValue() {
+        setIsSaving(true);
+
+        updateValue(reportId, draftValue)
+            .done(() => {
+                onValueSaved(draftValue);
+                setIsEditing(false);
+            })
+            .fail(() => alert(`Unable to update ${title.toLowerCase()}!`))
+            .always(() => setIsSaving(false));
+    }
+
     return (
         <section className="border rounded-4 p-3 h-100">
-            <h2 className="h5 mb-3">{title}</h2>
-            <div className="mb-0 text-break text-pre-wrap">{displayValue(children)}</div>
+            <div className="d-flex justify-content-between align-items-center gap-3 mb-3">
+                <h2 className="h5 mb-0">{title}</h2>
+                {!isEditing && (
+                    <button
+                        aria-label={`Edit ${title.toLowerCase()}`}
+                        className="btn btn-outline-secondary btn-sm"
+                        onClick={startEditing}
+                        type="button"
+                    >
+                        <i aria-hidden="true" className="bi bi-pencil" />
+                    </button>
+                )}
+            </div>
+            {isEditing ? (
+                <div>
+                    <textarea
+                        aria-label={title}
+                        className="form-control"
+                        disabled={isSaving}
+                        onChange={(event) => setDraftValue(event.target.value)}
+                        rows="6"
+                        value={draftValue}
+                    />
+                    <div className="d-flex gap-2 mt-2">
+                        <button
+                            className="btn btn-primary btn-sm"
+                            disabled={isSaving}
+                            onClick={saveValue}
+                            type="button"
+                        >
+                            {isSaving ? "Saving..." : "Save"}
+                        </button>
+                        <button
+                            className="btn btn-outline-secondary btn-sm"
+                            disabled={isSaving}
+                            onClick={cancelEditing}
+                            type="button"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                <div className="mb-0 text-break text-pre-wrap">{displayValue(value)}</div>
+            )}
         </section>
     );
 }
@@ -267,27 +345,55 @@ export default function BugReportPage() {
                                 </section>
                             </div>
                             <div className="col-12 col-lg-7">
-                                <ReportSection title="Description">
-                                    {bugReport.description}
-                                </ReportSection>
+                                <EditableReportSection
+                                    onValueSaved={(description) => setBugReport((report) => ({
+                                        ...report,
+                                        description,
+                                    }))}
+                                    reportId={bugReport.id}
+                                    title="Description"
+                                    updateValue={updateDescription}
+                                    value={bugReport.description}
+                                />
                             </div>
                         </div>
 
                         <div className="row g-3 mb-3">
                             <div className="col-12">
-                                <ReportSection title="Steps to reproduce">
-                                    {bugReport.stepsToReproduce}
-                                </ReportSection>
+                                <EditableReportSection
+                                    onValueSaved={(stepsToReproduce) => setBugReport((report) => ({
+                                        ...report,
+                                        stepsToReproduce,
+                                    }))}
+                                    reportId={bugReport.id}
+                                    title="Steps to reproduce"
+                                    updateValue={updateStepsToReproduce}
+                                    value={bugReport.stepsToReproduce}
+                                />
                             </div>
                             <div className="col-12 col-lg-6">
-                                <ReportSection title="Expected behavior">
-                                    {bugReport.expectedBehavior}
-                                </ReportSection>
+                                <EditableReportSection
+                                    onValueSaved={(expectedBehavior) => setBugReport((report) => ({
+                                        ...report,
+                                        expectedBehavior,
+                                    }))}
+                                    reportId={bugReport.id}
+                                    title="Expected behavior"
+                                    updateValue={updateExpectedBehavior}
+                                    value={bugReport.expectedBehavior}
+                                />
                             </div>
                             <div className="col-12 col-lg-6">
-                                <ReportSection title="Actual behavior">
-                                    {bugReport.actualBehavior}
-                                </ReportSection>
+                                <EditableReportSection
+                                    onValueSaved={(actualBehavior) => setBugReport((report) => ({
+                                        ...report,
+                                        actualBehavior,
+                                    }))}
+                                    reportId={bugReport.id}
+                                    title="Actual behavior"
+                                    updateValue={updateActualBehavior}
+                                    value={bugReport.actualBehavior}
+                                />
                             </div>
                         </div>
 
