@@ -10,10 +10,6 @@ import com.ramy.bugreport.domain.EBugStatus;
 import com.ramy.bugreport.domain.Resolution;
 import com.ramy.bugreport.domain.SoftwareProject;
 import com.ramy.bugreport.domain.UserAccount;
-import tools.jackson.databind.PropertyNamingStrategies;
-import tools.jackson.databind.annotation.JsonNaming;
-
-@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public record BugReportResponse(
     UUID id,
     String reporterName,

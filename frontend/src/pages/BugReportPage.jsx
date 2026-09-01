@@ -83,14 +83,14 @@ export default function BugReportPage() {
                                     <h1 className="h3 mb-1">{displayValue(bugReport.title)}</h1>
                                     <p className="text-secondary small mb-4">ID: {bugReport.id}</p>
                                     <dl className="row g-3 mb-0">
-                                        <ReportDetail label="Reporter" value={bugReport.reporter_name} />
-                                        <ReportDetail label="Assignee" value={bugReport.assignee_name} />
+                                        <ReportDetail label="Reporter" value={bugReport.reporterName} />
+                                        <ReportDetail label="Assignee" value={bugReport.assigneeName} />
                                         <ReportDetail label="Severity" value={bugReport.severity} />
                                         <ReportDetail label="Status" value={bugReport.status} />
-                                        <ReportDetail label="Project" value={bugReport.project_name} />
-                                        <ReportDetail label="Component" value={bugReport.component_name} />
-                                        <ReportDetail label="Created at" value={formatDate(bugReport.created_at)} />
-                                        <ReportDetail label="Updated at" value={formatDate(bugReport.updated_at)} />
+                                        <ReportDetail label="Project" value={bugReport.projectName} />
+                                        <ReportDetail label="Component" value={bugReport.componentName} />
+                                        <ReportDetail label="Created at" value={formatDate(bugReport.createdAt)} />
+                                        <ReportDetail label="Updated at" value={formatDate(bugReport.updatedAt)} />
                                     </dl>
                                 </section>
                             </div>
@@ -104,17 +104,17 @@ export default function BugReportPage() {
                         <div className="row g-3 mb-3">
                             <div className="col-12">
                                 <ReportSection title="Steps to reproduce">
-                                    {bugReport.steps_to_reproduce}
+                                    {bugReport.stepsToReproduce}
                                 </ReportSection>
                             </div>
                             <div className="col-12 col-lg-6">
                                 <ReportSection title="Expected behavior">
-                                    {bugReport.expected_behavior}
+                                    {bugReport.expectedBehavior}
                                 </ReportSection>
                             </div>
                             <div className="col-12 col-lg-6">
                                 <ReportSection title="Actual behavior">
-                                    {bugReport.actual_behavior}
+                                    {bugReport.actualBehavior}
                                 </ReportSection>
                             </div>
                         </div>
@@ -128,7 +128,7 @@ export default function BugReportPage() {
                                     {comments.map((comment) => (
                                         <CommentCard
                                             comment={comment}
-                                            isCurrentUser={comment.author_id === currentUser?.id}
+                                            isCurrentUser={comment.authorId === currentUser?.id}
                                             key={comment.id}
                                         />
                                     ))}
@@ -149,10 +149,10 @@ function CommentCard({ comment, isCurrentUser }) {
                 <article className="border rounded-4 p-3">
                     <div className="d-flex justify-content-between gap-3 mb-2">
                         <h3 className="h6 mb-0">
-                            {displayValue(comment.author_name)}
+                            {displayValue(comment.authorName)}
                         </h3>
-                        <time className="small text-secondary text-nowrap" dateTime={comment.created_at}>
-                            {formatDate(comment.created_at)}
+                        <time className="small text-secondary text-nowrap" dateTime={comment.createdAt}>
+                            {formatDate(comment.createdAt)}
                         </time>
                     </div>
                     <p className="mb-0 text-break text-pre-wrap">{comment.content}</p>

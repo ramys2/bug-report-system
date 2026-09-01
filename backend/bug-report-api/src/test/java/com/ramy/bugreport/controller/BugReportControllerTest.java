@@ -61,11 +61,11 @@ class BugReportControllerTest {
 
         mockMvc.perform(get("/api/reports"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].report_id").value(reportId.toString()))
+                .andExpect(jsonPath("$[0].reportId").value(reportId.toString()))
                 .andExpect(jsonPath("$[0].author").value("Leo Tester"))
                 .andExpect(jsonPath("$[0].assignee").value(nullValue()))
                 .andExpect(jsonPath("$[0].status").value("open"))
-                .andExpect(jsonPath("$[0].created_at").value("13-07-2026 12:05"));
+                .andExpect(jsonPath("$[0].createdAt").value("13-07-2026 12:05"));
 
         verify(reportService).getAll();
     }
@@ -78,14 +78,14 @@ class BugReportControllerTest {
         mockMvc.perform(get("/api/reports/{reportId}", reportId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(reportId.toString()))
-                .andExpect(jsonPath("$.reporter_name").value("Joe Reporter"))
-                .andExpect(jsonPath("$.assignee_name").value(nullValue()))
-                .andExpect(jsonPath("$.project_name").value("Bug Report"))
-                .andExpect(jsonPath("$.component_name").value("Backend API"))
-                .andExpect(jsonPath("$.reporter_id").doesNotExist())
-                .andExpect(jsonPath("$.assignee_id").doesNotExist())
-                .andExpect(jsonPath("$.project_id").doesNotExist())
-                .andExpect(jsonPath("$.component_id").doesNotExist());
+                .andExpect(jsonPath("$.reporterName").value("Joe Reporter"))
+                .andExpect(jsonPath("$.assigneeName").value(nullValue()))
+                .andExpect(jsonPath("$.projectName").value("Bug Report"))
+                .andExpect(jsonPath("$.componentName").value("Backend API"))
+                .andExpect(jsonPath("$.reporterId").doesNotExist())
+                .andExpect(jsonPath("$.assigneeId").doesNotExist())
+                .andExpect(jsonPath("$.projectId").doesNotExist())
+                .andExpect(jsonPath("$.componentId").doesNotExist());
 
         verify(reportService).getReport(reportId);
     }
@@ -97,7 +97,7 @@ class BugReportControllerTest {
 
         mockMvc.perform(get("/api/reports/{reportId}", reportId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.assignee_name").value("Joe Developer"));
+                .andExpect(jsonPath("$.assigneeName").value("Joe Developer"));
 
         verify(reportService).getReport(reportId);
     }
@@ -113,7 +113,7 @@ class BugReportControllerTest {
 
         mockMvc.perform(get("/api/reports/reported"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].report_id").value(reportId.toString()));
+                .andExpect(jsonPath("$[0].reportId").value(reportId.toString()));
 
         verify(reportService).getReportsByReporter(reporterId);
     }
@@ -129,7 +129,7 @@ class BugReportControllerTest {
 
         mockMvc.perform(get("/api/reports/assigned"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].report_id").value(reportId.toString()));
+                .andExpect(jsonPath("$[0].reportId").value(reportId.toString()));
 
         verify(reportService).getReportsByAssignee(assigneeId);
     }

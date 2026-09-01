@@ -5,7 +5,7 @@ function BugReportRow({ report }) {
         <article className="border rounded-4 px-3 py-3">
             <div className="row g-3 align-items-center">
                 <div className="col-12 col-md-3">
-                    <a href={`/reports/${report.report_id}`} className="link-dark fw-semibold">
+                    <a href={`/reports/${report.reportId}`} className="link-dark fw-semibold">
                         {report.title}
                     </a>
                 </div>
@@ -23,7 +23,7 @@ function BugReportRow({ report }) {
                 </div>
                 <div className="col-6 col-md-3">
                     <span className="d-md-none d-block small text-secondary">Created at</span>
-                    {report.created_at}
+                    {report.createdAt}
                 </div>
             </div>
         </article>

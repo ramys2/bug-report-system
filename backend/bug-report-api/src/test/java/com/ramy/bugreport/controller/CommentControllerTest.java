@@ -56,8 +56,8 @@ class CommentControllerTest {
         mockMvc.perform(get("/api/reports/{reportId}/comments", reportId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(commentId.toString()))
-                .andExpect(jsonPath("$[0].bug_report_id").value(reportId.toString()))
-                .andExpect(jsonPath("$[0].author_name").value("Ramy"));
+                .andExpect(jsonPath("$[0].bugReportId").value(reportId.toString()))
+                .andExpect(jsonPath("$[0].authorName").value("Ramy"));
 
         verify(commentService).getComments(reportId);
     }
@@ -84,10 +84,10 @@ class CommentControllerTest {
                 """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(commentId.toString()))
-                .andExpect(jsonPath("$.author_id").value(authorId.toString()))
-                .andExpect(jsonPath("$.author_name").value("Ramy"))
+                .andExpect(jsonPath("$.authorId").value(authorId.toString()))
+                .andExpect(jsonPath("$.authorName").value("Ramy"))
                 .andExpect(jsonPath("$.content").value(request.content()))
-                .andExpect(jsonPath("$.created_at").isNotEmpty());
+                .andExpect(jsonPath("$.createdAt").isNotEmpty());
 
         verify(commentService).create(reportId, authorId, request);
     }
