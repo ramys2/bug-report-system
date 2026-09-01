@@ -1,6 +1,7 @@
 package com.ramy.bugreport.service;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -50,6 +51,7 @@ public class CommentService {
 
         return commentRepository.findByBugReportId(reportId)
                 .stream()
+                .sorted(Comparator.comparing(Comment::getCreatedAt).reversed())
                 .map(comment -> {
                     UserAccount author = userAccountRepository.findById(comment.getAuthorId())
                             .orElseThrow(() -> new ResourceNotFoundException(

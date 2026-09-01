@@ -45,22 +45,35 @@ class CommentServiceTest {
     }
 
     @Test
-    void getCommentsMapsCommentsForExistingReport() {
+    void getCommentsMapsCommentsForExistingReportNewestFirst() {
         var reportId = UUID.randomUUID();
-        var comment = comment(reportId);
+        var oldestComment = new Comment(
+                reportId,
+                UUID.randomUUID(),
+                "First comment.",
+                LocalDateTime.of(2026, 1, 1, 10, 0));
+        var newestComment = new Comment(
+                reportId,
+                UUID.randomUUID(),
+                "Latest comment.",
+                LocalDateTime.of(2026, 1, 1, 11, 0));
         var author = org.mockito.Mockito.mock(UserAccount.class);
         when(bugReportRepository.existsById(reportId)).thenReturn(true);
-        when(commentRepository.findByBugReportId(reportId)).thenReturn(List.of(comment));
-        when(userAccountRepository.findById(comment.getAuthorId())).thenReturn(Optional.of(author));
+        when(commentRepository.findByBugReportId(reportId)).thenReturn(List.of(oldestComment, newestComment));
+        when(userAccountRepository.findById(oldestComment.getAuthorId())).thenReturn(Optional.of(author));
+        when(userAccountRepository.findById(newestComment.getAuthorId())).thenReturn(Optional.of(author));
         when(author.getName()).thenReturn("Ramy");
 
         var result = service.getComments(reportId);
 
         assertThat(result)
                 .extracting(response -> response.id(), response -> response.authorName())
-                .containsExactly(org.assertj.core.groups.Tuple.tuple(comment.getId(), "Ramy"));
+                .containsExactly(
+                        org.assertj.core.groups.Tuple.tuple(newestComment.getId(), "Ramy"),
+                        org.assertj.core.groups.Tuple.tuple(oldestComment.getId(), "Ramy"));
         verify(commentRepository).findByBugReportId(reportId);
-        verify(userAccountRepository).findById(comment.getAuthorId());
+        verify(userAccountRepository).findById(oldestComment.getAuthorId());
+        verify(userAccountRepository).findById(newestComment.getAuthorId());
     }
 
     @Test
