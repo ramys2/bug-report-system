@@ -13,7 +13,7 @@ import {
     updateStatus,
     updateStepsToReproduce,
 } from "../api/bug-report";
-import { getComments } from "../api/comment";
+import { createComment, getComments } from "../api/comment";
 import Navbar from "../components/Navbar";
 import { formatDateTime } from "../utils/date";
 import "./BugReportPage.css";
@@ -234,6 +234,9 @@ export default function BugReportPage() {
     const [bugReport, setBugReport] = useState(null);
     const [comments, setComments] = useState([]);
     const [currentUser, setCurrentUser] = useState(null);
+    const [commentDraft, setCommentDraft] = useState("");
+    const [isCommentEditing, setIsCommentEditing] = useState(false);
+    const [isCommentSaving, setIsCommentSaving] = useState(false);
 
     const [developers, setDevelopers] = useState([]);
     const [projects, setProjects] = useState([]);
@@ -263,6 +266,19 @@ export default function BugReportPage() {
         getCurrentUser()
             .done((user) => setCurrentUser(user));
     }, [id]);
+
+    function saveComment() {
+        setIsCommentSaving(true);
+
+        createComment(id, { content: commentDraft })
+            .done((comment) => {
+                setComments((existingComments) => [comment, ...existingComments]);
+                setCommentDraft("");
+                setIsCommentEditing(false);
+            })
+            .fail(() => alert("Unable to save comment!"))
+            .always(() => setIsCommentSaving(false));
+    }
 
     return (
         <div className="bug-report-page d-flex flex-column">
@@ -400,7 +416,7 @@ export default function BugReportPage() {
                         <section className="border-top pt-4 mt-4">
                             <h2 className="h4 mb-3">Comments</h2>
                             {comments.length === 0 ? (
-                                <p className="text-secondary mb-0">No comments yet.</p>
+                                <p className="text-secondary">No comments yet.</p>
                             ) : (
                                 <div className="d-flex flex-column gap-3">
                                     {comments.map((comment) => (
@@ -412,6 +428,41 @@ export default function BugReportPage() {
                                     ))}
                                 </div>
                             )}
+                            <div className="mt-3">
+                                <textarea
+                                    aria-label="New comment"
+                                    className="form-control"
+                                    disabled={isCommentSaving}
+                                    onChange={(event) => setCommentDraft(event.target.value)}
+                                    onFocus={() => setIsCommentEditing(true)}
+                                    placeholder="Write a comment..."
+                                    rows="4"
+                                    value={commentDraft}
+                                />
+                                {isCommentEditing && (
+                                    <div className="d-flex gap-2 mt-2">
+                                        <button
+                                            className="btn btn-primary btn-sm"
+                                            disabled={isCommentSaving}
+                                            onClick={saveComment}
+                                            type="button"
+                                        >
+                                            {isCommentSaving ? "Saving..." : "Save"}
+                                        </button>
+                                        <button
+                                            className="btn btn-outline-secondary btn-sm"
+                                            disabled={isCommentSaving}
+                                            onClick={() => {
+                                                setCommentDraft("");
+                                                setIsCommentEditing(false);
+                                            }}
+                                            type="button"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         </section>
                     </>
                 )}
