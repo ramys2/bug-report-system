@@ -5,14 +5,16 @@ import java.util.Locale;
 import java.util.UUID;
 
 import com.ramy.bugreport.domain.BugReport;
+import com.ramy.bugreport.domain.EBugSeverity;
+import com.ramy.bugreport.domain.EBugStatus;
 import com.ramy.bugreport.domain.UserAccount;
 public record BugReportBriefResponse(
         UUID reportId,
         String title,
         String author,
         String assignee,
-        String status,
-        String severity,
+        EBugStatus status,
+        EBugSeverity severity,
         String createdAt
 ) {
     private static final DateTimeFormatter CREATED_AT_FORMATTER =
@@ -28,8 +30,8 @@ public record BugReportBriefResponse(
                 report.getTitle(),
                 reporter.getName(),
                 assignee == null ? null : assignee.getName(),
-                report.getStatus().name().toLowerCase(Locale.ROOT),
-                report.getSeverity().name().toLowerCase(Locale.ROOT),
+                report.getStatus(),
+                report.getSeverity(),
                 report.getCreatedAt().format(CREATED_AT_FORMATTER));
     }
 }

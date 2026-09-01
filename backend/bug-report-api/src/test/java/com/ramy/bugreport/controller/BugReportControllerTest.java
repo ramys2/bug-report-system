@@ -64,7 +64,7 @@ class BugReportControllerTest {
                 .andExpect(jsonPath("$[0].reportId").value(reportId.toString()))
                 .andExpect(jsonPath("$[0].author").value("Leo Tester"))
                 .andExpect(jsonPath("$[0].assignee").value(nullValue()))
-                .andExpect(jsonPath("$[0].status").value("open"))
+                .andExpect(jsonPath("$[0].status").value("OPEN"))
                 .andExpect(jsonPath("$[0].createdAt").value("13-07-2026 12:05"));
 
         verify(reportService).getAll();
@@ -275,8 +275,8 @@ class BugReportControllerTest {
                 "Application crashes",
                 "Leo Tester",
                 null,
-                "open",
-                "high",
+                EBugStatus.OPEN,
+                EBugSeverity.HIGH,
                 "13-07-2026 12:05");
     }
 

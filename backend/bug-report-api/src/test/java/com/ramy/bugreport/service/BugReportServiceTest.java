@@ -74,7 +74,9 @@ class BugReportServiceTest {
                 .containsExactly(first.getId(), second.getId());
         assertThat(result.getFirst())
                 .extracting("title", "author", "assignee", "status", "severity", "createdAt")
-                .containsExactly("Application crashes", "Reporter", "Assignee", "open", "high", "13-07-2026 12:05");
+                .containsExactly(
+                        "Application crashes", "Reporter", "Assignee", EBugStatus.OPEN, EBugSeverity.HIGH,
+                        "13-07-2026 12:05");
         verify(bugReportRepository).findAll();
     }
 
