@@ -6,6 +6,7 @@ import { getComments } from "../api/comment";
 import Navbar from "../components/Navbar";
 import { formatDateTime } from "../utils/date";
 import "./BugReportPage.css";
+import { getComponents, getDevelopers, getProjects } from "../api/create-bug-report-options";
 
 function displayValue(value) {
     return value || "Not provided";
@@ -35,27 +36,33 @@ export default function BugReportPage() {
     const [comments, setComments] = useState([]);
     const [currentUser, setCurrentUser] = useState(null);
 
+    const [developers, setDevelopers] = useState([]);
+    const [projects, setProjects] = useState([]);
+    const [components, setComponents] = useState([]);
+
     useEffect(() => {
         getReport(id)
-            .done((data) => {
-                setBugReport(data);
-            })
-            .fail(() => {
-                alert("Unable to fetch bug report!");
-            });
+            .done((data) => setBugReport(data))
+            .fail(() => alert("Unable to fetch bug report!"));
 
         getComments(id)
-            .done((data) => {
-                setComments(data);
-            })
-            .fail(() => {
-                alert("Unable to fetch comments!");
-            });
+            .done((data) => setComments(data))
+            .fail(() => alert("Unable to fetch comments!"));
+
+        getDevelopers()
+            .done(setDevelopers)
+            .fail(() => alert("Failed to fetch developers."));
+
+        getProjects()
+            .done(setProjects)
+            .fail(() => alert("Failed to fetch projects."));
+
+        getComponents()
+            .done(setComponents)
+            .fail(() => alert("Failed to fetch components."));
 
         getCurrentUser()
-            .done((user) => {
-                setCurrentUser(user);
-            });
+            .done((user) => setCurrentUser(user));
     }, [id]);
 
     return (
