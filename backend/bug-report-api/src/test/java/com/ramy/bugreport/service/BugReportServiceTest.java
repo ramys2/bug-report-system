@@ -30,7 +30,15 @@ import com.ramy.bugreport.domain.SoftwareProject;
 import com.ramy.bugreport.domain.UserAccount;
 import com.ramy.bugreport.dto.report.CloseBugReportRequest;
 import com.ramy.bugreport.dto.report.CreateBugReportRequest;
-import com.ramy.bugreport.dto.report.UpdateBugReportRequest;
+import com.ramy.bugreport.dto.report.UpdateActualBehaviorRequest;
+import com.ramy.bugreport.dto.report.UpdateAssigneeRequest;
+import com.ramy.bugreport.dto.report.UpdateComponentRequest;
+import com.ramy.bugreport.dto.report.UpdateDescriptionRequest;
+import com.ramy.bugreport.dto.report.UpdateExpectedBehaviorRequest;
+import com.ramy.bugreport.dto.report.UpdateProjectRequest;
+import com.ramy.bugreport.dto.report.UpdateSeverityRequest;
+import com.ramy.bugreport.dto.report.UpdateStatusRequest;
+import com.ramy.bugreport.dto.report.UpdateStepsToReproduceRequest;
 import com.ramy.bugreport.exception.ResourceNotFoundException;
 import com.ramy.bugreport.repository.IBugReportRepository;
 import com.ramy.bugreport.repository.IComponentRepository;
@@ -282,59 +290,135 @@ class BugReportServiceTest {
     }
 
     @Test
-    void updateAppliesEveryProvidedField() {
+    void updateAssigneeChangesAssigneeAfterValidatingUser() {
         var report = report(UUID.randomUUID());
         var assigneeId = UUID.randomUUID();
-        var request = new UpdateBugReportRequest(
-                assigneeId,
-                "Updated description",
-                "Updated steps",
-                "Updated expected behavior",
-                "Updated actual behavior",
-                EBugStatus.IN_PROGRESS);
+        var request = new UpdateAssigneeRequest(assigneeId);
         when(bugReportRepository.findById(report.getId())).thenReturn(Optional.of(report));
         when(userAccountRepository.existsById(assigneeId)).thenReturn(true);
 
-        var result = service.update(report.getId(), request);
+        var result = service.updateAssignee(report.getId(), request);
 
         assertThat(report.getAssigneeId()).isEqualTo(assigneeId);
-        assertThat(report.getDescription()).isEqualTo(request.description());
-        assertThat(report.getStepsToReproduce()).isEqualTo(request.stepsToReproduce());
-        assertThat(report.getExpectedBehavior()).isEqualTo(request.expectedBehavior());
-        assertThat(report.getActualBehavior()).isEqualTo(request.actualBehavior());
-        assertThat(report.getStatus()).isEqualTo(request.bugStatus());
-        assertThat(result.id()).isEqualTo(report.getId());
-        assertThat(result.message()).isEqualTo("Bug report updated successfully!");
+        assertUpdateResponse(result, report);
         verify(bugReportRepository).findById(report.getId());
         verify(userAccountRepository).existsById(assigneeId);
         verify(bugReportRepository, never()).save(any());
     }
 
     @Test
-    void updateLeavesFieldsUntouchedWhenValuesAreNull() {
+    void updateSeverityChangesSeverity() {
         var report = report(UUID.randomUUID());
-        var originalDescription = report.getDescription();
-        var request = new UpdateBugReportRequest(null, null, null, null, null, null);
+        var request = new UpdateSeverityRequest(EBugSeverity.CRITICAL);
         when(bugReportRepository.findById(report.getId())).thenReturn(Optional.of(report));
 
-        service.update(report.getId(), request);
+        var result = service.updateSeverity(report.getId(), request);
 
-        assertThat(report.getDescription()).isEqualTo(originalDescription);
-        assertThat(report.getStatus()).isEqualTo(EBugStatus.OPEN);
+        assertThat(report.getSeverity()).isEqualTo(EBugSeverity.CRITICAL);
+        assertUpdateResponse(result, report);
         verify(bugReportRepository).findById(report.getId());
-        verifyNoInteractions(userAccountRepository);
-        verify(bugReportRepository, never()).save(any());
     }
 
     @Test
-    void updateThrowsWhenAssigneeDoesNotExist() {
+    void updateStatusChangesStatus() {
+        var report = report(UUID.randomUUID());
+        var request = new UpdateStatusRequest(EBugStatus.IN_PROGRESS);
+        when(bugReportRepository.findById(report.getId())).thenReturn(Optional.of(report));
+
+        var result = service.updateStatus(report.getId(), request);
+
+        assertThat(report.getStatus()).isEqualTo(EBugStatus.IN_PROGRESS);
+        assertUpdateResponse(result, report);
+        verify(bugReportRepository).findById(report.getId());
+    }
+
+    @Test
+    void updateProjectChangesProjectAfterValidatingProject() {
+        var report = report(UUID.randomUUID());
+        var projectId = UUID.randomUUID();
+        var request = new UpdateProjectRequest(projectId);
+        when(bugReportRepository.findById(report.getId())).thenReturn(Optional.of(report));
+        when(softwareProjectRepository.existsById(projectId)).thenReturn(true);
+
+        var result = service.updateProject(report.getId(), request);
+
+        assertThat(report.getProjectId()).isEqualTo(projectId);
+        assertUpdateResponse(result, report);
+        verify(softwareProjectRepository).existsById(projectId);
+    }
+
+    @Test
+    void updateComponentChangesComponentAfterValidatingComponent() {
+        var report = report(UUID.randomUUID());
+        var componentId = UUID.randomUUID();
+        var request = new UpdateComponentRequest(componentId);
+        when(bugReportRepository.findById(report.getId())).thenReturn(Optional.of(report));
+        when(componentRepository.existsById(componentId)).thenReturn(true);
+
+        var result = service.updateComponent(report.getId(), request);
+
+        assertThat(report.getComponentId()).isEqualTo(componentId);
+        assertUpdateResponse(result, report);
+        verify(componentRepository).existsById(componentId);
+    }
+
+    @Test
+    void updateDescriptionChangesDescription() {
+        var report = report(UUID.randomUUID());
+        var request = new UpdateDescriptionRequest("Updated description");
+        when(bugReportRepository.findById(report.getId())).thenReturn(Optional.of(report));
+
+        var result = service.updateDescription(report.getId(), request);
+
+        assertThat(report.getDescription()).isEqualTo(request.description());
+        assertUpdateResponse(result, report);
+    }
+
+    @Test
+    void updateStepsToReproduceChangesSteps() {
+        var report = report(UUID.randomUUID());
+        var request = new UpdateStepsToReproduceRequest("Updated steps");
+        when(bugReportRepository.findById(report.getId())).thenReturn(Optional.of(report));
+
+        var result = service.updateStepsToReproduce(report.getId(), request);
+
+        assertThat(report.getStepsToReproduce()).isEqualTo(request.stepsToReproduce());
+        assertUpdateResponse(result, report);
+    }
+
+    @Test
+    void updateExpectedBehaviorChangesExpectedBehavior() {
+        var report = report(UUID.randomUUID());
+        var request = new UpdateExpectedBehaviorRequest("Updated expected behavior");
+        when(bugReportRepository.findById(report.getId())).thenReturn(Optional.of(report));
+
+        var result = service.updateExpectedBehavior(report.getId(), request);
+
+        assertThat(report.getExpectedBehavior()).isEqualTo(request.expectedBehavior());
+        assertUpdateResponse(result, report);
+    }
+
+    @Test
+    void updateActualBehaviorChangesActualBehavior() {
+        var report = report(UUID.randomUUID());
+        var request = new UpdateActualBehaviorRequest("Updated actual behavior");
+        when(bugReportRepository.findById(report.getId())).thenReturn(Optional.of(report));
+
+        var result = service.updateActualBehavior(report.getId(), request);
+
+        assertThat(report.getActualBehavior()).isEqualTo(request.actualBehavior());
+        assertUpdateResponse(result, report);
+    }
+
+    @Test
+    void updateAssigneeThrowsWhenAssigneeDoesNotExist() {
         var report = report(UUID.randomUUID());
         var assigneeId = UUID.randomUUID();
-        var request = new UpdateBugReportRequest(assigneeId, null, null, null, null, null);
+        var request = new UpdateAssigneeRequest(assigneeId);
         when(bugReportRepository.findById(report.getId())).thenReturn(Optional.of(report));
         when(userAccountRepository.existsById(assigneeId)).thenReturn(false);
 
-        assertThatThrownBy(() -> service.update(report.getId(), request))
+        assertThatThrownBy(() -> service.updateAssignee(report.getId(), request))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("User with id=%s does not exist!".formatted(assigneeId));
         verify(bugReportRepository).findById(report.getId());
@@ -343,16 +427,50 @@ class BugReportServiceTest {
     }
 
     @Test
-    void updateThrowsWhenReportDoesNotExist() {
+    void updateProjectThrowsWhenProjectDoesNotExist() {
+        var report = report(UUID.randomUUID());
+        var projectId = UUID.randomUUID();
+        when(bugReportRepository.findById(report.getId())).thenReturn(Optional.of(report));
+        when(softwareProjectRepository.existsById(projectId)).thenReturn(false);
+
+        assertThatThrownBy(() -> service.updateProject(report.getId(), new UpdateProjectRequest(projectId)))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Project with id=%s does not exist!".formatted(projectId));
+        verify(bugReportRepository, never()).save(any());
+    }
+
+    @Test
+    void updateComponentThrowsWhenComponentDoesNotExist() {
+        var report = report(UUID.randomUUID());
+        var componentId = UUID.randomUUID();
+        when(bugReportRepository.findById(report.getId())).thenReturn(Optional.of(report));
+        when(componentRepository.existsById(componentId)).thenReturn(false);
+
+        assertThatThrownBy(() -> service.updateComponent(report.getId(), new UpdateComponentRequest(componentId)))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Component with id=%s does not exist!".formatted(componentId));
+        verify(bugReportRepository, never()).save(any());
+    }
+
+    @Test
+    void updateSeverityThrowsWhenReportDoesNotExist() {
         var reportId = UUID.randomUUID();
-        var request = new UpdateBugReportRequest(null, null, null, null, null, null);
+        var request = new UpdateSeverityRequest(EBugSeverity.LOW);
         when(bugReportRepository.findById(reportId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.update(reportId, request))
+        assertThatThrownBy(() -> service.updateSeverity(reportId, request))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Report with id: %s".formatted(reportId));
         verify(bugReportRepository).findById(reportId);
         verifyNoInteractions(userAccountRepository);
+    }
+
+    private static void assertUpdateResponse(
+            com.ramy.bugreport.dto.report.UpdateBugReportResponse response,
+            BugReport report
+    ) {
+        assertThat(response.id()).isEqualTo(report.getId());
+        assertThat(response.message()).isEqualTo("Bug report updated successfully!");
     }
 
     private static CreateBugReportRequest createRequest() {

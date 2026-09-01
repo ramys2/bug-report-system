@@ -32,8 +32,16 @@ import com.ramy.bugreport.dto.report.CloseBugReportRequest;
 import com.ramy.bugreport.dto.report.CloseBugReportResponse;
 import com.ramy.bugreport.dto.report.CreateBugReportRequest;
 import com.ramy.bugreport.dto.report.CreateBugReportResponse;
-import com.ramy.bugreport.dto.report.UpdateBugReportRequest;
+import com.ramy.bugreport.dto.report.UpdateActualBehaviorRequest;
+import com.ramy.bugreport.dto.report.UpdateAssigneeRequest;
 import com.ramy.bugreport.dto.report.UpdateBugReportResponse;
+import com.ramy.bugreport.dto.report.UpdateComponentRequest;
+import com.ramy.bugreport.dto.report.UpdateDescriptionRequest;
+import com.ramy.bugreport.dto.report.UpdateExpectedBehaviorRequest;
+import com.ramy.bugreport.dto.report.UpdateProjectRequest;
+import com.ramy.bugreport.dto.report.UpdateSeverityRequest;
+import com.ramy.bugreport.dto.report.UpdateStatusRequest;
+import com.ramy.bugreport.dto.report.UpdateStepsToReproduceRequest;
 import com.ramy.bugreport.security.UserAccountDetails;
 import com.ramy.bugreport.service.BugReportService;
 
@@ -181,37 +189,90 @@ class BugReportControllerTest {
     }
 
     @Test
-    void updateUsesReportIdPathAndReturnsOk() throws Exception {
+    void dedicatedUpdateRoutesUseReportIdAndReturnOk() throws Exception {
         var reportId = UUID.randomUUID();
         var assigneeId = UUID.randomUUID();
-        var request = new UpdateBugReportRequest(
-                assigneeId,
-                "Updated",
-                "Steps",
-                "Expected",
-                "Actual",
-                EBugStatus.IN_PROGRESS);
-        when(reportService.update(reportId, request))
-                .thenReturn(new UpdateBugReportResponse(
-                        reportId, "Bug report updated successfully!"));
+        var projectId = UUID.randomUUID();
+        var componentId = UUID.randomUUID();
+        var response = new UpdateBugReportResponse(reportId, "Bug report updated successfully!");
+        var assigneeRequest = new UpdateAssigneeRequest(assigneeId);
+        var severityRequest = new UpdateSeverityRequest(EBugSeverity.CRITICAL);
+        var statusRequest = new UpdateStatusRequest(EBugStatus.IN_PROGRESS);
+        var projectRequest = new UpdateProjectRequest(projectId);
+        var componentRequest = new UpdateComponentRequest(componentId);
+        var descriptionRequest = new UpdateDescriptionRequest("Updated description");
+        var stepsRequest = new UpdateStepsToReproduceRequest("Updated steps");
+        var expectedRequest = new UpdateExpectedBehaviorRequest("Updated expected behavior");
+        var actualRequest = new UpdateActualBehaviorRequest("Updated actual behavior");
+        when(reportService.updateAssignee(reportId, assigneeRequest)).thenReturn(response);
+        when(reportService.updateSeverity(reportId, severityRequest)).thenReturn(response);
+        when(reportService.updateStatus(reportId, statusRequest)).thenReturn(response);
+        when(reportService.updateProject(reportId, projectRequest)).thenReturn(response);
+        when(reportService.updateComponent(reportId, componentRequest)).thenReturn(response);
+        when(reportService.updateDescription(reportId, descriptionRequest)).thenReturn(response);
+        when(reportService.updateStepsToReproduce(reportId, stepsRequest)).thenReturn(response);
+        when(reportService.updateExpectedBehavior(reportId, expectedRequest)).thenReturn(response);
+        when(reportService.updateActualBehavior(reportId, actualRequest)).thenReturn(response);
 
-        mockMvc.perform(patch("/api/reports/{reportId}", reportId)
+        mockMvc.perform(patch("/api/reports/{reportId}/assignee", reportId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "assigneeId": "%s",
-                                  "description": "Updated",
-                                  "stepsToReproduce": "Steps",
-                                  "expectedBehavior": "Expected",
-                                  "actualBehavior": "Actual",
-                                  "bugStatus": "IN_PROGRESS"
-                                }
-                                """.formatted(assigneeId)))
+                        .content("{\"assigneeId\":\"%s\"}".formatted(assigneeId)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(reportId.toString()))
                 .andExpect(jsonPath("$.message").value("Bug report updated successfully!"));
 
-        verify(reportService).update(reportId, request);
+        mockMvc.perform(patch("/api/reports/{reportId}/severity", reportId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"severity\":\"CRITICAL\"}"))
+                .andExpect(status().isOk());
+        mockMvc.perform(patch("/api/reports/{reportId}/status", reportId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"IN_PROGRESS\"}"))
+                .andExpect(status().isOk());
+        mockMvc.perform(patch("/api/reports/{reportId}/project", reportId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"projectId\":\"%s\"}".formatted(projectId)))
+                .andExpect(status().isOk());
+        mockMvc.perform(patch("/api/reports/{reportId}/component", reportId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"componentId\":\"%s\"}".formatted(componentId)))
+                .andExpect(status().isOk());
+        mockMvc.perform(patch("/api/reports/{reportId}/description", reportId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"description\":\"Updated description\"}"))
+                .andExpect(status().isOk());
+        mockMvc.perform(patch("/api/reports/{reportId}/steps-to-reproduce", reportId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"stepsToReproduce\":\"Updated steps\"}"))
+                .andExpect(status().isOk());
+        mockMvc.perform(patch("/api/reports/{reportId}/expected-behavior", reportId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"expectedBehavior\":\"Updated expected behavior\"}"))
+                .andExpect(status().isOk());
+        mockMvc.perform(patch("/api/reports/{reportId}/actual-behavior", reportId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"actualBehavior\":\"Updated actual behavior\"}"))
+                .andExpect(status().isOk());
+
+        verify(reportService).updateAssignee(reportId, assigneeRequest);
+        verify(reportService).updateSeverity(reportId, severityRequest);
+        verify(reportService).updateStatus(reportId, statusRequest);
+        verify(reportService).updateProject(reportId, projectRequest);
+        verify(reportService).updateComponent(reportId, componentRequest);
+        verify(reportService).updateDescription(reportId, descriptionRequest);
+        verify(reportService).updateStepsToReproduce(reportId, stepsRequest);
+        verify(reportService).updateExpectedBehavior(reportId, expectedRequest);
+        verify(reportService).updateActualBehavior(reportId, actualRequest);
+    }
+
+    @Test
+    void updateAssigneeRejectsMissingAssigneeId() throws Exception {
+        mockMvc.perform(patch("/api/reports/{reportId}/assignee", UUID.randomUUID())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest());
+
+        org.mockito.Mockito.verifyNoInteractions(reportService);
     }
 
     private static CreateBugReportRequest createRequest() {

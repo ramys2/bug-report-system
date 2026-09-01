@@ -19,8 +19,16 @@ import com.ramy.bugreport.dto.report.CloseBugReportRequest;
 import com.ramy.bugreport.dto.report.CloseBugReportResponse;
 import com.ramy.bugreport.dto.report.CreateBugReportRequest;
 import com.ramy.bugreport.dto.report.CreateBugReportResponse;
-import com.ramy.bugreport.dto.report.UpdateBugReportRequest;
+import com.ramy.bugreport.dto.report.UpdateActualBehaviorRequest;
+import com.ramy.bugreport.dto.report.UpdateAssigneeRequest;
 import com.ramy.bugreport.dto.report.UpdateBugReportResponse;
+import com.ramy.bugreport.dto.report.UpdateComponentRequest;
+import com.ramy.bugreport.dto.report.UpdateDescriptionRequest;
+import com.ramy.bugreport.dto.report.UpdateExpectedBehaviorRequest;
+import com.ramy.bugreport.dto.report.UpdateProjectRequest;
+import com.ramy.bugreport.dto.report.UpdateSeverityRequest;
+import com.ramy.bugreport.dto.report.UpdateStatusRequest;
+import com.ramy.bugreport.dto.report.UpdateStepsToReproduceRequest;
 import com.ramy.bugreport.exception.ResourceNotFoundException;
 import com.ramy.bugreport.repository.IBugReportRepository;
 import com.ramy.bugreport.repository.IComponentRepository;
@@ -193,41 +201,122 @@ public class BugReportService {
     @PreAuthorize(
     		"hasRole('ADMIN') or @bugReportAuthorizer.canUpdate(#reportId, authentication)"
     )
-    public UpdateBugReportResponse update(UUID reportId, UpdateBugReportRequest request) {
-        BugReport report = bugReportRepository.findById(reportId)
-                .orElseThrow(() -> new ResourceNotFoundException("Report with id: %s".formatted(reportId)));
-        
-        var assigneedId = request.assigneeId();
-        if (assigneedId != null) {
-            if (!userAccountRepository.existsById(assigneedId)) {
-                throw new ResourceNotFoundException(
-                        "User with id=%s does not exist!".formatted(assigneedId)
-                );
-            }
+    public UpdateBugReportResponse updateAssignee(UUID reportId, UpdateAssigneeRequest request) {
+        var report = reportById(reportId);
+        var assigneeId = request.assigneeId();
+        if (!userAccountRepository.existsById(assigneeId)) {
+            throw new ResourceNotFoundException("User with id=%s does not exist!".formatted(assigneeId));
+        }
 
-            report.setAssigneeId(request.assigneeId());
+        report.setAssigneeId(assigneeId);
+        return updateResponse(report);
+    }
+
+    @Transactional
+    @PreAuthorize(
+            "hasRole('ADMIN') or @bugReportAuthorizer.canUpdate(#reportId, authentication)"
+    )
+    public UpdateBugReportResponse updateSeverity(UUID reportId, UpdateSeverityRequest request) {
+        var report = reportById(reportId);
+        report.setSeverity(request.severity());
+        return updateResponse(report);
+    }
+
+    @Transactional
+    @PreAuthorize(
+            "hasRole('ADMIN') or @bugReportAuthorizer.canUpdate(#reportId, authentication)"
+    )
+    public UpdateBugReportResponse updateStatus(UUID reportId, UpdateStatusRequest request) {
+        var report = reportById(reportId);
+        report.setStatus(request.status());
+        return updateResponse(report);
+    }
+
+    @Transactional
+    @PreAuthorize(
+            "hasRole('ADMIN') or @bugReportAuthorizer.canUpdate(#reportId, authentication)"
+    )
+    public UpdateBugReportResponse updateProject(UUID reportId, UpdateProjectRequest request) {
+        var report = reportById(reportId);
+        var projectId = request.projectId();
+        if (!softwareProjectRepository.existsById(projectId)) {
+            throw new ResourceNotFoundException("Project with id=%s does not exist!".formatted(projectId));
         }
-        
-        if (request.description() != null) {
-            report.setDescription(request.description());
+
+        report.setProjectId(projectId);
+        return updateResponse(report);
+    }
+
+    @Transactional
+    @PreAuthorize(
+            "hasRole('ADMIN') or @bugReportAuthorizer.canUpdate(#reportId, authentication)"
+    )
+    public UpdateBugReportResponse updateComponent(UUID reportId, UpdateComponentRequest request) {
+        var report = reportById(reportId);
+        var componentId = request.componentId();
+        if (!componentRepository.existsById(componentId)) {
+            throw new ResourceNotFoundException("Component with id=%s does not exist!".formatted(componentId));
         }
-        
-        if (request.stepsToReproduce() != null) {
-            report.setStepsToReproduce(request.stepsToReproduce());
-        }
-        
-        if (request.expectedBehavior() != null) {
-            report.setExpectedBehavior(request.expectedBehavior());
-        }
-        
-        if (request.actualBehavior() != null) {
-            report.setActualBehavior(request.actualBehavior());
-        }
-        
-        if (request.bugStatus() != null) {
-            report.setStatus(request.bugStatus());
-        }
-        
+
+        report.setComponentId(componentId);
+        return updateResponse(report);
+    }
+
+    @Transactional
+    @PreAuthorize(
+            "hasRole('ADMIN') or @bugReportAuthorizer.canUpdate(#reportId, authentication)"
+    )
+    public UpdateBugReportResponse updateDescription(UUID reportId, UpdateDescriptionRequest request) {
+        var report = reportById(reportId);
+        report.setDescription(request.description());
+        return updateResponse(report);
+    }
+
+    @Transactional
+    @PreAuthorize(
+            "hasRole('ADMIN') or @bugReportAuthorizer.canUpdate(#reportId, authentication)"
+    )
+    public UpdateBugReportResponse updateStepsToReproduce(
+            UUID reportId,
+            UpdateStepsToReproduceRequest request
+    ) {
+        var report = reportById(reportId);
+        report.setStepsToReproduce(request.stepsToReproduce());
+        return updateResponse(report);
+    }
+
+    @Transactional
+    @PreAuthorize(
+            "hasRole('ADMIN') or @bugReportAuthorizer.canUpdate(#reportId, authentication)"
+    )
+    public UpdateBugReportResponse updateExpectedBehavior(
+            UUID reportId,
+            UpdateExpectedBehaviorRequest request
+    ) {
+        var report = reportById(reportId);
+        report.setExpectedBehavior(request.expectedBehavior());
+        return updateResponse(report);
+    }
+
+    @Transactional
+    @PreAuthorize(
+            "hasRole('ADMIN') or @bugReportAuthorizer.canUpdate(#reportId, authentication)"
+    )
+    public UpdateBugReportResponse updateActualBehavior(
+            UUID reportId,
+            UpdateActualBehaviorRequest request
+    ) {
+        var report = reportById(reportId);
+        report.setActualBehavior(request.actualBehavior());
+        return updateResponse(report);
+    }
+
+    private BugReport reportById(UUID reportId) {
+        return bugReportRepository.findById(reportId)
+                .orElseThrow(() -> new ResourceNotFoundException("Report with id: %s".formatted(reportId)));
+    }
+
+    private UpdateBugReportResponse updateResponse(BugReport report) {
         return new UpdateBugReportResponse(report.getId(), "Bug report updated successfully!");
     }
 }
