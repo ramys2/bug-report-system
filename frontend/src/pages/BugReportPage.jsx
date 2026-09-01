@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
 import { getCurrentUser } from "../api/auth";
-import { getReport } from "../api/bug-report";
+import { getReport, updateSeverity, updateStatus } from "../api/bug-report";
 import { getComments } from "../api/comment";
 import Navbar from "../components/Navbar";
 import { formatDateTime } from "../utils/date";
@@ -27,6 +27,97 @@ function ReportSection({ title, children }) {
             <h2 className="h5 mb-3">{title}</h2>
             <div className="mb-0 text-break text-pre-wrap">{displayValue(children)}</div>
         </section>
+    );
+}
+
+const STATUS_OPTIONS = [
+    "OPEN",
+    "ASSIGNED",
+    "IN_PROGRESS",
+    "NEEDS_INFORMATION",
+    "REVIEWING",
+    "REJECTED",
+    "CLOSED",
+];
+
+const SEVERITY_OPTIONS = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
+
+function EditableEnumField({ label, reportId, value, options, updateValue, onValueSaved }) {
+    const [isEditing, setIsEditing] = useState(false);
+    const [selectedValue, setSelectedValue] = useState(value);
+    const [isSaving, setIsSaving] = useState(false);
+
+    function startEditing() {
+        setSelectedValue(value);
+        setIsEditing(true);
+    }
+
+    function cancelEditing() {
+        setSelectedValue(value);
+        setIsEditing(false);
+    }
+
+    function saveValue() {
+        setIsSaving(true);
+
+        updateValue(reportId, selectedValue)
+            .done(() => {
+                onValueSaved(selectedValue);
+                setIsEditing(false);
+            })
+            .fail(() => alert(`Unable to update ${label.toLowerCase()}!`))
+            .always(() => setIsSaving(false));
+    }
+
+    return (
+        <div className="col-12 col-sm-6">
+            <dt className="small text-secondary fw-semibold">{label}</dt>
+            <dd className="mb-0">
+                {isEditing ? (
+                    <div>
+                        <select
+                            aria-label={label}
+                            className="form-select"
+                            disabled={isSaving}
+                            onChange={(event) => setSelectedValue(event.target.value)}
+                            value={selectedValue}
+                        >
+                            {options.map((option) => (
+                                <option key={option} value={option}>{option}</option>
+                            ))}
+                        </select>
+                        <div className="d-flex gap-2 mt-2">
+                            <button
+                                className="btn btn-primary btn-sm"
+                                disabled={isSaving}
+                                onClick={saveValue}
+                                type="button"
+                            >
+                                {isSaving ? "Saving..." : "Save"}
+                            </button>
+                            <button
+                                className="btn btn-outline-secondary btn-sm"
+                                disabled={isSaving}
+                                onClick={cancelEditing}
+                                type="button"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    <button
+                        aria-label={`Edit ${label.toLowerCase()}`}
+                        className="editable-enum-display"
+                        onClick={startEditing}
+                        type="button"
+                    >
+                        <span>{displayValue(value)}</span>
+                        <i aria-hidden="true" className="bi bi-pencil" />
+                    </button>
+                )}
+            </dd>
+        </div>
     );
 }
 
@@ -81,8 +172,22 @@ export default function BugReportPage() {
                                     <dl className="row g-3 mb-0">
                                         <ReportDetail label="Reporter" value={bugReport.reporterName} />
                                         <ReportDetail label="Assignee" value={bugReport.assigneeName} />
-                                        <ReportDetail label="Severity" value={bugReport.severity} />
-                                        <ReportDetail label="Status" value={bugReport.status} />
+                                        <EditableEnumField
+                                            label="Severity"
+                                            onValueSaved={(severity) => setBugReport((report) => ({ ...report, severity }))}
+                                            options={SEVERITY_OPTIONS}
+                                            reportId={bugReport.id}
+                                            updateValue={updateSeverity}
+                                            value={bugReport.severity}
+                                        />
+                                        <EditableEnumField
+                                            label="Status"
+                                            onValueSaved={(status) => setBugReport((report) => ({ ...report, status }))}
+                                            options={STATUS_OPTIONS}
+                                            reportId={bugReport.id}
+                                            updateValue={updateStatus}
+                                            value={bugReport.status}
+                                        />
                                         <ReportDetail label="Project" value={bugReport.projectName} />
                                         <ReportDetail label="Component" value={bugReport.componentName} />
                                         <ReportDetail label="Created at" value={formatDateTime(bugReport.createdAt)} />

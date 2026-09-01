@@ -1,1 +1,36 @@
-/* Reserved for page-specific styles once the Bootstrap-only layout is approved. */
+.editable-enum-display {
+    align-items: center;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 0.5rem;
+    color: inherit;
+    display: flex;
+    justify-content: space-between;
+    min-height: 2.5rem;
+    padding: 0.375rem 0.5rem;
+    text-align: left;
+    width: 100%;
+}
+
+.editable-enum-display:hover,
+.editable-enum-display:focus-visible {
+    border-color: var(--bs-secondary-color);
+}
+
+.editable-enum-display i {
+    border-left: 1px solid var(--bs-secondary-color);
+    margin: -0.375rem -0.5rem -0.375rem 0.5rem;
+    opacity: 0;
+    padding: 0.625rem 0.75rem;
+    transition: opacity 0.15s ease-in-out;
+}
+
+.editable-enum-display:hover i,
+.editable-enum-display:focus-visible i {
+    opacity: 1;
+}
+
+.editable-enum-display:focus-visible {
+    outline: 2px solid var(--bs-primary);
+    outline-offset: 2px;
+}
