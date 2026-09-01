@@ -35,3 +35,10 @@ export function createReport(report) {
         }
     });
 }
+
+export function getReport(reportId) {
+    return $.ajax({
+        method: "GET",
+        url:`/api/reports/${reportId}`
+    })
+}
