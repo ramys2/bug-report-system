@@ -34,3 +34,20 @@
     outline: 2px solid var(--bs-primary);
     outline-offset: 2px;
 }
+
+.comment-card-current-user {
+    background-color: var(--bs-primary-bg-subtle);
+    border-color: var(--bs-primary-border-subtle) !important;
+}
+
+.comment-card-remove {
+    margin-top: 0.25rem;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.comment-card:hover .comment-card-remove,
+.comment-card:focus-within .comment-card-remove {
+    opacity: 1;
+    pointer-events: auto;
+}

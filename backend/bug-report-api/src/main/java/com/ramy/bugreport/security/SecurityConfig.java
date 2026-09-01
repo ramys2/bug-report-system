@@ -67,7 +67,7 @@ public class SecurityConfig {
 
 					// Comment removal is an administrative action.
 					.requestMatchers(HttpMethod.DELETE, "/api/comments/*")
-					.hasRole("ADMIN")
+					.authenticated()
 
 					// Reject any endpoint that has not been explicitly allowed above.
 					.anyRequest().denyAll()

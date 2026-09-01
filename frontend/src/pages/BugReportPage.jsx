@@ -13,7 +13,7 @@ import {
     updateStatus,
     updateStepsToReproduce,
 } from "../api/bug-report";
-import { createComment, getComments } from "../api/comment";
+import { createComment, getComments, removeComment } from "../api/comment";
 import Navbar from "../components/Navbar";
 import { formatDateTime } from "../utils/date";
 import "./BugReportPage.css";
@@ -237,6 +237,7 @@ export default function BugReportPage() {
     const [commentDraft, setCommentDraft] = useState("");
     const [isCommentEditing, setIsCommentEditing] = useState(false);
     const [isCommentSaving, setIsCommentSaving] = useState(false);
+    const [removingCommentId, setRemovingCommentId] = useState(null);
 
     const [developers, setDevelopers] = useState([]);
     const [projects, setProjects] = useState([]);
@@ -278,6 +279,19 @@ export default function BugReportPage() {
             })
             .fail(() => alert("Unable to save comment!"))
             .always(() => setIsCommentSaving(false));
+    }
+
+    function removeCommentById(commentId) {
+        setRemovingCommentId(commentId);
+
+        removeComment(commentId)
+            .done(() => {
+                setComments((existingComments) => (
+                    existingComments.filter((comment) => comment.id !== commentId)
+                ));
+            })
+            .fail(() => alert("Unable to remove comment!"))
+            .always(() => setRemovingCommentId(null));
     }
 
     return (
@@ -422,8 +436,11 @@ export default function BugReportPage() {
                                     {comments.map((comment) => (
                                         <CommentCard
                                             comment={comment}
+                                            canRemove={comment.authorId === currentUser?.id || currentUser?.role === "ADMIN"}
                                             isCurrentUser={comment.authorId === currentUser?.id}
                                             key={comment.id}
+                                            onRemove={removeCommentById}
+                                            isRemoving={removingCommentId === comment.id}
                                         />
                                     ))}
                                 </div>
@@ -471,18 +488,31 @@ export default function BugReportPage() {
     );
 }
 
-function CommentCard({ comment, isCurrentUser }) {
+function CommentCard({ canRemove, comment, isCurrentUser, isRemoving, onRemove }) {
     return (
         <div className="row">
             <div className={`col-12 col-md-6 ${isCurrentUser ? "ms-md-auto" : ""}`}>
-                <article className="border rounded-4 p-3">
+                <article className={`comment-card border rounded-4 p-3 ${isCurrentUser ? "comment-card-current-user" : ""}`}>
                     <div className="d-flex justify-content-between gap-3 mb-2">
                         <h3 className="h6 mb-0">
                             {displayValue(comment.authorName)}
                         </h3>
-                        <time className="small text-secondary text-nowrap" dateTime={comment.createdAt}>
-                            {formatDateTime(comment.createdAt)}
-                        </time>
+                        <div className="comment-card-actions d-flex flex-column align-items-end">
+                            <time className="small text-secondary text-nowrap" dateTime={comment.createdAt}>
+                                {formatDateTime(comment.createdAt)}
+                            </time>
+                            {canRemove && (
+                                <button
+                                    aria-label="Remove comment"
+                                    className="comment-card-remove btn btn-danger btn-sm"
+                                    disabled={isRemoving}
+                                    onClick={() => onRemove(comment.id)}
+                                    type="button"
+                                >
+                                    <i aria-hidden="true" className="bi bi-x-lg" />
+                                </button>
+                            )}
+                        </div>
                     </div>
                     <p className="mb-0 text-break text-pre-wrap">{comment.content}</p>
                 </article>

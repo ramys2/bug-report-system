@@ -21,3 +21,15 @@ export function createComment(reportId, comment) {
         },
     });
 }
+
+export function removeComment(commentId) {
+    const csrfToken = getCsrfToken();
+
+    return $.ajax({
+        method: "DELETE",
+        url: `/api/comments/${commentId}`,
+        headers: {
+            [csrfToken.headerName]: csrfToken.token,
+        },
+    });
+}
