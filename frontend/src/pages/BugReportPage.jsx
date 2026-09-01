@@ -4,22 +4,11 @@ import { getCurrentUser } from "../api/auth";
 import { getReport } from "../api/bug-report";
 import { getComments } from "../api/comment";
 import Navbar from "../components/Navbar";
+import { formatDateTime } from "../utils/date";
 import "./BugReportPage.css";
 
 function displayValue(value) {
     return value || "Not provided";
-}
-
-function formatDate(value) {
-    if (!value) {
-        return "Not provided";
-    }
-
-    const date = new Date(value);
-
-    return Number.isNaN(date.getTime())
-        ? value
-        : date.toLocaleString();
 }
 
 function ReportDetail({ label, value }) {
@@ -89,8 +78,8 @@ export default function BugReportPage() {
                                         <ReportDetail label="Status" value={bugReport.status} />
                                         <ReportDetail label="Project" value={bugReport.projectName} />
                                         <ReportDetail label="Component" value={bugReport.componentName} />
-                                        <ReportDetail label="Created at" value={formatDate(bugReport.createdAt)} />
-                                        <ReportDetail label="Updated at" value={formatDate(bugReport.updatedAt)} />
+                                        <ReportDetail label="Created at" value={formatDateTime(bugReport.createdAt)} />
+                                        <ReportDetail label="Updated at" value={formatDateTime(bugReport.updatedAt)} />
                                     </dl>
                                 </section>
                             </div>
@@ -152,7 +141,7 @@ function CommentCard({ comment, isCurrentUser }) {
                             {displayValue(comment.authorName)}
                         </h3>
                         <time className="small text-secondary text-nowrap" dateTime={comment.createdAt}>
-                            {formatDate(comment.createdAt)}
+                            {formatDateTime(comment.createdAt)}
                         </time>
                     </div>
                     <p className="mb-0 text-break text-pre-wrap">{comment.content}</p>

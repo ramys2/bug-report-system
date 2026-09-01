@@ -1,4 +1,5 @@
 import "./BugReportRow.css";
+import { formatDateTime } from "../utils/date";
 
 function BugReportRow({ report }) {
     return (
@@ -23,7 +24,7 @@ function BugReportRow({ report }) {
                 </div>
                 <div className="col-6 col-md-3">
                     <span className="d-md-none d-block small text-secondary">Created at</span>
-                    {report.createdAt}
+                    {formatDateTime(report.createdAt)}
                 </div>
             </div>
         </article>
