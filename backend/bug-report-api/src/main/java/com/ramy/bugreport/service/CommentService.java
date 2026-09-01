@@ -50,7 +50,13 @@ public class CommentService {
 
         return commentRepository.findByBugReportId(reportId)
                 .stream()
-                .map(CommentResponse::from)
+                .map(comment -> {
+                    UserAccount author = userAccountRepository.findById(comment.getAuthorId())
+                            .orElseThrow(() -> new ResourceNotFoundException(
+                                    "User with id=%s does not exist!".formatted(comment.getAuthorId())
+                            ));
+                    return CommentResponse.from(comment, author);
+                })
                 .toList();
     }
 

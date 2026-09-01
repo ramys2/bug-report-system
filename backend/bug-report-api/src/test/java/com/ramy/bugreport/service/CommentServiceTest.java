@@ -48,15 +48,19 @@ class CommentServiceTest {
     void getCommentsMapsCommentsForExistingReport() {
         var reportId = UUID.randomUUID();
         var comment = comment(reportId);
+        var author = org.mockito.Mockito.mock(UserAccount.class);
         when(bugReportRepository.existsById(reportId)).thenReturn(true);
         when(commentRepository.findByBugReportId(reportId)).thenReturn(List.of(comment));
+        when(userAccountRepository.findById(comment.getAuthorId())).thenReturn(Optional.of(author));
+        when(author.getName()).thenReturn("Ramy");
 
         var result = service.getComments(reportId);
 
         assertThat(result)
-                .extracting(response -> response.id())
-                .containsExactly(comment.getId());
+                .extracting(response -> response.id(), response -> response.authorName())
+                .containsExactly(org.assertj.core.groups.Tuple.tuple(comment.getId(), "Ramy"));
         verify(commentRepository).findByBugReportId(reportId);
+        verify(userAccountRepository).findById(comment.getAuthorId());
     }
 
     @Test

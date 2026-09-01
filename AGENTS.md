@@ -52,6 +52,10 @@ When working on tasks:
 - Do not hide complexity behind unnecessary abstractions. Prefer code that is straightforward for a junior developer to follow.
 - If I ask for help rather than explicitly asking for an implementation, prefer guiding me with explanations and hints before providing the complete solution.
 
+## Project-specific Guidance
+
+- Use `camelCase` for JSON fields in API request and response DTOs.
+
 ## Engineering Guidance
 
 ### Principles

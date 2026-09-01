@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
+import { getCurrentUser } from "../api/auth";
 import { getReport } from "../api/bug-report";
 import { getComments } from "../api/comment";
 import Navbar from "../components/Navbar";
@@ -43,6 +44,7 @@ export default function BugReportPage() {
     const { id } = useParams();
     const [bugReport, setBugReport] = useState(null);
     const [comments, setComments] = useState([]);
+    const [currentUser, setCurrentUser] = useState(null);
 
     useEffect(() => {
         getReport(id)
@@ -59,6 +61,11 @@ export default function BugReportPage() {
             })
             .fail(() => {
                 alert("Unable to fetch comments!");
+            });
+
+        getCurrentUser()
+            .done((user) => {
+                setCurrentUser(user);
             });
     }, [id]);
 
@@ -117,21 +124,13 @@ export default function BugReportPage() {
                             {comments.length === 0 ? (
                                 <p className="text-secondary mb-0">No comments yet.</p>
                             ) : (
-                                <div className="row g-3">
+                                <div className="d-flex flex-column gap-3">
                                     {comments.map((comment) => (
-                                        <div className="col-12 col-lg-6" key={comment.id}>
-                                            <article className="border rounded-4 p-3 h-100">
-                                                <div className="d-flex justify-content-between gap-3 mb-2">
-                                                    <h3 className="h6 mb-0">
-                                                        {comment.author_name || comment.authorName || comment.author_id}
-                                                    </h3>
-                                                    <time className="small text-secondary text-nowrap" dateTime={comment.created_at}>
-                                                        {formatDate(comment.created_at)}
-                                                    </time>
-                                                </div>
-                                                <p className="mb-0 text-break text-pre-wrap">{comment.content}</p>
-                                            </article>
-                                        </div>
+                                        <CommentCard
+                                            comment={comment}
+                                            isCurrentUser={comment.author_id === currentUser?.id}
+                                            key={comment.id}
+                                        />
                                     ))}
                                 </div>
                             )}
@@ -139,6 +138,26 @@ export default function BugReportPage() {
                     </>
                 )}
             </main>
+        </div>
+    );
+}
+
+function CommentCard({ comment, isCurrentUser }) {
+    return (
+        <div className="row">
+            <div className={`col-12 col-md-6 ${isCurrentUser ? "ms-md-auto" : ""}`}>
+                <article className="border rounded-4 p-3">
+                    <div className="d-flex justify-content-between gap-3 mb-2">
+                        <h3 className="h6 mb-0">
+                            {displayValue(comment.author_name)}
+                        </h3>
+                        <time className="small text-secondary text-nowrap" dateTime={comment.created_at}>
+                            {formatDate(comment.created_at)}
+                        </time>
+                    </div>
+                    <p className="mb-0 text-break text-pre-wrap">{comment.content}</p>
+                </article>
+            </div>
         </div>
     );
 }
