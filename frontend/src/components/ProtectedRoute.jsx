@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigate, Outlet, useLocation } from "react-router";
 import { getCurrentUser } from "../api/auth";
+import { loadCsrfToken } from "../api/csrf";
 
 function ProtectedRoute() {
     const [isAuthenticated, setIsAuthenticated] = useState(null);
@@ -8,6 +9,7 @@ function ProtectedRoute() {
 
     useEffect(() => {
         getCurrentUser()
+            .then(() => loadCsrfToken())
             .done(() => setIsAuthenticated(true))
             .fail(() => setIsAuthenticated(false));
     }, []);

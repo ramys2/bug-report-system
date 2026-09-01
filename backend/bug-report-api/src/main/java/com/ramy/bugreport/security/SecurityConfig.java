@@ -56,7 +56,7 @@ public class SecurityConfig {
 					.authenticated()
 					.requestMatchers(HttpMethod.POST, "/api/reports/*/resolution")
 					.authenticated()
-					.requestMatchers(HttpMethod.PATCH, "/api/reports/*")
+					.requestMatchers(HttpMethod.PATCH, "/api/reports/*/*")
 					.authenticated()
 
 					// All signed-in users can read data and participate in discussions.

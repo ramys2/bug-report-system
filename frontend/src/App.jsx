@@ -11,11 +11,10 @@ export default function App() {
             <Routes>
                 <Route element={<ProtectedRoute />}>
                     <Route path="/" element={<HomePage />} />
-                </Route>
-                <Route path="/login" element={<LoginPage />} />
-                <Route element={<ProtectedRoute />}>
                     <Route path="/reports/:id" element={<BugReportPage />} />
                 </Route>
+
+                <Route path="/login" element={<LoginPage />} />
             </Routes>
         </BrowserRouter>
     );
