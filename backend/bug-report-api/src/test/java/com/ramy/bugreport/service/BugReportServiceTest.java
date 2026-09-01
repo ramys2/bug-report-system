@@ -7,6 +7,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
@@ -22,8 +23,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ramy.bugreport.domain.BugReport;
+import com.ramy.bugreport.domain.Component;
 import com.ramy.bugreport.domain.EBugSeverity;
 import com.ramy.bugreport.domain.EBugStatus;
+import com.ramy.bugreport.domain.SoftwareProject;
 import com.ramy.bugreport.domain.UserAccount;
 import com.ramy.bugreport.dto.report.CloseBugReportRequest;
 import com.ramy.bugreport.dto.report.CreateBugReportRequest;
@@ -78,13 +81,50 @@ class BugReportServiceTest {
     @Test
     void getReportReturnsMappedReport() {
         var report = report(UUID.randomUUID());
+        var reporter = namedUser("Joe Reporter");
+        var assignee = namedUser("Joe Developer");
+        var project = project("Bug Report");
+        var component = component("Backend API");
         when(bugReportRepository.findById(report.getId())).thenReturn(Optional.of(report));
+        when(userAccountRepository.findById(report.getReporterId())).thenReturn(Optional.of(reporter));
+        when(userAccountRepository.findById(report.getAssigneeId())).thenReturn(Optional.of(assignee));
+        when(softwareProjectRepository.findById(report.getProjectId())).thenReturn(Optional.of(project));
+        when(componentRepository.findById(report.getComponentId())).thenReturn(Optional.of(component));
 
         var result = service.getReport(report.getId());
 
         assertThat(result.id()).isEqualTo(report.getId());
         assertThat(result.title()).isEqualTo(report.getTitle());
+        assertThat(result.reporterName()).isEqualTo("Joe Reporter");
+        assertThat(result.assigneeName()).isEqualTo("Joe Developer");
+        assertThat(result.projectName()).isEqualTo("Bug Report");
+        assertThat(result.componentName()).isEqualTo("Backend API");
         verify(bugReportRepository).findById(report.getId());
+        verify(userAccountRepository).findById(report.getReporterId());
+        verify(userAccountRepository).findById(report.getAssigneeId());
+        verify(softwareProjectRepository).findById(report.getProjectId());
+        verify(componentRepository).findById(report.getComponentId());
+    }
+
+    @Test
+    void getReportReturnsNullAssigneeNameWhenReportIsUnassigned() {
+        var report = report(UUID.randomUUID());
+        report.setAssigneeId(null);
+        var reporter = namedUser("Joe Reporter");
+        var project = project("Bug Report");
+        var component = component("Backend API");
+        when(bugReportRepository.findById(report.getId())).thenReturn(Optional.of(report));
+        when(userAccountRepository.findById(report.getReporterId())).thenReturn(Optional.of(reporter));
+        when(softwareProjectRepository.findById(report.getProjectId())).thenReturn(Optional.of(project));
+        when(componentRepository.findById(report.getComponentId())).thenReturn(Optional.of(component));
+
+        var result = service.getReport(report.getId());
+
+        assertThat(result.assigneeName()).isNull();
+        verify(userAccountRepository).findById(report.getReporterId());
+        verifyNoMoreInteractions(userAccountRepository);
+        verify(softwareProjectRepository).findById(report.getProjectId());
+        verify(componentRepository).findById(report.getComponentId());
     }
 
     @Test
@@ -358,5 +398,23 @@ class BugReportServiceTest {
         when(user.getId()).thenReturn(id);
         when(user.getName()).thenReturn(name);
         return user;
+    }
+
+    private static UserAccount namedUser(String name) {
+        var user = mock(UserAccount.class);
+        when(user.getName()).thenReturn(name);
+        return user;
+    }
+
+    private static SoftwareProject project(String name) {
+        var project = mock(SoftwareProject.class);
+        when(project.getName()).thenReturn(name);
+        return project;
+    }
+
+    private static Component component(String name) {
+        var component = mock(Component.class);
+        when(component.getName()).thenReturn(name);
+        return component;
     }
 }

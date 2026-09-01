@@ -62,8 +62,23 @@ public class BugReportService {
     public BugReportResponse getReport(UUID reportId) {
         BugReport report = bugReportRepository.findById(reportId)
                 .orElseThrow(() -> new ResourceNotFoundException("Report with id: %s".formatted(reportId)));
-        
-        return BugReportResponse.from(report);
+
+        var reporter = userAccountRepository.findById(report.getReporterId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "User with id=%s does not exist!".formatted(report.getReporterId())));
+        var assignee = report.getAssigneeId() == null
+                ? null
+                : userAccountRepository.findById(report.getAssigneeId())
+                        .orElseThrow(() -> new ResourceNotFoundException(
+                                "User with id=%s does not exist!".formatted(report.getAssigneeId())));
+        var project = softwareProjectRepository.findById(report.getProjectId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Project with id=%s does not exist!".formatted(report.getProjectId())));
+        var component = componentRepository.findById(report.getComponentId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Component with id=%s does not exist!".formatted(report.getComponentId())));
+
+        return BugReportResponse.from(report, reporter, assignee, project, component);
     }
     
     public List<BugReportBriefResponse> getReportsByReporter(UUID reporterId) {

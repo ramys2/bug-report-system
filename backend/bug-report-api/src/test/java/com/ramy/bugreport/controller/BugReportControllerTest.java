@@ -1,8 +1,8 @@
 package com.ramy.bugreport.controller;
 
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -77,7 +77,27 @@ class BugReportControllerTest {
 
         mockMvc.perform(get("/api/reports/{reportId}", reportId))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(reportId.toString()));
+                .andExpect(jsonPath("$.id").value(reportId.toString()))
+                .andExpect(jsonPath("$.reporter_name").value("Joe Reporter"))
+                .andExpect(jsonPath("$.assignee_name").value(nullValue()))
+                .andExpect(jsonPath("$.project_name").value("Bug Report"))
+                .andExpect(jsonPath("$.component_name").value("Backend API"))
+                .andExpect(jsonPath("$.reporter_id").doesNotExist())
+                .andExpect(jsonPath("$.assignee_id").doesNotExist())
+                .andExpect(jsonPath("$.project_id").doesNotExist())
+                .andExpect(jsonPath("$.component_id").doesNotExist());
+
+        verify(reportService).getReport(reportId);
+    }
+
+    @Test
+    void getReportSerializesAssignedAssigneeName() throws Exception {
+        var reportId = UUID.randomUUID();
+        when(reportService.getReport(reportId)).thenReturn(reportResponse(reportId, "Joe Developer"));
+
+        mockMvc.perform(get("/api/reports/{reportId}", reportId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.assignee_name").value("Joe Developer"));
 
         verify(reportService).getReport(reportId);
     }
@@ -227,12 +247,16 @@ class BugReportControllerTest {
     }
 
     private static BugReportResponse reportResponse(UUID reportId) {
+        return reportResponse(reportId, null);
+    }
+
+    private static BugReportResponse reportResponse(UUID reportId, String assigneeName) {
         return new BugReportResponse(
                 reportId,
-                UUID.randomUUID(),
-                null,
-                UUID.randomUUID(),
-                UUID.randomUUID(),
+                "Joe Reporter",
+                assigneeName,
+                "Bug Report",
+                "Backend API",
                 "Application crashes",
                 null,
                 null,
