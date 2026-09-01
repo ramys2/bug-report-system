@@ -1,7 +1,14 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
 import { getCurrentUser } from "../api/auth";
-import { getReport, updateSeverity, updateStatus } from "../api/bug-report";
+import {
+    getReport,
+    updateAssignee,
+    updateComponent,
+    updateProject,
+    updateSeverity,
+    updateStatus,
+} from "../api/bug-report";
 import { getComments } from "../api/comment";
 import Navbar from "../components/Navbar";
 import { formatDateTime } from "../utils/date";
@@ -42,27 +49,46 @@ const STATUS_OPTIONS = [
 
 const SEVERITY_OPTIONS = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
 
-function EditableEnumField({ label, reportId, value, options, updateValue, onValueSaved }) {
+function EditableSelectField({
+    label,
+    reportId,
+    value,
+    options,
+    placeholder,
+    getOptionValue,
+    getOptionLabel,
+    updateValue,
+    onValueSaved,
+}) {
     const [isEditing, setIsEditing] = useState(false);
-    const [selectedValue, setSelectedValue] = useState(value);
+    const [selectedOptionValue, setSelectedOptionValue] = useState("");
     const [isSaving, setIsSaving] = useState(false);
 
     function startEditing() {
-        setSelectedValue(value);
+        const selectedOption = options.find((option) => getOptionLabel(option) === value)
+            ?? (placeholder ? null : options[0]);
+        setSelectedOptionValue(selectedOption ? getOptionValue(selectedOption) : "");
         setIsEditing(true);
     }
 
     function cancelEditing() {
-        setSelectedValue(value);
         setIsEditing(false);
     }
 
     function saveValue() {
+        const selectedOption = options.find(
+            (option) => getOptionValue(option) === selectedOptionValue,
+        );
+
+        if (!selectedOption) {
+            return;
+        }
+
         setIsSaving(true);
 
-        updateValue(reportId, selectedValue)
+        updateValue(reportId, selectedOptionValue)
             .done(() => {
-                onValueSaved(selectedValue);
+                onValueSaved(getOptionLabel(selectedOption));
                 setIsEditing(false);
             })
             .fail(() => alert(`Unable to update ${label.toLowerCase()}!`))
@@ -79,17 +105,20 @@ function EditableEnumField({ label, reportId, value, options, updateValue, onVal
                             aria-label={label}
                             className="form-select"
                             disabled={isSaving}
-                            onChange={(event) => setSelectedValue(event.target.value)}
-                            value={selectedValue}
+                            onChange={(event) => setSelectedOptionValue(event.target.value)}
+                            value={selectedOptionValue}
                         >
+                            {placeholder && <option disabled value="">{placeholder}</option>}
                             {options.map((option) => (
-                                <option key={option} value={option}>{option}</option>
+                                <option key={getOptionValue(option)} value={getOptionValue(option)}>
+                                    {getOptionLabel(option)}
+                                </option>
                             ))}
                         </select>
                         <div className="d-flex gap-2 mt-2">
                             <button
                                 className="btn btn-primary btn-sm"
-                                disabled={isSaving}
+                                disabled={isSaving || !selectedOptionValue}
                                 onClick={saveValue}
                                 type="button"
                             >
@@ -109,6 +138,7 @@ function EditableEnumField({ label, reportId, value, options, updateValue, onVal
                     <button
                         aria-label={`Edit ${label.toLowerCase()}`}
                         className="editable-enum-display"
+                        disabled={options.length === 0}
                         onClick={startEditing}
                         type="button"
                     >
@@ -171,8 +201,23 @@ export default function BugReportPage() {
                                     <p className="text-secondary small mb-4">ID: {bugReport.id}</p>
                                     <dl className="row g-3 mb-0">
                                         <ReportDetail label="Reporter" value={bugReport.reporterName} />
-                                        <ReportDetail label="Assignee" value={bugReport.assigneeName} />
-                                        <EditableEnumField
+                                        <EditableSelectField
+                                            getOptionLabel={(developer) => developer.name}
+                                            getOptionValue={(developer) => developer.id}
+                                            label="Assignee"
+                                            onValueSaved={(assigneeName) => setBugReport((report) => ({
+                                                ...report,
+                                                assigneeName,
+                                            }))}
+                                            options={developers}
+                                            placeholder="Select an assignee"
+                                            reportId={bugReport.id}
+                                            updateValue={updateAssignee}
+                                            value={bugReport.assigneeName}
+                                        />
+                                        <EditableSelectField
+                                            getOptionLabel={(severity) => severity}
+                                            getOptionValue={(severity) => severity}
                                             label="Severity"
                                             onValueSaved={(severity) => setBugReport((report) => ({ ...report, severity }))}
                                             options={SEVERITY_OPTIONS}
@@ -180,7 +225,9 @@ export default function BugReportPage() {
                                             updateValue={updateSeverity}
                                             value={bugReport.severity}
                                         />
-                                        <EditableEnumField
+                                        <EditableSelectField
+                                            getOptionLabel={(status) => status}
+                                            getOptionValue={(status) => status}
                                             label="Status"
                                             onValueSaved={(status) => setBugReport((report) => ({ ...report, status }))}
                                             options={STATUS_OPTIONS}
@@ -188,8 +235,32 @@ export default function BugReportPage() {
                                             updateValue={updateStatus}
                                             value={bugReport.status}
                                         />
-                                        <ReportDetail label="Project" value={bugReport.projectName} />
-                                        <ReportDetail label="Component" value={bugReport.componentName} />
+                                        <EditableSelectField
+                                            getOptionLabel={(project) => project.name}
+                                            getOptionValue={(project) => project.id}
+                                            label="Project"
+                                            onValueSaved={(projectName) => setBugReport((report) => ({
+                                                ...report,
+                                                projectName,
+                                            }))}
+                                            options={projects}
+                                            reportId={bugReport.id}
+                                            updateValue={updateProject}
+                                            value={bugReport.projectName}
+                                        />
+                                        <EditableSelectField
+                                            getOptionLabel={(component) => component.name}
+                                            getOptionValue={(component) => component.id}
+                                            label="Component"
+                                            onValueSaved={(componentName) => setBugReport((report) => ({
+                                                ...report,
+                                                componentName,
+                                            }))}
+                                            options={components}
+                                            reportId={bugReport.id}
+                                            updateValue={updateComponent}
+                                            value={bugReport.componentName}
+                                        />
                                         <ReportDetail label="Created at" value={formatDateTime(bugReport.createdAt)} />
                                         <ReportDetail label="Updated at" value={formatDateTime(bugReport.updatedAt)} />
                                     </dl>
