@@ -30,6 +30,11 @@ function Navbar() {
                     <Link to="/" className="link-secondary link-underline-opacity-100">
                         Home
                     </Link>
+                    {auth.currentUser.role === "ADMIN" && (
+                        <Link to="/admin/users" className="link-secondary link-underline-opacity-100">
+                            Users
+                        </Link>
+                    )}
                 </div>
 
                 <div className="d-flex align-items-center gap-3">
