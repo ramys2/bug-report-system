@@ -26,6 +26,7 @@ import com.ramy.bugreport.domain.BugReport;
 import com.ramy.bugreport.domain.Component;
 import com.ramy.bugreport.domain.EBugSeverity;
 import com.ramy.bugreport.domain.EBugStatus;
+import com.ramy.bugreport.domain.EUserRole;
 import com.ramy.bugreport.domain.SoftwareProject;
 import com.ramy.bugreport.domain.UserAccount;
 import com.ramy.bugreport.dto.report.CloseBugReportRequest;
@@ -40,6 +41,7 @@ import com.ramy.bugreport.dto.report.UpdateSeverityRequest;
 import com.ramy.bugreport.dto.report.UpdateStatusRequest;
 import com.ramy.bugreport.dto.report.UpdateStepsToReproduceRequest;
 import com.ramy.bugreport.exception.ResourceNotFoundException;
+import com.ramy.bugreport.exception.BusinessRuleConflictException;
 import com.ramy.bugreport.repository.IBugReportRepository;
 import com.ramy.bugreport.repository.IComponentRepository;
 import com.ramy.bugreport.repository.ISoftwareProjectRepository;
@@ -181,6 +183,9 @@ class BugReportServiceTest {
         when(userAccountRepository.existsById(reporterId)).thenReturn(true);
         when(softwareProjectRepository.existsById(request.projectId())).thenReturn(true);
         when(componentRepository.existsById(request.componentId())).thenReturn(true);
+        var developer = mock(UserAccount.class);
+        when(developer.getRole()).thenReturn(EUserRole.DEVELOPER);
+        when(userAccountRepository.findById(request.assigneeId())).thenReturn(Optional.of(developer));
         when(bugReportRepository.save(any(BugReport.class))).thenAnswer(invocation -> {
             BugReport report = invocation.getArgument(0);
             report.setId(savedId);
@@ -290,19 +295,21 @@ class BugReportServiceTest {
     }
 
     @Test
-    void updateAssigneeChangesAssigneeAfterValidatingUser() {
+    void updateAssigneeChangesAssigneeAfterValidatingDeveloperRole() {
         var report = report(UUID.randomUUID());
         var assigneeId = UUID.randomUUID();
         var request = new UpdateAssigneeRequest(assigneeId);
         when(bugReportRepository.findById(report.getId())).thenReturn(Optional.of(report));
-        when(userAccountRepository.existsById(assigneeId)).thenReturn(true);
+        var developer = mock(UserAccount.class);
+        when(developer.getRole()).thenReturn(EUserRole.DEVELOPER);
+        when(userAccountRepository.findById(assigneeId)).thenReturn(Optional.of(developer));
 
         var result = service.updateAssignee(report.getId(), request);
 
         assertThat(report.getAssigneeId()).isEqualTo(assigneeId);
         assertUpdateResponse(result, report);
         verify(bugReportRepository).findById(report.getId());
-        verify(userAccountRepository).existsById(assigneeId);
+        verify(userAccountRepository).findById(assigneeId);
         verify(bugReportRepository, never()).save(any());
     }
 
@@ -416,14 +423,28 @@ class BugReportServiceTest {
         var assigneeId = UUID.randomUUID();
         var request = new UpdateAssigneeRequest(assigneeId);
         when(bugReportRepository.findById(report.getId())).thenReturn(Optional.of(report));
-        when(userAccountRepository.existsById(assigneeId)).thenReturn(false);
+        when(userAccountRepository.findById(assigneeId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.updateAssignee(report.getId(), request))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("User with id=%s does not exist!".formatted(assigneeId));
         verify(bugReportRepository).findById(report.getId());
-        verify(userAccountRepository).existsById(assigneeId);
+        verify(userAccountRepository).findById(assigneeId);
         verify(bugReportRepository, never()).save(any());
+    }
+
+    @Test
+    void updateAssigneeRejectsNonDeveloper() {
+        var report = report(UUID.randomUUID());
+        var assigneeId = UUID.randomUUID();
+        var account = mock(UserAccount.class);
+        when(bugReportRepository.findById(report.getId())).thenReturn(Optional.of(report));
+        when(userAccountRepository.findById(assigneeId)).thenReturn(Optional.of(account));
+        when(account.getRole()).thenReturn(EUserRole.REPORTER);
+
+        assertThatThrownBy(() -> service.updateAssignee(report.getId(), new UpdateAssigneeRequest(assigneeId)))
+                .isInstanceOf(BusinessRuleConflictException.class)
+                .hasMessage("Bug reports can only be assigned to developers.");
     }
 
     @Test

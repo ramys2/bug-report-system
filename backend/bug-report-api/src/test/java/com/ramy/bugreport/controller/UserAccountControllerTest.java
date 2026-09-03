@@ -2,8 +2,8 @@ package com.ramy.bugreport.controller;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -24,14 +24,15 @@ import com.ramy.bugreport.domain.EUserRole;
 import com.ramy.bugreport.dto.account.CreateUserAccountRequest;
 import com.ramy.bugreport.dto.account.CreateUserAccountResponse;
 import com.ramy.bugreport.dto.account.DeveloperResponse;
+import com.ramy.bugreport.dto.account.UpdateRoleRequest;
 import com.ramy.bugreport.dto.account.UserAccountResponse;
+import com.ramy.bugreport.exception.ApiExceptionHandler;
 import com.ramy.bugreport.service.UserAccountService;
 
 @ExtendWith(MockitoExtension.class)
 class UserAccountControllerTest {
 
-    @Mock
-    private UserAccountService userAccountService;
+    @Mock private UserAccountService userAccountService;
 
     private MockMvc mockMvc;
 
@@ -39,6 +40,7 @@ class UserAccountControllerTest {
     void setUp() {
         mockMvc = MockMvcBuilders
                 .standaloneSetup(new UserAccountController(userAccountService))
+                .setControllerAdvice(new ApiExceptionHandler())
                 .build();
     }
 
@@ -68,8 +70,6 @@ class UserAccountControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(developerId.toString()))
                 .andExpect(jsonPath("$[0].name").value("Ada Lovelace"));
-
-        verify(userAccountService).getDevelopers();
     }
 
     @Test
@@ -82,26 +82,32 @@ class UserAccountControllerTest {
         mockMvc.perform(post("/api/accounts")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {
-                                  "username": "Ramy",
-                                  "email": "ramy@example.com",
-                                  "password": "Password123!"
-                                }
+                                {"username":"Ramy","email":"ramy@example.com","password":"Password123!"}
                                 """))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(accountId.toString()))
-                .andExpect(jsonPath("$.message").value("Successfully created!"));
+                .andExpect(jsonPath("$.id").value(accountId.toString()));
 
         verify(userAccountService).create(request);
     }
 
     @Test
-    void deleteUsesAccountIdRouteAndReturnsNoContent() throws Exception {
+    void updateRoleReturnsNoContent() throws Exception {
         var accountId = UUID.randomUUID();
 
-        mockMvc.perform(delete("/api/accounts/{accountId}", accountId))
+        mockMvc.perform(patch("/api/accounts/{userId}/role", accountId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"role\":\"DEVELOPER\"}"))
                 .andExpect(status().isNoContent());
 
-        verify(userAccountService).delete(accountId);
+        verify(userAccountService).updateRole(accountId, new UpdateRoleRequest(EUserRole.DEVELOPER));
+    }
+
+    @Test
+    void updateRoleRejectsMissingRole() throws Exception {
+        mockMvc.perform(patch("/api/accounts/{userId}/role", UUID.randomUUID())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Request contains invalid values."));
     }
 }

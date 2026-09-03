@@ -5,7 +5,6 @@ import java.util.List;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -14,7 +13,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.HttpStatusEntryPoint;
+import org.springframework.security.web.context.SecurityContextHolderFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
@@ -28,7 +27,12 @@ import jakarta.servlet.http.HttpServletResponse;
 public class SecurityConfig {
 	
 	@Bean
-	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+	public SecurityFilterChain securityFilterChain(
+            HttpSecurity http,
+            CurrentUserAuthenticationFilter currentUserAuthenticationFilter,
+            ApiAuthenticationEntryPoint apiAuthenticationEntryPoint,
+            ApiAccessDeniedHandler apiAccessDeniedHandler
+    ) throws Exception {
 		http
 			.cors(Customizer.withDefaults())
 			.authorizeHttpRequests(auth -> auth
@@ -44,6 +48,8 @@ public class SecurityConfig {
 					.hasRole("ADMIN")
 					.requestMatchers(HttpMethod.GET, "/api/accounts/developers")
 					.authenticated()
+					.requestMatchers(HttpMethod.PATCH, "/api/accounts/*/role")
+					.hasRole("ADMIN")
 
 					// Only admins create projects; admins and developers create components.
 					.requestMatchers(HttpMethod.POST, "/api/projects")
@@ -89,10 +95,11 @@ public class SecurityConfig {
 					})
 			)
 			.exceptionHandling((exception) -> exception
-					.authenticationEntryPoint(
-							new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)
-					)
+				.authenticationEntryPoint(apiAuthenticationEntryPoint)
+				.accessDeniedHandler(apiAccessDeniedHandler)
 			);
+
+		http.addFilterAfter(currentUserAuthenticationFilter, SecurityContextHolderFilter.class);
 		
 		return http.build();
 	}

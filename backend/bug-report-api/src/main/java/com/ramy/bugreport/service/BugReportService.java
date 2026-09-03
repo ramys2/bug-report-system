@@ -11,6 +11,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import com.ramy.bugreport.domain.BugReport;
+import com.ramy.bugreport.domain.EUserRole;
 import com.ramy.bugreport.domain.Resolution;
 import com.ramy.bugreport.domain.UserAccount;
 import com.ramy.bugreport.dto.report.BugReportBriefResponse;
@@ -29,6 +30,7 @@ import com.ramy.bugreport.dto.report.UpdateProjectRequest;
 import com.ramy.bugreport.dto.report.UpdateSeverityRequest;
 import com.ramy.bugreport.dto.report.UpdateStatusRequest;
 import com.ramy.bugreport.dto.report.UpdateStepsToReproduceRequest;
+import com.ramy.bugreport.exception.BusinessRuleConflictException;
 import com.ramy.bugreport.exception.ResourceNotFoundException;
 import com.ramy.bugreport.repository.IBugReportRepository;
 import com.ramy.bugreport.repository.IComponentRepository;
@@ -158,6 +160,10 @@ public class BugReportService {
             );
         }
 
+        if (request.assigneeId() != null) {
+            requireDeveloper(request.assigneeId());
+        }
+
         BugReport report = BugReport.builder(reporterId, projectId, componentId, title, severity)
             .assigneeId(request.assigneeId())
             .description(request.description())
@@ -204,9 +210,7 @@ public class BugReportService {
     public UpdateBugReportResponse updateAssignee(UUID reportId, UpdateAssigneeRequest request) {
         var report = reportById(reportId);
         var assigneeId = request.assigneeId();
-        if (!userAccountRepository.existsById(assigneeId)) {
-            throw new ResourceNotFoundException("User with id=%s does not exist!".formatted(assigneeId));
-        }
+        requireDeveloper(assigneeId);
 
         report.setAssigneeId(assigneeId);
         return updateResponse(report);
@@ -318,5 +322,14 @@ public class BugReportService {
 
     private UpdateBugReportResponse updateResponse(BugReport report) {
         return new UpdateBugReportResponse(report.getId(), "Bug report updated successfully!");
+    }
+
+    private void requireDeveloper(UUID assigneeId) {
+        UserAccount assignee = userAccountRepository.findById(assigneeId)
+                .orElseThrow(() -> new ResourceNotFoundException("User with id=%s does not exist!".formatted(assigneeId)));
+        if (assignee.getRole() != EUserRole.DEVELOPER) {
+            throw new BusinessRuleConflictException(
+                    "Bug reports can only be assigned to developers.");
+        }
     }
 }

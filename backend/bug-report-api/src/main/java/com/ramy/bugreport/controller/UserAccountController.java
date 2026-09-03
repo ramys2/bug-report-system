@@ -5,8 +5,8 @@ import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.ramy.bugreport.dto.account.CreateUserAccountRequest;
 import com.ramy.bugreport.dto.account.CreateUserAccountResponse;
 import com.ramy.bugreport.dto.account.DeveloperResponse;
+import com.ramy.bugreport.dto.account.UpdateRoleRequest;
 import com.ramy.bugreport.dto.account.UserAccountResponse;
 import com.ramy.bugreport.service.UserAccountService;
 
@@ -70,16 +71,17 @@ public class UserAccountController {
     /*
      * ============================================
      *
-     * Delete Mappings
+     * PATCH Mappings
      *
      * ============================================
      */
     
-    @DeleteMapping("/{userId}")
+    @PatchMapping("/{userId}/role")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(
-    		@PathVariable UUID userId
+    public void updateRole(
+            @PathVariable UUID userId,
+            @Valid @RequestBody UpdateRoleRequest request
     ) {
-    	userAccountService.delete(userId);
+        userAccountService.updateRole(userId, request);
     }
 }
