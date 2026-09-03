@@ -3,7 +3,6 @@ import { Modal as BootstrapModal } from "bootstrap";
 import BugReportList from "../components/BugReportList";
 import CreateBugReportForm from "../components/CreateBugReportForm";
 import Modal from "../components/Modal";
-import Navbar from "../components/Navbar";
 import QuickFilters from "../components/QuickFilters";
 import "./HomePage.css";
 import { getAllReports, getAssigned, getReported } from "../api/bug-report";
@@ -87,7 +86,6 @@ function HomePage() {
 
     return (
         <div className="home-page d-flex flex-column">
-            <Navbar />
             <main className="container d-flex flex-column flex-grow-1 py-4 text-start">
                 <div className="d-flex justify-content-between align-items-start">
                     <QuickFilters

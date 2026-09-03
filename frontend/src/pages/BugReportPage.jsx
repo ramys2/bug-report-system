@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useParams } from "react-router";
-import { getCurrentUser } from "../api/auth";
 import {
     getReport,
     updateAssignee,
@@ -14,10 +13,10 @@ import {
     updateStepsToReproduce,
 } from "../api/bug-report";
 import { createComment, getComments, removeComment } from "../api/comment";
-import Navbar from "../components/Navbar";
 import { formatDateTime } from "../utils/date";
 import "./BugReportPage.css";
 import { getComponents, getDevelopers, getProjects } from "../api/create-bug-report-options";
+import AuthContext from "../components/AuthContext";
 
 function displayValue(value) {
     return value || "Not provided";
@@ -231,9 +230,9 @@ function EditableSelectField({
 
 export default function BugReportPage() {
     const { id } = useParams();
+    const { currentUser } = useContext(AuthContext);
     const [bugReport, setBugReport] = useState(null);
     const [comments, setComments] = useState([]);
-    const [currentUser, setCurrentUser] = useState(null);
     const [commentDraft, setCommentDraft] = useState("");
     const [isCommentEditing, setIsCommentEditing] = useState(false);
     const [isCommentSaving, setIsCommentSaving] = useState(false);
@@ -263,9 +262,6 @@ export default function BugReportPage() {
         getComponents()
             .done(setComponents)
             .fail(() => alert("Failed to fetch components."));
-
-        getCurrentUser()
-            .done((user) => setCurrentUser(user));
     }, [id]);
 
     function saveComment() {
@@ -296,7 +292,6 @@ export default function BugReportPage() {
 
     return (
         <div className="bug-report-page d-flex flex-column">
-            <Navbar />
             <main className="container flex-grow-1 py-4 text-start">
                 {bugReport === null ? (
                     <p className="text-secondary mb-0">Loading bug report...</p>

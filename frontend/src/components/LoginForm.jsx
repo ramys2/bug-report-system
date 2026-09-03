@@ -1,19 +1,23 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { login } from "../api/auth";
 import "./LoginForm.css";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
+import AuthContext from "./AuthContext";
 
 function LoginForm() {
+    const auth = useContext(AuthContext);
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const navigate = useNavigate();
+    const location = useLocation();
 
     function handleSubmit(event) {
         event.preventDefault();
 
         login(email, password)
             .done(() => {
-                navigate("/");
+                auth.loadCurrentUser()
+                    .done(() => navigate(location.state?.from ?? "/", { replace: true }));
             })
             .fail((xhr) => {
                 console.log("Login failed");

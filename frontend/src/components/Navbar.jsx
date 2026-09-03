@@ -1,27 +1,25 @@
-import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { getCurrentUser, logout } from "../api/auth";
 import "./Navbar.css";
+import { useContext } from "react";
+import AuthContext from "./AuthContext";
 
 function Navbar() {
-    const [user, setUser] = useState(null);
+    const auth = useContext(AuthContext);
     const navigate = useNavigate();
 
-    useEffect(() => {
-        getCurrentUser()
-            .done((currentUser) => setUser(currentUser));
-    }, []);
-
     function handleLogout() {
-        logout()
+        auth.logout()
             .done(() => {
-                setUser(null);
                 navigate("/login", { replace: true });
             });
     }
 
-    if (user === null) {
-        return null;
+    if (auth.currentUser === undefined || auth.currentUser === null) {
+        return (
+            <nav className="navbar border-bottom px-4 py-3">
+                <span className="navbar-brand mb-0 fs-4">Bug Report</span>
+            </nav>
+        );
     }
 
     return (
@@ -39,7 +37,7 @@ function Navbar() {
                         className="d-flex align-items-center gap-2 link-secondary link-underline-opacity-0 link-underline-opacity-100-hover"
                     >
                         <i aria-hidden="true" className="bi bi-person-circle fs-4" />
-                        {user.username}
+                        {auth.currentUser.username}
                     </span>
                     <button
                         type="button"

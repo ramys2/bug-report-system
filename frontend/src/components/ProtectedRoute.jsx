@@ -1,24 +1,16 @@
-import { useEffect, useState } from "react";
+import { useContext } from "react";
 import { Navigate, Outlet, useLocation } from "react-router";
-import { getCurrentUser } from "../api/auth";
-import { loadCsrfToken } from "../api/csrf";
+import AuthContext from "./AuthContext";
 
 function ProtectedRoute() {
-    const [isAuthenticated, setIsAuthenticated] = useState(null);
+    const auth = useContext(AuthContext);
     const location = useLocation();
 
-    useEffect(() => {
-        getCurrentUser()
-            .then(() => loadCsrfToken())
-            .done(() => setIsAuthenticated(true))
-            .fail(() => setIsAuthenticated(false));
-    }, []);
-
-    if (isAuthenticated === null) {
+    if (auth.currentUser === undefined) {
         return null;
     }
 
-    if (!isAuthenticated) {
+    if (auth.currentUser === null) {
         return <Navigate to="/login" replace state={{ from: location }} />;
     }
 
