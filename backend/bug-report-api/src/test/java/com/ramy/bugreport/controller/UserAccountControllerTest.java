@@ -2,6 +2,7 @@ package com.ramy.bugreport.controller;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -92,5 +93,15 @@ class UserAccountControllerTest {
                 .andExpect(jsonPath("$.message").value("Successfully created!"));
 
         verify(userAccountService).create(request);
+    }
+
+    @Test
+    void deleteUsesAccountIdRouteAndReturnsNoContent() throws Exception {
+        var accountId = UUID.randomUUID();
+
+        mockMvc.perform(delete("/api/accounts/{accountId}", accountId))
+                .andExpect(status().isNoContent());
+
+        verify(userAccountService).delete(accountId);
     }
 }

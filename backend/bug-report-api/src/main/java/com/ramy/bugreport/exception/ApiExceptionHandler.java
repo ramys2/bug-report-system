@@ -16,4 +16,13 @@ public class ApiExceptionHandler {
                 .status(HttpStatus.NOT_FOUND)
                 .body(new ApiErrorResponse(exception.getMessage()));
     }
+    
+    @ExceptionHandler(AdminAccountDeletionException.class)
+    public ResponseEntity<ApiErrorResponse> handleAdminAccountDeletion(
+    		AdminAccountDeletionException exception
+    ) {
+    	return ResponseEntity
+    			.status(HttpStatus.CONFLICT)
+    			.body(new ApiErrorResponse(exception.getMessage()));
+    }
 }
