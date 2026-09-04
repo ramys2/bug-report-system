@@ -48,7 +48,7 @@ public class ComponentService {
         Component component = new Component(
                 request.name(),
                 request.description(),
-                request.responsibleDeveloperId());
+                request.responsibleUserId());
         component = componentRepository.save(component);
 
         return new CreateComponentResponse(component.getId(), "Successfully created!");

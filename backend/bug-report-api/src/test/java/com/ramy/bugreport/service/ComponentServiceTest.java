@@ -48,9 +48,9 @@ class ComponentServiceTest {
 
     @Test
     void createBuildsAndSavesComponentWithOptionalFields() {
-        var responsibleDeveloperId = UUID.randomUUID();
+        var responsibleUserId = UUID.randomUUID();
         var request = new CreateComponentRequest(
-                "API", "Handles public endpoints", responsibleDeveloperId);
+                "API", "Handles public endpoints", responsibleUserId);
         var componentId = UUID.randomUUID();
         var savedComponent = org.mockito.Mockito.mock(Component.class);
         when(componentRepository.save(any(Component.class))).thenReturn(savedComponent);
@@ -63,7 +63,7 @@ class ComponentServiceTest {
         var component = componentCaptor.getValue();
         assertThat(component.getName()).isEqualTo(request.name());
         assertThat(component.getDescription()).isEqualTo(request.description());
-        assertThat(component.getResponsibleDeveloperId()).isEqualTo(request.responsibleDeveloperId());
+        assertThat(component.getResponsibleUserId()).isEqualTo(request.responsibleUserId());
         assertThat(result.id()).isEqualTo(componentId);
         assertThat(result.message()).isEqualTo("Successfully created!");
     }
@@ -81,7 +81,7 @@ class ComponentServiceTest {
         var componentCaptor = ArgumentCaptor.forClass(Component.class);
         verify(componentRepository).save(componentCaptor.capture());
         assertThat(componentCaptor.getValue().getDescription()).isNull();
-        assertThat(componentCaptor.getValue().getResponsibleDeveloperId()).isNull();
+        assertThat(componentCaptor.getValue().getResponsibleUserId()).isNull();
         assertThat(result.id()).isEqualTo(componentId);
     }
 }

@@ -7,6 +7,6 @@ import jakarta.validation.constraints.NotBlank;
 public record CreateComponentRequest(
         @NotBlank String name,
         String description,
-        UUID responsibleDeveloperId
+        UUID responsibleUserId
 ) {
 }

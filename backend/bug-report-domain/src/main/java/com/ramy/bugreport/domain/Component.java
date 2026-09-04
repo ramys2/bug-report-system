@@ -20,16 +20,16 @@ public class Component {
 
     private String description;
 
-    private UUID responsibleDeveloperId;
+    private UUID responsibleUserId;
 
     protected Component() {
         // Required by JPA
     }
 
-    public Component(String name, String description, UUID responsibleDeveloperId) {
+    public Component(String name, String description, UUID responsibleUserId) {
         this.name = name;
         this.description = description;
-        this.responsibleDeveloperId = responsibleDeveloperId;
+        this.responsibleUserId = responsibleUserId;
     }
 
     public UUID  getId() {
@@ -44,12 +44,12 @@ public class Component {
         return description;
     }
 
-    public UUID getResponsibleDeveloperId() {
-        return responsibleDeveloperId;
+    public UUID getResponsibleUserId() {
+        return responsibleUserId;
     }
 
-    public void setResponsibleDeveloperId(UUID responsibleDeveloperId) {
-        this.responsibleDeveloperId = responsibleDeveloperId;
+    public void setResponsibleUserId(UUID responsibleUserId) {
+        this.responsibleUserId = responsibleUserId;
     }
 
 }

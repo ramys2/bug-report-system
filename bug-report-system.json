@@ -7,6 +7,12 @@
       "name": "To Do",
       "tasks": [
         {
+          "id": "task-546bbf58-4435-4ea4-8432-4bd031e15a64",
+          "title": "Add option to resolve a Bug Report to Bug Report page",
+          "description": "Implement modal that will appear when an user attempts to close a Bug Report. The modal will send PATCH /api/reports/{reportId}/resolution.",
+          "color": "#4a9270"
+        },
+        {
           "id": "task-d03e0281-a9c4-4e95-82a2-e989b72c2261",
           "title": "Implement custom Toast component",
           "description": "",
