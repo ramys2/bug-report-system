@@ -7,18 +7,6 @@
       "name": "To Do",
       "tasks": [
         {
-          "id": "task-217f9f55-feae-46f4-b43b-1625829ce032",
-          "title": "Implement Project admin page",
-          "description": "",
-          "color": "#4a9270"
-        },
-        {
-          "id": "task-6c3d399b-1e46-4e0d-b811-b480db3dc63e",
-          "title": "Implement Component admin page",
-          "description": "",
-          "color": "#4a9270"
-        },
-        {
           "id": "task-d03e0281-a9c4-4e95-82a2-e989b72c2261",
           "title": "Implement custom Toast component",
           "description": "",
@@ -67,8 +55,14 @@
       "name": "In progress",
       "tasks": [
         {
-          "id": "task-fca510bc-1af6-4558-83ac-23155cce2e29",
-          "title": "Implement User admin page",
+          "id": "task-217f9f55-feae-46f4-b43b-1625829ce032",
+          "title": "Implement Project admin page",
+          "description": "",
+          "color": "#4a9270"
+        },
+        {
+          "id": "task-6c3d399b-1e46-4e0d-b811-b480db3dc63e",
+          "title": "Implement Component admin page",
           "description": "",
           "color": "#4a9270"
         }
@@ -78,6 +72,12 @@
       "id": "column-14e7a403-192c-4f53-950b-80997c07901c",
       "name": "Done",
       "tasks": [
+        {
+          "id": "task-fca510bc-1af6-4558-83ac-23155cce2e29",
+          "title": "Implement User admin page",
+          "description": "- implement user table",
+          "color": "#4a9270"
+        },
         {
           "id": "task-48a03bb1-faf4-4a94-980c-87a3257e79a3",
           "title": "Implement single Report Page",
