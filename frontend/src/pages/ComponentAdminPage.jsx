@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Modal as BootstrapModal } from "bootstrap";
 import Modal from "../components/Modal";
+import CreateComponentForm from "../components/CreateComponentForm";
 import {
     getAllComponents,
     updateComponentDescription,
@@ -11,6 +12,7 @@ import { searchUsers } from "../api/account";
 import "./ComponentAdminPage.css";
 
 const descriptionModalId = "component-description-modal";
+const createModalId = "create-component-modal";
 
 function EditableName({ component, onNameSaved }) {
     const [isEditing, setIsEditing] = useState(false);
@@ -222,11 +224,15 @@ export default function ComponentAdminPage() {
     const [isSavingDescription, setIsSavingDescription] = useState(false);
 
     useEffect(() => {
-        getAllComponents()
+        loadComponents();
+    }, []);
+
+    function loadComponents() {
+        return getAllComponents()
             .done(setComponents)
             .fail(() => alert("Unable to fetch components."))
             .always(() => setIsLoading(false));
-    }, []);
+    }
 
     function updateComponent(componentId, changes) {
         setComponents((currentComponents) => currentComponents.map((component) => (
@@ -244,6 +250,13 @@ export default function ComponentAdminPage() {
 
     function closeDescriptionEditor() {
         const modalElement = document.getElementById(descriptionModalId);
+        BootstrapModal.getOrCreateInstance(modalElement).hide();
+    }
+
+    function handleComponentCreated() {
+        loadComponents();
+
+        const modalElement = document.getElementById(createModalId);
         BootstrapModal.getOrCreateInstance(modalElement).hide();
     }
 
@@ -270,7 +283,17 @@ export default function ComponentAdminPage() {
                         <h1 className="h3 mb-1">Component administration</h1>
                         <p className="text-secondary mb-0">Manage component details and responsible users.</p>
                     </div>
-                    <span className="text-secondary small">{components.length} component{components.length === 1 ? "" : "s"}</span>
+                    <div className="d-flex align-items-center gap-3">
+                        <span className="text-secondary small">{components.length} component{components.length === 1 ? "" : "s"}</span>
+                        <button
+                            className="btn btn-primary"
+                            data-bs-target={`#${createModalId}`}
+                            data-bs-toggle="modal"
+                            type="button"
+                        >
+                            Create new +
+                        </button>
+                    </div>
                 </div>
 
                 <section className="border rounded-4 d-flex flex-column flex-grow-1 overflow-hidden">
@@ -333,6 +356,9 @@ export default function ComponentAdminPage() {
                         {isSavingDescription ? "Saving..." : "Save"}
                     </button>
                 </div>
+            </Modal>
+            <Modal id={createModalId}>
+                <CreateComponentForm onCreated={handleComponentCreated} />
             </Modal>
         </div>
     );

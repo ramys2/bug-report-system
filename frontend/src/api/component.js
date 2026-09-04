@@ -8,6 +8,10 @@ export function getAllComponents() {
     });
 }
 
+export function createComponent(component) {
+    return postComponent(component);
+}
+
 export function updateComponentName(componentId, name) {
     return patchComponent(componentId, "name", { name });
 }
@@ -26,6 +30,20 @@ function patchComponent(componentId, field, request) {
     return $.ajax({
         method: "PATCH",
         url: `/api/components/${componentId}/${field}`,
+        contentType: "application/json",
+        data: JSON.stringify(request),
+        headers: {
+            [csrfToken.headerName]: csrfToken.token,
+        },
+    });
+}
+
+function postComponent(request) {
+    const csrfToken = getCsrfToken();
+
+    return $.ajax({
+        method: "POST",
+        url: "/api/components",
         contentType: "application/json",
         data: JSON.stringify(request),
         headers: {

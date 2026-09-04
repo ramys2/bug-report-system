@@ -1,10 +1,13 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Modal as BootstrapModal } from "bootstrap";
 import Modal from "../components/Modal";
+import AuthContext from "../components/AuthContext";
+import CreateProjectForm from "../components/CreateProjectForm";
 import { getAllProjects, updateProjectDescription, updateProjectName } from "../api/project";
 import "./ProjectAdminPage.css";
 
 const descriptionModalId = "project-description-modal";
+const createModalId = "create-project-modal";
 
 function EditableName({ project, onNameSaved }) {
     const [isEditing, setIsEditing] = useState(false);
@@ -77,6 +80,7 @@ function EditableName({ project, onNameSaved }) {
 }
 
 export default function ProjectAdminPage() {
+    const auth = useContext(AuthContext);
     const [projects, setProjects] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [projectForDescription, setProjectForDescription] = useState(null);
@@ -84,11 +88,15 @@ export default function ProjectAdminPage() {
     const [isSavingDescription, setIsSavingDescription] = useState(false);
 
     useEffect(() => {
-        getAllProjects()
+        loadProjects();
+    }, []);
+
+    function loadProjects() {
+        return getAllProjects()
             .done(setProjects)
             .fail(() => alert("Unable to fetch projects."))
             .always(() => setIsLoading(false));
-    }, []);
+    }
 
     function updateProject(projectId, changes) {
         setProjects((currentProjects) => currentProjects.map((project) => (
@@ -106,6 +114,13 @@ export default function ProjectAdminPage() {
 
     function closeDescriptionEditor() {
         const modalElement = document.getElementById(descriptionModalId);
+        BootstrapModal.getOrCreateInstance(modalElement).hide();
+    }
+
+    function handleProjectCreated() {
+        loadProjects();
+
+        const modalElement = document.getElementById(createModalId);
         BootstrapModal.getOrCreateInstance(modalElement).hide();
     }
 
@@ -132,7 +147,19 @@ export default function ProjectAdminPage() {
                         <h1 className="h3 mb-1">Project administration</h1>
                         <p className="text-secondary mb-0">Manage software project details.</p>
                     </div>
-                    <span className="text-secondary small">{projects.length} project{projects.length === 1 ? "" : "s"}</span>
+                    <div className="d-flex align-items-center gap-3">
+                        <span className="text-secondary small">{projects.length} project{projects.length === 1 ? "" : "s"}</span>
+                        {auth.currentUser.role === "ADMIN" && (
+                            <button
+                                className="btn btn-primary"
+                                data-bs-target={`#${createModalId}`}
+                                data-bs-toggle="modal"
+                                type="button"
+                            >
+                                Create new +
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 <section className="border rounded-4 d-flex flex-column flex-grow-1 overflow-hidden">
@@ -188,6 +215,9 @@ export default function ProjectAdminPage() {
                         {isSavingDescription ? "Saving..." : "Save"}
                     </button>
                 </div>
+            </Modal>
+            <Modal id={createModalId}>
+                <CreateProjectForm onCreated={handleProjectCreated} />
             </Modal>
         </div>
     );

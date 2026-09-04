@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
+import DeveloperRoute from "./components/DeveloperRoute";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import BugReportPage from "./pages/BugReportPage";
@@ -21,8 +22,10 @@ export default function App() {
                     <Route element={<ProtectedRoute />}>
                         <Route path="/" element={<HomePage />} />
                         <Route path="/reports/:id" element={<BugReportPage />} />
-                        <Route path="/admin/components" element={<ComponentAdminPage />} />
-                        <Route path="/admin/projects" element={<ProjectAdminPage />} />
+                        <Route element={<DeveloperRoute />}>
+                            <Route path="/admin/components" element={<ComponentAdminPage />} />
+                            <Route path="/admin/projects" element={<ProjectAdminPage />} />
+                        </Route>
                         <Route element={<AdminRoute />}>
                             <Route path="/admin/users" element={<UserAdminPage />} />
                         </Route>
