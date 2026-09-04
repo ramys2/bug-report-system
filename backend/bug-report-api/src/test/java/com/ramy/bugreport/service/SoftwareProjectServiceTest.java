@@ -6,7 +6,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -19,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ramy.bugreport.domain.SoftwareProject;
 import com.ramy.bugreport.dto.project.CreateSoftwareProjectRequest;
+import com.ramy.bugreport.dto.project.SoftwareProjectResponse;
 import com.ramy.bugreport.dto.project.UpdateSoftwareProjectDescriptionRequest;
 import com.ramy.bugreport.dto.project.UpdateSoftwareProjectNameRequest;
 import com.ramy.bugreport.exception.ResourceNotFoundException;
@@ -38,16 +38,18 @@ class SoftwareProjectServiceTest {
     }
 
     @Test
-    void getAllMapsProjectIdsToNames() {
+    void getAllMapsProjectsToResponses() {
         var projectId = UUID.randomUUID();
         var project = org.mockito.Mockito.mock(SoftwareProject.class);
         when(softwareProjectRepository.findAll()).thenReturn(List.of(project));
         when(project.getId()).thenReturn(projectId);
         when(project.getName()).thenReturn("Bug Report System");
+        when(project.getDescription()).thenReturn("Tracks bugs");
 
         var result = service.getAll();
 
-        assertThat(result).containsExactlyEntriesOf(Map.of(projectId, "Bug Report System"));
+        assertThat(result).containsExactly(new SoftwareProjectResponse(
+                projectId, "Bug Report System", "Tracks bugs"));
     }
 
     @Test

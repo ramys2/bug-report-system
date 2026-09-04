@@ -6,7 +6,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -18,12 +17,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ramy.bugreport.domain.Component;
+import com.ramy.bugreport.domain.UserAccount;
 import com.ramy.bugreport.dto.component.CreateComponentRequest;
+import com.ramy.bugreport.dto.component.ComponentResponse;
 import com.ramy.bugreport.dto.component.UpdateComponentDescriptionRequest;
 import com.ramy.bugreport.dto.component.UpdateComponentNameRequest;
 import com.ramy.bugreport.dto.component.UpdateComponentResponsibleUserRequest;
 import com.ramy.bugreport.exception.ResourceNotFoundException;
 import com.ramy.bugreport.repository.IComponentRepository;
+import com.ramy.bugreport.repository.IUserAccountRepository;
 
 @ExtendWith(MockitoExtension.class)
 class ComponentServiceTest {
@@ -31,24 +33,36 @@ class ComponentServiceTest {
     @Mock
     private IComponentRepository componentRepository;
 
+    @Mock
+    private IUserAccountRepository userAccountRepository;
+
     private ComponentService service;
 
     @BeforeEach
     void setUp() {
-        service = new ComponentService(componentRepository);
+        service = new ComponentService(componentRepository, userAccountRepository);
     }
 
     @Test
-    void getAllMapsComponentIdsToNames() {
+    void getAllMapsComponentsToResponsesWithResponsibleUserNames() {
         var componentId = UUID.randomUUID();
+        var responsibleUserId = UUID.randomUUID();
         var component = org.mockito.Mockito.mock(Component.class);
+        var responsibleUser = org.mockito.Mockito.mock(UserAccount.class);
         when(componentRepository.findAll()).thenReturn(List.of(component));
         when(component.getId()).thenReturn(componentId);
         when(component.getName()).thenReturn("API");
+        when(component.getDescription()).thenReturn("Handles public endpoints");
+        when(component.getResponsibleUserId()).thenReturn(responsibleUserId);
+        when(userAccountRepository.findAllById(List.of(responsibleUserId)))
+                .thenReturn(List.of(responsibleUser));
+        when(responsibleUser.getId()).thenReturn(responsibleUserId);
+        when(responsibleUser.getName()).thenReturn("Joe Responsible");
 
         var result = service.getAll();
 
-        assertThat(result).containsExactlyEntriesOf(Map.of(componentId, "API"));
+        assertThat(result).containsExactly(new ComponentResponse(
+                componentId, "API", "Handles public endpoints", "Joe Responsible"));
     }
 
     @Test

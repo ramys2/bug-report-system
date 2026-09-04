@@ -8,7 +8,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.util.Map;
+import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -22,6 +22,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import com.ramy.bugreport.dto.component.CreateComponentRequest;
 import com.ramy.bugreport.dto.component.CreateComponentResponse;
+import com.ramy.bugreport.dto.component.ComponentResponse;
 import com.ramy.bugreport.dto.component.UpdateComponentDescriptionRequest;
 import com.ramy.bugreport.dto.component.UpdateComponentNameRequest;
 import com.ramy.bugreport.dto.component.UpdateComponentResponsibleUserRequest;
@@ -46,11 +47,17 @@ class ComponentControllerTest {
     @Test
     void getAllUsesComponentsRoute() throws Exception {
         var componentId = UUID.randomUUID();
-        when(componentService.getAll()).thenReturn(Map.of(componentId, "API"));
+        when(componentService.getAll()).thenReturn(List.of(new ComponentResponse(
+                componentId, "API", "Handles public endpoints", "Joe Responsible")));
 
         mockMvc.perform(get("/api/components"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$['%s']".formatted(componentId)).value("API"));
+                .andExpect(jsonPath("$[0].id").value(componentId.toString()))
+                .andExpect(jsonPath("$[0].name").value("API"))
+                .andExpect(jsonPath("$[0].description")
+                        .value("Handles public endpoints"))
+                .andExpect(jsonPath("$[0].responsibleUserName")
+                        .value("Joe Responsible"));
 
         verify(componentService).getAll();
     }

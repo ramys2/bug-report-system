@@ -1,29 +1,38 @@
 package com.ramy.bugreport.service;
 
-import java.util.Map;
+import java.util.List;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
 import com.ramy.bugreport.domain.Component;
+import com.ramy.bugreport.domain.UserAccount;
 import com.ramy.bugreport.dto.component.CreateComponentRequest;
 import com.ramy.bugreport.dto.component.CreateComponentResponse;
+import com.ramy.bugreport.dto.component.ComponentResponse;
 import com.ramy.bugreport.dto.component.UpdateComponentDescriptionRequest;
 import com.ramy.bugreport.dto.component.UpdateComponentNameRequest;
 import com.ramy.bugreport.dto.component.UpdateComponentResponsibleUserRequest;
 import com.ramy.bugreport.dto.component.UpdateComponentResponse;
 import com.ramy.bugreport.exception.ResourceNotFoundException;
 import com.ramy.bugreport.repository.IComponentRepository;
+import com.ramy.bugreport.repository.IUserAccountRepository;
 
 import jakarta.transaction.Transactional;
 
 @Service
 public class ComponentService {
     private final IComponentRepository componentRepository;
+    private final IUserAccountRepository userAccountRepository;
 
-    public ComponentService(IComponentRepository componentRepository) {
+    public ComponentService(
+            IComponentRepository componentRepository,
+            IUserAccountRepository userAccountRepository
+    ) {
         this.componentRepository = componentRepository;
+        this.userAccountRepository = userAccountRepository;
     }
 
     /*
@@ -34,10 +43,21 @@ public class ComponentService {
     * ============================================
     */
 
-    public Map<UUID, String> getAll() {
-        return componentRepository.findAll()
-                .stream()
-                .collect(Collectors.toMap(Component::getId, Component::getName));
+    public List<ComponentResponse> getAll() {
+        var components = componentRepository.findAll();
+        var responsibleUserIds = components.stream()
+                .map(Component::getResponsibleUserId)
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .toList();
+        var responsibleUsersById = userAccountRepository.findAllById(responsibleUserIds).stream()
+                .collect(Collectors.toMap(UserAccount::getId, Function.identity()));
+
+        return components.stream()
+                .map(component -> ComponentResponse.from(
+                        component,
+                        responsibleUsersById.get(component.getResponsibleUserId())))
+                .toList();
     }
 
     /*

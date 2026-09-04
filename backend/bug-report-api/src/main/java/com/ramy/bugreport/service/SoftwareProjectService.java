@@ -1,14 +1,14 @@
 package com.ramy.bugreport.service;
 
-import java.util.Map;
+import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
 import com.ramy.bugreport.domain.SoftwareProject;
 import com.ramy.bugreport.dto.project.CreateSoftwareProjectRequest;
 import com.ramy.bugreport.dto.project.CreateSoftwareProjectResponse;
+import com.ramy.bugreport.dto.project.SoftwareProjectResponse;
 import com.ramy.bugreport.dto.project.UpdateSoftwareProjectDescriptionRequest;
 import com.ramy.bugreport.dto.project.UpdateSoftwareProjectNameRequest;
 import com.ramy.bugreport.dto.project.UpdateSoftwareProjectResponse;
@@ -33,10 +33,11 @@ public class SoftwareProjectService {
     * ============================================
     */
 
-    public Map<UUID, String> getAll() {
+    public List<SoftwareProjectResponse> getAll() {
         return softwareProjectRepository.findAll()
                 .stream()
-                .collect(Collectors.toMap(SoftwareProject::getId, SoftwareProject::getName));
+                .map(SoftwareProjectResponse::from)
+                .toList();
     }
 
     /*

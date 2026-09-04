@@ -1,6 +1,6 @@
 package com.ramy.bugreport.controller;
 
-import java.util.Map;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.ramy.bugreport.dto.project.CreateSoftwareProjectRequest;
 import com.ramy.bugreport.dto.project.CreateSoftwareProjectResponse;
+import com.ramy.bugreport.dto.project.SoftwareProjectResponse;
 import com.ramy.bugreport.dto.project.UpdateSoftwareProjectDescriptionRequest;
 import com.ramy.bugreport.dto.project.UpdateSoftwareProjectNameRequest;
 import com.ramy.bugreport.dto.project.UpdateSoftwareProjectResponse;
@@ -40,7 +41,7 @@ public class SoftwareProjectController {
     */
 
     @GetMapping
-    public Map<UUID, String> getAll() {
+    public List<SoftwareProjectResponse> getAll() {
         return softwareProjectService.getAll();
     }
 

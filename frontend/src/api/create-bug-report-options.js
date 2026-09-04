@@ -21,6 +21,9 @@ export function getComponents() {
     }).then(toOptions);
 }
 
-function toOptions(itemsById) {
-    return Object.entries(itemsById).map(([id, name]) => ({ id, name }));
+function toOptions(items) {
+    return items.map((item) => ({
+        id: item.id,
+        name: item.name
+    }));
 }

@@ -8,7 +8,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.util.Map;
+import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -22,6 +22,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import com.ramy.bugreport.dto.project.CreateSoftwareProjectRequest;
 import com.ramy.bugreport.dto.project.CreateSoftwareProjectResponse;
+import com.ramy.bugreport.dto.project.SoftwareProjectResponse;
 import com.ramy.bugreport.dto.project.UpdateSoftwareProjectDescriptionRequest;
 import com.ramy.bugreport.dto.project.UpdateSoftwareProjectNameRequest;
 import com.ramy.bugreport.dto.project.UpdateSoftwareProjectResponse;
@@ -45,11 +46,14 @@ class SoftwareProjectControllerTest {
     @Test
     void getAllUsesProjectsRoute() throws Exception {
         var projectId = UUID.randomUUID();
-        when(softwareProjectService.getAll()).thenReturn(Map.of(projectId, "Bug Report System"));
+        when(softwareProjectService.getAll()).thenReturn(List.of(new SoftwareProjectResponse(
+                projectId, "Bug Report System", "Tracks bugs")));
 
         mockMvc.perform(get("/api/projects"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$['%s']".formatted(projectId)).value("Bug Report System"));
+                .andExpect(jsonPath("$[0].id").value(projectId.toString()))
+                .andExpect(jsonPath("$[0].name").value("Bug Report System"))
+                .andExpect(jsonPath("$[0].description").value("Tracks bugs"));
 
         verify(softwareProjectService).getAll();
     }

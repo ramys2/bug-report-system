@@ -1,6 +1,6 @@
 package com.ramy.bugreport.controller;
 
-import java.util.Map;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.ramy.bugreport.dto.component.CreateComponentRequest;
 import com.ramy.bugreport.dto.component.CreateComponentResponse;
+import com.ramy.bugreport.dto.component.ComponentResponse;
 import com.ramy.bugreport.dto.component.UpdateComponentDescriptionRequest;
 import com.ramy.bugreport.dto.component.UpdateComponentNameRequest;
 import com.ramy.bugreport.dto.component.UpdateComponentResponsibleUserRequest;
@@ -41,7 +42,7 @@ public class ComponentController {
     */
 
     @GetMapping
-    public Map<UUID, String> getAll() {
+    public List<ComponentResponse> getAll() {
         return componentService.getAll();
     }
 
