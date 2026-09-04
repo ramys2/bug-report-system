@@ -3,6 +3,7 @@ package com.ramy.bugreport.controller;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -21,6 +22,10 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import com.ramy.bugreport.dto.component.CreateComponentRequest;
 import com.ramy.bugreport.dto.component.CreateComponentResponse;
+import com.ramy.bugreport.dto.component.UpdateComponentDescriptionRequest;
+import com.ramy.bugreport.dto.component.UpdateComponentNameRequest;
+import com.ramy.bugreport.dto.component.UpdateComponentResponsibleUserRequest;
+import com.ramy.bugreport.dto.component.UpdateComponentResponse;
 import com.ramy.bugreport.service.ComponentService;
 
 @ExtendWith(MockitoExtension.class)
@@ -69,5 +74,39 @@ class ComponentControllerTest {
                 .andExpect(jsonPath("$.message").value("Successfully created!"));
 
         verify(componentService).create(request);
+    }
+
+    @Test
+    void dedicatedUpdateRoutesUseComponentIdAndReturnOk() throws Exception {
+        var componentId = UUID.randomUUID();
+        var responsibleUserId = UUID.randomUUID();
+        var response = new UpdateComponentResponse(componentId, "Component updated successfully!");
+        var nameRequest = new UpdateComponentNameRequest("Frontend");
+        var descriptionRequest = new UpdateComponentDescriptionRequest("Handles the UI");
+        var responsibleUserRequest = new UpdateComponentResponsibleUserRequest(responsibleUserId);
+        when(componentService.updateName(componentId, nameRequest)).thenReturn(response);
+        when(componentService.updateDescription(componentId, descriptionRequest)).thenReturn(response);
+        when(componentService.updateResponsibleUserId(componentId, responsibleUserRequest)).thenReturn(response);
+
+        mockMvc.perform(patch("/api/components/{componentId}/name", componentId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Frontend\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(componentId.toString()))
+                .andExpect(jsonPath("$.message").value("Component updated successfully!"));
+
+        mockMvc.perform(patch("/api/components/{componentId}/description", componentId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"description\":\"Handles the UI\"}"))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(patch("/api/components/{componentId}/responsibleUserId", componentId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"responsibleUserId\":\"%s\"}".formatted(responsibleUserId)))
+                .andExpect(status().isOk());
+
+        verify(componentService).updateName(componentId, nameRequest);
+        verify(componentService).updateDescription(componentId, descriptionRequest);
+        verify(componentService).updateResponsibleUserId(componentId, responsibleUserRequest);
     }
 }

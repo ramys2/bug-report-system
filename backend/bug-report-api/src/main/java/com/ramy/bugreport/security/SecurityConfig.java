@@ -51,10 +51,19 @@ public class SecurityConfig {
 					.requestMatchers(HttpMethod.PATCH, "/api/accounts/*/role")
 					.hasRole("ADMIN")
 
-					// Only admins create projects; admins and developers create components.
+					// Only admins create and update projects; admins and developers create and update components.
 					.requestMatchers(HttpMethod.POST, "/api/projects")
 					.hasRole("ADMIN")
+					.requestMatchers(HttpMethod.PATCH,
+							"/api/projects/*/name",
+							"/api/projects/*/description")
+					.hasRole("ADMIN")
 					.requestMatchers(HttpMethod.POST, "/api/components")
+					.hasAnyRole("ADMIN", "DEVELOPER")
+					.requestMatchers(HttpMethod.PATCH,
+							"/api/components/*/name",
+							"/api/components/*/description",
+							"/api/components/*/responsibleUserId")
 					.hasAnyRole("ADMIN", "DEVELOPER")
 
 					// All signed-in users can create, update, and resolve bug reports.

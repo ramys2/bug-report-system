@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -18,6 +19,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ramy.bugreport.domain.SoftwareProject;
 import com.ramy.bugreport.dto.project.CreateSoftwareProjectRequest;
+import com.ramy.bugreport.dto.project.UpdateSoftwareProjectDescriptionRequest;
+import com.ramy.bugreport.dto.project.UpdateSoftwareProjectNameRequest;
+import com.ramy.bugreport.exception.ResourceNotFoundException;
 import com.ramy.bugreport.repository.ISoftwareProjectRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -63,5 +67,45 @@ class SoftwareProjectServiceTest {
         assertThat(project.getDescription()).isEqualTo(request.description());
         assertThat(result.id()).isEqualTo(projectId);
         assertThat(result.message()).isEqualTo("Successfully created!");
+    }
+
+    @Test
+    void updateNameChangesTheLoadedProject() {
+        var projectId = UUID.randomUUID();
+        var project = org.mockito.Mockito.mock(SoftwareProject.class);
+        var request = new UpdateSoftwareProjectNameRequest("Issue Tracker");
+        when(softwareProjectRepository.findById(projectId)).thenReturn(Optional.of(project));
+        when(project.getId()).thenReturn(projectId);
+
+        var response = service.updateName(projectId, request);
+
+        verify(project).setName("Issue Tracker");
+        assertThat(response.id()).isEqualTo(projectId);
+        assertThat(response.message()).isEqualTo("Project updated successfully!");
+    }
+
+    @Test
+    void updateDescriptionChangesTheLoadedProject() {
+        var projectId = UUID.randomUUID();
+        var project = org.mockito.Mockito.mock(SoftwareProject.class);
+        var request = new UpdateSoftwareProjectDescriptionRequest("Tracks reported issues");
+        when(softwareProjectRepository.findById(projectId)).thenReturn(Optional.of(project));
+        when(project.getId()).thenReturn(projectId);
+
+        var response = service.updateDescription(projectId, request);
+
+        verify(project).setDescription("Tracks reported issues");
+        assertThat(response.id()).isEqualTo(projectId);
+    }
+
+    @Test
+    void updateNameThrowsWhenProjectDoesNotExist() {
+        var projectId = UUID.randomUUID();
+        when(softwareProjectRepository.findById(projectId)).thenReturn(Optional.empty());
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                () -> service.updateName(projectId, new UpdateSoftwareProjectNameRequest("Issue Tracker")))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Project with id=%s does not exist!".formatted(projectId));
     }
 }
