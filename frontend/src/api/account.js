@@ -8,6 +8,14 @@ export function getAllAccounts() {
     });
 }
 
+export function searchUsers(search) {
+    return $.ajax({
+        method: "GET",
+        url: "/api/accounts/users",
+        data: { search },
+    });
+}
+
 export function updateAccountRole(userId, role) {
     const csrfToken = getCsrfToken();
 

@@ -26,6 +26,7 @@ import com.ramy.bugreport.dto.account.CreateUserAccountResponse;
 import com.ramy.bugreport.dto.account.DeveloperResponse;
 import com.ramy.bugreport.dto.account.UpdateRoleRequest;
 import com.ramy.bugreport.dto.account.UserAccountResponse;
+import com.ramy.bugreport.dto.account.UserAccountBriefResponse;
 import com.ramy.bugreport.exception.ApiExceptionHandler;
 import com.ramy.bugreport.service.UserAccountService;
 
@@ -70,6 +71,20 @@ class UserAccountControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(developerId.toString()))
                 .andExpect(jsonPath("$[0].name").value("Ada Lovelace"));
+    }
+
+    @Test
+    void searchUsersUsesSearchQueryAndReturnsBriefResponses() throws Exception {
+        var accountId = UUID.randomUUID();
+        when(userAccountService.searchUsers("ram"))
+                .thenReturn(List.of(new UserAccountBriefResponse(accountId, "Ramy")));
+
+        mockMvc.perform(get("/api/accounts/users").param("search", "ram"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].userId").value(accountId.toString()))
+                .andExpect(jsonPath("$[0].name").value("Ramy"));
+
+        verify(userAccountService).searchUsers("ram");
     }
 
     @Test

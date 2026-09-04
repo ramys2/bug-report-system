@@ -48,16 +48,18 @@ public class SecurityConfig {
 					.hasRole("ADMIN")
 					.requestMatchers(HttpMethod.GET, "/api/accounts/developers")
 					.authenticated()
+					.requestMatchers(HttpMethod.GET, "/api/accounts/users")
+					.hasAnyRole("ADMIN", "DEVELOPER")
 					.requestMatchers(HttpMethod.PATCH, "/api/accounts/*/role")
 					.hasRole("ADMIN")
 
-					// Only admins create and update projects; admins and developers create and update components.
+					// Only admins create projects; admins and developers update projects and components.
 					.requestMatchers(HttpMethod.POST, "/api/projects")
 					.hasRole("ADMIN")
 					.requestMatchers(HttpMethod.PATCH,
 							"/api/projects/*/name",
 							"/api/projects/*/description")
-					.hasRole("ADMIN")
+					.hasAnyRole("ADMIN", "DEVELOPER")
 					.requestMatchers(HttpMethod.POST, "/api/components")
 					.hasAnyRole("ADMIN", "DEVELOPER")
 					.requestMatchers(HttpMethod.PATCH,

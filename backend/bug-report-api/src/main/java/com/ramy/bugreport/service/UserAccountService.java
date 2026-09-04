@@ -15,6 +15,7 @@ import com.ramy.bugreport.dto.account.CreateUserAccountResponse;
 import com.ramy.bugreport.dto.account.DeveloperResponse;
 import com.ramy.bugreport.dto.account.UpdateRoleRequest;
 import com.ramy.bugreport.dto.account.UserAccountResponse;
+import com.ramy.bugreport.dto.account.UserAccountBriefResponse;
 import com.ramy.bugreport.domain.EBugStatus;
 import com.ramy.bugreport.exception.BusinessRuleConflictException;
 import com.ramy.bugreport.exception.DuplicateEmailException;
@@ -60,6 +61,17 @@ public class UserAccountService {
                 .stream()
                 .filter(userAccount -> userAccount.getRole() == EUserRole.DEVELOPER)
                 .map(DeveloperResponse::from)
+                .toList();
+    }
+
+    public List<UserAccountBriefResponse> searchUsers(String search) {
+        if (search == null || search.isBlank()) {
+            return List.of();
+        }
+
+        return userAccountRepository.findByNameContainingIgnoreCase(search.trim())
+                .stream()
+                .map(UserAccountBriefResponse::from)
                 .toList();
     }
 

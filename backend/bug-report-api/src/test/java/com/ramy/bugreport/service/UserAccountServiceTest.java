@@ -25,6 +25,7 @@ import com.ramy.bugreport.dto.account.CreateUserAccountRequest;
 import com.ramy.bugreport.dto.account.DeveloperResponse;
 import com.ramy.bugreport.dto.account.UpdateRoleRequest;
 import com.ramy.bugreport.dto.account.UserAccountResponse;
+import com.ramy.bugreport.dto.account.UserAccountBriefResponse;
 import com.ramy.bugreport.exception.BusinessRuleConflictException;
 import com.ramy.bugreport.exception.DuplicateEmailException;
 import com.ramy.bugreport.repository.IBugReportRepository;
@@ -70,6 +71,24 @@ class UserAccountServiceTest {
         when(reporter.getRole()).thenReturn(EUserRole.REPORTER);
 
         assertThat(service.getDevelopers()).containsExactly(new DeveloperResponse(developerId, "Ada Lovelace"));
+    }
+
+    @Test
+    void searchUsersReturnsBriefNameMatches() {
+        var accountId = UUID.randomUUID();
+        var account = org.mockito.Mockito.mock(UserAccount.class);
+        when(userAccountRepository.findByNameContainingIgnoreCase("ram"))
+                .thenReturn(List.of(account));
+        when(account.getId()).thenReturn(accountId);
+        when(account.getName()).thenReturn("Ramy");
+
+        assertThat(service.searchUsers(" ram ")).containsExactly(
+                new UserAccountBriefResponse(accountId, "Ramy"));
+    }
+
+    @Test
+    void searchUsersSkipsBlankSearches() {
+        assertThat(service.searchUsers(" ")).isEmpty();
     }
 
     @Test

@@ -1,5 +1,6 @@
 package com.ramy.bugreport.repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -17,6 +18,8 @@ public interface IUserAccountRepository extends JpaRepository<UserAccount, UUID>
 	Optional<UserAccount> findByEmailAddress(String emailAddress);
 
     boolean existsByEmailAddress(String emailAddress);
+
+    List<UserAccount> findByNameContainingIgnoreCase(String name);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     java.util.List<UserAccount> findAllByRole(EUserRole role);

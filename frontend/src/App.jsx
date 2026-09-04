@@ -6,6 +6,8 @@ import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import BugReportPage from "./pages/BugReportPage";
 import UserAdminPage from "./pages/UserAdminPage";
+import ComponentAdminPage from "./pages/ComponentAdminPage";
+import ProjectAdminPage from "./pages/ProjectAdminPage";
 import Navbar from "./components/Navbar";
 import AuthProvider from "./components/AuthProvider";
 
@@ -19,6 +21,8 @@ export default function App() {
                     <Route element={<ProtectedRoute />}>
                         <Route path="/" element={<HomePage />} />
                         <Route path="/reports/:id" element={<BugReportPage />} />
+                        <Route path="/admin/components" element={<ComponentAdminPage />} />
+                        <Route path="/admin/projects" element={<ProjectAdminPage />} />
                         <Route element={<AdminRoute />}>
                             <Route path="/admin/users" element={<UserAdminPage />} />
                         </Route>

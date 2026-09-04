@@ -31,9 +31,21 @@ function Navbar() {
                         Home
                     </Link>
                     {auth.currentUser.role === "ADMIN" && (
-                        <Link to="/admin/users" className="link-secondary link-underline-opacity-100">
-                            Users
-                        </Link>
+                        <>
+                            <Link to="/admin/users" className="link-secondary link-underline-opacity-100">
+                                Users
+                            </Link>
+                        </>
+                    )}
+                    {(auth.currentUser.role === "ADMIN" || auth.currentUser.role === "DEVELOPER") && (
+                        <>
+                            <Link to="/admin/components" className="link-secondary link-underline-opacity-100">
+                                Components
+                            </Link>
+                            <Link to="/admin/projects" className="link-secondary link-underline-opacity-100">
+                                Projects
+                            </Link>
+                        </>
                     )}
                 </div>
 

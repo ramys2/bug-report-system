@@ -1,0 +1,13 @@
+.component-admin-page {
+    height: calc(100svh - 73px);
+}
+
+.component-description {
+    max-width: 28rem;
+    white-space: pre-wrap;
+}
+
+.responsible-user-options {
+    max-height: 12rem;
+    overflow-y: auto;
+}

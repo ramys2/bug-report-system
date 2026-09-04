@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -19,6 +20,7 @@ import com.ramy.bugreport.dto.account.CreateUserAccountResponse;
 import com.ramy.bugreport.dto.account.DeveloperResponse;
 import com.ramy.bugreport.dto.account.UpdateRoleRequest;
 import com.ramy.bugreport.dto.account.UserAccountResponse;
+import com.ramy.bugreport.dto.account.UserAccountBriefResponse;
 import com.ramy.bugreport.service.UserAccountService;
 
 import jakarta.validation.Valid;
@@ -48,6 +50,11 @@ public class UserAccountController {
     @GetMapping("/developers")
     public List<DeveloperResponse> getDevelopers() {
         return userAccountService.getDevelopers();
+    }
+
+    @GetMapping("/users")
+    public List<UserAccountBriefResponse> searchUsers(@RequestParam(required = false) String search) {
+        return userAccountService.searchUsers(search);
     }
 
     /*
