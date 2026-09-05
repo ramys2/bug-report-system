@@ -35,6 +35,12 @@
           "title": "Add fake email client",
           "description": "",
           "color": "#c45b62"
+        },
+        {
+          "id": "task-ed5b0e2c-8589-4217-bf75-4c0b9a9b9dcd",
+          "title": "Setup devcontainer",
+          "description": "",
+          "color": "#4f78c4"
         }
       ]
     },
@@ -42,12 +48,6 @@
       "id": "column-da59c649-0c7a-4a74-81fa-4780384d990a",
       "name": "In progress",
       "tasks": [
-        {
-          "id": "task-ed5b0e2c-8589-4217-bf75-4c0b9a9b9dcd",
-          "title": "Setup devcontainer",
-          "description": "",
-          "color": "#4f78c4"
-        },
         {
           "id": "task-4cd99be2-be6f-4806-8893-601e3a6b3480",
           "title": "Explore differences between PostgreSQL and MySQL",
