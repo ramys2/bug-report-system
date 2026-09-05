@@ -1,6 +1,8 @@
 import { useContext, useEffect, useState } from "react";
 import { useParams } from "react-router";
+import { Modal as BootstrapModal } from "bootstrap";
 import {
+    closeReport,
     getReport,
     updateAssignee,
     updateActualBehavior,
@@ -17,6 +19,15 @@ import { formatDateTime } from "../utils/date";
 import "./BugReportPage.css";
 import { getComponents, getDevelopers, getProjects } from "../api/create-bug-report-options";
 import AuthContext from "../components/AuthContext";
+import Modal from "../components/Modal";
+
+const closeBugReportModalId = "close-bug-report-modal";
+const resolutionModalId = "resolution-modal";
+const EMPTY_RESOLUTION = {
+    description: "",
+    fixedVersion: "",
+    commitUrl: "",
+};
 
 function displayValue(value) {
     return value || "Not provided";
@@ -35,12 +46,14 @@ function EditableReportSection({
     title,
     reportId,
     value,
+    isEditable = true,
     updateValue,
     onValueSaved,
 }) {
     const [isEditing, setIsEditing] = useState(false);
     const [draftValue, setDraftValue] = useState("");
     const [isSaving, setIsSaving] = useState(false);
+    const isCurrentlyEditing = isEditing && isEditable;
 
     function startEditing() {
         setDraftValue(value ?? "");
@@ -67,7 +80,7 @@ function EditableReportSection({
         <section className="border rounded-4 p-3 h-100">
             <div className="d-flex justify-content-between align-items-center gap-3 mb-3">
                 <h2 className="h5 mb-0">{title}</h2>
-                {!isEditing && (
+                {!isCurrentlyEditing && isEditable && (
                     <button
                         aria-label={`Edit ${title.toLowerCase()}`}
                         className="btn btn-outline-secondary btn-sm"
@@ -78,7 +91,7 @@ function EditableReportSection({
                     </button>
                 )}
             </div>
-            {isEditing ? (
+            {isCurrentlyEditing ? (
                 <div>
                     <textarea
                         aria-label={title}
@@ -121,7 +134,6 @@ const STATUS_OPTIONS = [
     "NEEDS_INFORMATION",
     "REVIEWING",
     "REJECTED",
-    "CLOSED",
 ];
 
 const SEVERITY_OPTIONS = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
@@ -134,12 +146,14 @@ function EditableSelectField({
     placeholder,
     getOptionValue,
     getOptionLabel,
+    isEditable = true,
     updateValue,
     onValueSaved,
 }) {
     const [isEditing, setIsEditing] = useState(false);
     const [selectedOptionValue, setSelectedOptionValue] = useState("");
     const [isSaving, setIsSaving] = useState(false);
+    const isCurrentlyEditing = isEditing && isEditable;
 
     function startEditing() {
         const selectedOption = options.find((option) => getOptionLabel(option) === value)
@@ -176,7 +190,7 @@ function EditableSelectField({
         <div className="col-12 col-sm-6">
             <dt className="small text-secondary fw-semibold">{label}</dt>
             <dd className="mb-0">
-                {isEditing ? (
+                {isCurrentlyEditing ? (
                     <div>
                         <select
                             aria-label={label}
@@ -215,7 +229,7 @@ function EditableSelectField({
                     <button
                         aria-label={`Edit ${label.toLowerCase()}`}
                         className="editable-enum-display"
-                        disabled={options.length === 0}
+                        disabled={!isEditable || options.length === 0}
                         onClick={startEditing}
                         type="button"
                     >
@@ -237,10 +251,13 @@ export default function BugReportPage() {
     const [isCommentEditing, setIsCommentEditing] = useState(false);
     const [isCommentSaving, setIsCommentSaving] = useState(false);
     const [removingCommentId, setRemovingCommentId] = useState(null);
+    const [resolutionDraft, setResolutionDraft] = useState(EMPTY_RESOLUTION);
+    const [isClosing, setIsClosing] = useState(false);
 
     const [developers, setDevelopers] = useState([]);
     const [projects, setProjects] = useState([]);
     const [components, setComponents] = useState([]);
+    const isClosed = bugReport?.status === "CLOSED";
 
     useEffect(() => {
         getReport(id)
@@ -290,6 +307,50 @@ export default function BugReportPage() {
             .always(() => setRemovingCommentId(null));
     }
 
+    function updateResolutionDraft(field, value) {
+        setResolutionDraft((resolution) => ({ ...resolution, [field]: value }));
+    }
+
+    function closeResolutionModal() {
+        const modalElement = document.getElementById(closeBugReportModalId);
+
+        if (modalElement) {
+            BootstrapModal.getOrCreateInstance(modalElement).hide();
+        }
+    }
+
+    function submitResolution(event) {
+        event.preventDefault();
+
+        if (!resolutionDraft.description.trim()) {
+            alert("Resolution description is required.");
+            return;
+        }
+
+        const isConfirmed = window.confirm(
+            "Are you sure you want to close this issue? It cannot be reopened.",
+        );
+
+        if (!isConfirmed) {
+            return;
+        }
+
+        setIsClosing(true);
+
+        closeReport(bugReport.id, resolutionDraft)
+            .done(() => {
+                setBugReport((report) => ({
+                    ...report,
+                    resolution: resolutionDraft,
+                    status: "CLOSED",
+                }));
+                setResolutionDraft(EMPTY_RESOLUTION);
+                closeResolutionModal();
+            })
+            .fail(() => alert("Unable to close issue!"))
+            .always(() => setIsClosing(false));
+    }
+
     return (
         <div className="bug-report-page d-flex flex-column">
             <main className="container flex-grow-1 py-4 text-start">
@@ -307,6 +368,7 @@ export default function BugReportPage() {
                                         <EditableSelectField
                                             getOptionLabel={(developer) => developer.name}
                                             getOptionValue={(developer) => developer.id}
+                                            isEditable={!isClosed}
                                             label="Assignee"
                                             onValueSaved={(assigneeName) => setBugReport((report) => ({
                                                 ...report,
@@ -321,6 +383,7 @@ export default function BugReportPage() {
                                         <EditableSelectField
                                             getOptionLabel={(severity) => severity}
                                             getOptionValue={(severity) => severity}
+                                            isEditable={!isClosed}
                                             label="Severity"
                                             onValueSaved={(severity) => setBugReport((report) => ({ ...report, severity }))}
                                             options={SEVERITY_OPTIONS}
@@ -331,6 +394,7 @@ export default function BugReportPage() {
                                         <EditableSelectField
                                             getOptionLabel={(status) => status}
                                             getOptionValue={(status) => status}
+                                            isEditable={!isClosed}
                                             label="Status"
                                             onValueSaved={(status) => setBugReport((report) => ({ ...report, status }))}
                                             options={STATUS_OPTIONS}
@@ -341,6 +405,7 @@ export default function BugReportPage() {
                                         <EditableSelectField
                                             getOptionLabel={(project) => project.name}
                                             getOptionValue={(project) => project.id}
+                                            isEditable={!isClosed}
                                             label="Project"
                                             onValueSaved={(projectName) => setBugReport((report) => ({
                                                 ...report,
@@ -354,6 +419,7 @@ export default function BugReportPage() {
                                         <EditableSelectField
                                             getOptionLabel={(component) => component.name}
                                             getOptionValue={(component) => component.id}
+                                            isEditable={!isClosed}
                                             label="Component"
                                             onValueSaved={(componentName) => setBugReport((report) => ({
                                                 ...report,
@@ -367,10 +433,32 @@ export default function BugReportPage() {
                                         <ReportDetail label="Created at" value={formatDateTime(bugReport.createdAt)} />
                                         <ReportDetail label="Updated at" value={formatDateTime(bugReport.updatedAt)} />
                                     </dl>
+                                    <div className="border-top mt-4 pt-3">
+                                        {bugReport.resolution ? (
+                                            <button
+                                                className="btn btn-outline-primary w-100"
+                                                data-bs-target={`#${resolutionModalId}`}
+                                                data-bs-toggle="modal"
+                                                type="button"
+                                            >
+                                                Show resolution
+                                            </button>
+                                        ) : (
+                                            <button
+                                                className="btn btn-danger w-100"
+                                                data-bs-target={`#${closeBugReportModalId}`}
+                                                data-bs-toggle="modal"
+                                                type="button"
+                                            >
+                                                Close issue
+                                            </button>
+                                        )}
+                                    </div>
                                 </section>
                             </div>
                             <div className="col-12 col-lg-7">
                                 <EditableReportSection
+                                    isEditable={!isClosed}
                                     onValueSaved={(description) => setBugReport((report) => ({
                                         ...report,
                                         description,
@@ -386,6 +474,7 @@ export default function BugReportPage() {
                         <div className="row g-3 mb-3">
                             <div className="col-12">
                                 <EditableReportSection
+                                    isEditable={!isClosed}
                                     onValueSaved={(stepsToReproduce) => setBugReport((report) => ({
                                         ...report,
                                         stepsToReproduce,
@@ -398,6 +487,7 @@ export default function BugReportPage() {
                             </div>
                             <div className="col-12 col-lg-6">
                                 <EditableReportSection
+                                    isEditable={!isClosed}
                                     onValueSaved={(expectedBehavior) => setBugReport((report) => ({
                                         ...report,
                                         expectedBehavior,
@@ -410,6 +500,7 @@ export default function BugReportPage() {
                             </div>
                             <div className="col-12 col-lg-6">
                                 <EditableReportSection
+                                    isEditable={!isClosed}
                                     onValueSaved={(actualBehavior) => setBugReport((report) => ({
                                         ...report,
                                         actualBehavior,
@@ -431,7 +522,7 @@ export default function BugReportPage() {
                                     {comments.map((comment) => (
                                         <CommentCard
                                             comment={comment}
-                                            canRemove={comment.authorId === currentUser?.id || currentUser?.role === "ADMIN"}
+                                            canRemove={!isClosed && (comment.authorId === currentUser?.id || currentUser?.role === "ADMIN")}
                                             isCurrentUser={comment.authorId === currentUser?.id}
                                             key={comment.id}
                                             onRemove={removeCommentById}
@@ -440,42 +531,145 @@ export default function BugReportPage() {
                                     ))}
                                 </div>
                             )}
-                            <div className="mt-3">
-                                <textarea
-                                    aria-label="New comment"
-                                    className="form-control"
-                                    disabled={isCommentSaving}
-                                    onChange={(event) => setCommentDraft(event.target.value)}
-                                    onFocus={() => setIsCommentEditing(true)}
-                                    placeholder="Write a comment..."
-                                    rows="4"
-                                    value={commentDraft}
-                                />
-                                {isCommentEditing && (
-                                    <div className="d-flex gap-2 mt-2">
-                                        <button
-                                            className="btn btn-primary btn-sm"
-                                            disabled={isCommentSaving}
-                                            onClick={saveComment}
-                                            type="button"
-                                        >
-                                            {isCommentSaving ? "Saving..." : "Save"}
-                                        </button>
-                                        <button
-                                            className="btn btn-outline-secondary btn-sm"
-                                            disabled={isCommentSaving}
-                                            onClick={() => {
-                                                setCommentDraft("");
-                                                setIsCommentEditing(false);
-                                            }}
-                                            type="button"
-                                        >
-                                            Cancel
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
+                            {!isClosed && (
+                                <div className="mt-3">
+                                    <textarea
+                                        aria-label="New comment"
+                                        className="form-control"
+                                        disabled={isCommentSaving}
+                                        onChange={(event) => setCommentDraft(event.target.value)}
+                                        onFocus={() => setIsCommentEditing(true)}
+                                        placeholder="Write a comment..."
+                                        rows="4"
+                                        value={commentDraft}
+                                    />
+                                    {isCommentEditing && (
+                                        <div className="d-flex gap-2 mt-2">
+                                            <button
+                                                className="btn btn-primary btn-sm"
+                                                disabled={isCommentSaving}
+                                                onClick={saveComment}
+                                                type="button"
+                                            >
+                                                {isCommentSaving ? "Saving..." : "Save"}
+                                            </button>
+                                            <button
+                                                className="btn btn-outline-secondary btn-sm"
+                                                disabled={isCommentSaving}
+                                                onClick={() => {
+                                                    setCommentDraft("");
+                                                    setIsCommentEditing(false);
+                                                }}
+                                                type="button"
+                                            >
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </section>
+
+                        <Modal id={closeBugReportModalId}>
+                            <form onSubmit={submitResolution}>
+                                <div className="modal-header">
+                                    <h2 className="modal-title fs-5">Close issue</h2>
+                                    <button
+                                        aria-label="Close"
+                                        className="btn-close"
+                                        data-bs-dismiss="modal"
+                                        disabled={isClosing}
+                                        type="button"
+                                    />
+                                </div>
+                                <div className="modal-body overflow-auto">
+                                    <div className="mb-3">
+                                        <label className="form-label" htmlFor="resolution-description">
+                                            Resolution description
+                                        </label>
+                                        <textarea
+                                            className="form-control"
+                                            disabled={isClosing}
+                                            id="resolution-description"
+                                            onChange={(event) => updateResolutionDraft("description", event.target.value)}
+                                            required
+                                            rows="5"
+                                            value={resolutionDraft.description}
+                                        />
+                                    </div>
+                                    <div className="mb-3">
+                                        <label className="form-label" htmlFor="fixed-version">
+                                            Fixed version
+                                        </label>
+                                        <input
+                                            className="form-control"
+                                            disabled={isClosing}
+                                            id="fixed-version"
+                                            onChange={(event) => updateResolutionDraft("fixedVersion", event.target.value)}
+                                            value={resolutionDraft.fixedVersion}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="form-label" htmlFor="commit-url">
+                                            Commit URL
+                                        </label>
+                                        <input
+                                            className="form-control"
+                                            disabled={isClosing}
+                                            id="commit-url"
+                                            onChange={(event) => updateResolutionDraft("commitUrl", event.target.value)}
+                                            value={resolutionDraft.commitUrl}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="modal-footer">
+                                    <button
+                                        className="btn btn-secondary"
+                                        data-bs-dismiss="modal"
+                                        disabled={isClosing}
+                                        type="button"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button className="btn btn-danger" disabled={isClosing} type="submit">
+                                        {isClosing ? "Closing..." : "Close issue"}
+                                    </button>
+                                </div>
+                            </form>
+                        </Modal>
+
+                        <Modal fullscreen={false} id={resolutionModalId}>
+                            <div className="modal-header">
+                                <h2 className="modal-title fs-5">Resolution</h2>
+                                <button
+                                    aria-label="Close"
+                                    className="btn-close"
+                                    data-bs-dismiss="modal"
+                                    type="button"
+                                />
+                            </div>
+                            <div className="modal-body">
+                                <dl className="row g-3 mb-0">
+                                    <ReportDetail
+                                        label="Description"
+                                        value={bugReport.resolution?.description}
+                                    />
+                                    <ReportDetail
+                                        label="Fixed version"
+                                        value={bugReport.resolution?.fixedVersion}
+                                    />
+                                    <ReportDetail
+                                        label="Commit URL"
+                                        value={bugReport.resolution?.commitUrl}
+                                    />
+                                </dl>
+                            </div>
+                            <div className="modal-footer">
+                                <button className="btn btn-secondary" data-bs-dismiss="modal" type="button">
+                                    Close
+                                </button>
+                            </div>
+                        </Modal>
                     </>
                 )}
             </main>

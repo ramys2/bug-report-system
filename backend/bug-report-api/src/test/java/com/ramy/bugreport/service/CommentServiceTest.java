@@ -20,8 +20,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ramy.bugreport.domain.Comment;
+import com.ramy.bugreport.domain.BugReport;
+import com.ramy.bugreport.domain.EBugStatus;
 import com.ramy.bugreport.domain.UserAccount;
 import com.ramy.bugreport.dto.comment.CreateCommentRequest;
+import com.ramy.bugreport.exception.BusinessRuleConflictException;
 import com.ramy.bugreport.exception.ResourceNotFoundException;
 import com.ramy.bugreport.repository.IBugReportRepository;
 import com.ramy.bugreport.repository.ICommentRepository;
@@ -95,7 +98,8 @@ class CommentServiceTest {
         var commentId = UUID.randomUUID();
         var savedComment = org.mockito.Mockito.mock(Comment.class);
         var author = org.mockito.Mockito.mock(UserAccount.class);
-        when(bugReportRepository.existsById(reportId)).thenReturn(true);
+        var report = openReport();
+        when(bugReportRepository.findById(reportId)).thenReturn(Optional.of(report));
         when(userAccountRepository.findById(authorId)).thenReturn(Optional.of(author));
         when(commentRepository.save(any(Comment.class))).thenReturn(savedComment);
         when(savedComment.getId()).thenReturn(commentId);
@@ -126,7 +130,7 @@ class CommentServiceTest {
         var reportId = UUID.randomUUID();
         var authorId = UUID.randomUUID();
         var request = new CreateCommentRequest("Working on a fix.");
-        when(bugReportRepository.existsById(reportId)).thenReturn(false);
+        when(bugReportRepository.findById(reportId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.create(reportId, authorId, request))
                 .isInstanceOf(ResourceNotFoundException.class)
@@ -139,7 +143,8 @@ class CommentServiceTest {
         var reportId = UUID.randomUUID();
         var authorId = UUID.randomUUID();
         var request = new CreateCommentRequest("Working on a fix.");
-        when(bugReportRepository.existsById(reportId)).thenReturn(true);
+        var report = openReport();
+        when(bugReportRepository.findById(reportId)).thenReturn(Optional.of(report));
         when(userAccountRepository.findById(authorId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.create(reportId, authorId, request))
@@ -151,12 +156,45 @@ class CommentServiceTest {
     @Test
     void deleteDeletesExistingComment() {
         var commentId = UUID.randomUUID();
-        var comment = comment(UUID.randomUUID());
+        var reportId = UUID.randomUUID();
+        var comment = comment(reportId);
+        var report = openReport();
         when(commentRepository.findById(commentId)).thenReturn(Optional.of(comment));
+        when(bugReportRepository.findById(reportId)).thenReturn(Optional.of(report));
 
         service.delete(commentId);
 
         verify(commentRepository).delete(comment);
+    }
+
+    @Test
+    void createRejectsCommentOnClosedReport() {
+        var reportId = UUID.randomUUID();
+        var report = org.mockito.Mockito.mock(BugReport.class);
+        when(report.getStatus()).thenReturn(EBugStatus.CLOSED);
+        when(bugReportRepository.findById(reportId)).thenReturn(Optional.of(report));
+
+        assertThatThrownBy(() -> service.create(
+                reportId, UUID.randomUUID(), new CreateCommentRequest("Working on a fix.")))
+                .isInstanceOf(BusinessRuleConflictException.class)
+                .hasMessage("Comments cannot be changed on a closed report.");
+
+        verifyNoInteractions(userAccountRepository, commentRepository);
+    }
+
+    @Test
+    void deleteRejectsCommentOnClosedReport() {
+        var commentId = UUID.randomUUID();
+        var reportId = UUID.randomUUID();
+        var comment = comment(reportId);
+        var report = org.mockito.Mockito.mock(BugReport.class);
+        when(report.getStatus()).thenReturn(EBugStatus.CLOSED);
+        when(commentRepository.findById(commentId)).thenReturn(Optional.of(comment));
+        when(bugReportRepository.findById(reportId)).thenReturn(Optional.of(report));
+
+        assertThatThrownBy(() -> service.delete(commentId))
+                .isInstanceOf(BusinessRuleConflictException.class)
+                .hasMessage("Comments cannot be changed on a closed report.");
     }
 
     @Test
@@ -175,5 +213,11 @@ class CommentServiceTest {
                 UUID.randomUUID(),
                 "Working on a fix.",
                 LocalDateTime.now());
+    }
+
+    private static BugReport openReport() {
+        var report = org.mockito.Mockito.mock(BugReport.class);
+        when(report.getStatus()).thenReturn(EBugStatus.OPEN);
+        return report;
     }
 }

@@ -189,6 +189,22 @@ class BugReportControllerTest {
     }
 
     @Test
+    void closeRejectsBlankResolutionDescription() throws Exception {
+        mockMvc.perform(post("/api/reports/{reportId}/resolution", UUID.randomUUID())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "description": "   ",
+                                  "fixedVersion": "1.1.0",
+                                  "commitUrl": "https://example.com/commit/1"
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+
+        org.mockito.Mockito.verifyNoInteractions(reportService);
+    }
+
+    @Test
     void dedicatedUpdateRoutesUseReportIdAndReturnOk() throws Exception {
         var reportId = UUID.randomUUID();
         var assigneeId = UUID.randomUUID();

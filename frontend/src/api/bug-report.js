@@ -36,6 +36,20 @@ export function createReport(report) {
     });
 }
 
+export function closeReport(reportId, resolution) {
+    const csrfToken = getCsrfToken();
+
+    return $.ajax({
+        method: "POST",
+        url: `/api/reports/${reportId}/resolution`,
+        contentType: "application/json",
+        data: JSON.stringify(resolution),
+        headers: {
+            [csrfToken.headerName]: csrfToken.token
+        }
+    });
+}
+
 export function getReport(reportId) {
     return $.ajax({
         method: "GET",

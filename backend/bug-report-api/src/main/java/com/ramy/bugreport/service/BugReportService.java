@@ -11,6 +11,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import com.ramy.bugreport.domain.BugReport;
+import com.ramy.bugreport.domain.EBugStatus;
 import com.ramy.bugreport.domain.EUserRole;
 import com.ramy.bugreport.domain.Resolution;
 import com.ramy.bugreport.domain.UserAccount;
@@ -185,10 +186,15 @@ public class BugReportService {
     public CloseBugReportResponse close(UUID reportId, CloseBugReportRequest request) {
         BugReport report = bugReportRepository.findById(reportId)
                 .orElseThrow(() -> new ResourceNotFoundException("Report with id: %s".formatted(reportId)));
+
+        if (report.getStatus() == EBugStatus.CLOSED || report.getResolution() != null) {
+            throw new BusinessRuleConflictException("Report is already closed and cannot be reopened.");
+        }
         
         var resolution = new Resolution(request.description(), LocalDateTime.now(), request.fixedVersion(), request.commitUrl());
         
         report.setResolution(resolution);
+        report.setStatus(EBugStatus.CLOSED);
         
         bugReportRepository.save(report);
         
@@ -232,6 +238,11 @@ public class BugReportService {
     )
     public UpdateBugReportResponse updateStatus(UUID reportId, UpdateStatusRequest request) {
         var report = reportById(reportId);
+
+        if (request.status() == EBugStatus.CLOSED) {
+            throw new BusinessRuleConflictException("Use the resolution endpoint to close a report.");
+        }
+
         report.setStatus(request.status());
         return updateResponse(report);
     }
@@ -316,8 +327,14 @@ public class BugReportService {
     }
 
     private BugReport reportById(UUID reportId) {
-        return bugReportRepository.findById(reportId)
+        var report = bugReportRepository.findById(reportId)
                 .orElseThrow(() -> new ResourceNotFoundException("Report with id: %s".formatted(reportId)));
+
+        if (report.getStatus() == EBugStatus.CLOSED) {
+            throw new BusinessRuleConflictException("Report is closed and cannot be updated.");
+        }
+
+        return report;
     }
 
     private UpdateBugReportResponse updateResponse(BugReport report) {

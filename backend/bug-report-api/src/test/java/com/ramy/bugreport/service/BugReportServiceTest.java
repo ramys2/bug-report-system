@@ -276,6 +276,7 @@ class BugReportServiceTest {
         assertThat(report.getResolution().getFixedVersion()).isEqualTo(request.fixedVersion());
         assertThat(report.getResolution().getCommitUrl()).isEqualTo(request.commitUrl());
         assertThat(report.getResolution().getResolvedAt()).isBetween(before, LocalDateTime.now());
+        assertThat(report.getStatus()).isEqualTo(EBugStatus.CLOSED);
         assertThat(result.reportId()).isEqualTo(report.getResolution().getId());
         assertThat(result.message()).isEqualTo("Task has been closed successfully!");
         verify(bugReportRepository).findById(report.getId());
@@ -291,6 +292,20 @@ class BugReportServiceTest {
         assertThatThrownBy(() -> service.close(reportId, request))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Report with id: %s".formatted(reportId));
+        verify(bugReportRepository, never()).save(any());
+    }
+
+    @Test
+    void closeRejectsAlreadyClosedReport() {
+        var report = report(UUID.randomUUID());
+        report.setStatus(EBugStatus.CLOSED);
+        var request = new CloseBugReportRequest("Fixed", "1.1.0", "commit");
+        when(bugReportRepository.findById(report.getId())).thenReturn(Optional.of(report));
+
+        assertThatThrownBy(() -> service.close(report.getId(), request))
+                .isInstanceOf(BusinessRuleConflictException.class)
+                .hasMessage("Report is already closed and cannot be reopened.");
+
         verify(bugReportRepository, never()).save(any());
     }
 
@@ -337,6 +352,18 @@ class BugReportServiceTest {
         assertThat(report.getStatus()).isEqualTo(EBugStatus.IN_PROGRESS);
         assertUpdateResponse(result, report);
         verify(bugReportRepository).findById(report.getId());
+    }
+
+    @Test
+    void updateStatusRejectsReopeningClosedReport() {
+        var report = report(UUID.randomUUID());
+        report.setStatus(EBugStatus.CLOSED);
+        var request = new UpdateStatusRequest(EBugStatus.OPEN);
+        when(bugReportRepository.findById(report.getId())).thenReturn(Optional.of(report));
+
+        assertThatThrownBy(() -> service.updateStatus(report.getId(), request))
+                .isInstanceOf(BusinessRuleConflictException.class)
+                .hasMessage("Report is closed and cannot be updated.");
     }
 
     @Test

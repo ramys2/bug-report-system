@@ -1,7 +1,7 @@
-function Modal({ children, id }) {
+function Modal({ children, fullscreen = true, id }) {
     return (
         <div id={id} className="modal" tabIndex={-1}>
-            <div className="modal-dialog modal-fullscreen modal-dialog-scrollable">
+            <div className={`modal-dialog modal-dialog-scrollable${fullscreen ? " modal-fullscreen" : ""}`}>
                 <div className="modal-content">
                     {children}
                 </div>
