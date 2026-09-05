@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createProject } from "../api/project";
+import { showToast } from "./toast";
 
 const initialFormValues = { name: "", description: "" };
 
@@ -16,7 +17,7 @@ export default function CreateProjectForm({ onCreated }) {
         event.preventDefault();
 
         if (!formValues.name.trim()) {
-            alert("Please enter a project name.");
+            showToast("warning", "Please enter a project name.", "Missing information");
             return;
         }
 
@@ -26,7 +27,7 @@ export default function CreateProjectForm({ onCreated }) {
                 setFormValues(initialFormValues);
                 onCreated();
             })
-            .fail(() => alert("Failed to create the project. Please try again."))
+            .fail(() => showToast("danger", "Failed to create the project. Please try again.", "Project not created"))
             .always(() => setIsSubmitting(false));
     }
 

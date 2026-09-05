@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { createComponent } from "../api/component";
 import { searchUsers } from "../api/account";
+import { showToast } from "./toast";
 
 const initialFormValues = { name: "", description: "" };
 
@@ -30,7 +31,7 @@ export default function CreateComponentForm({ onCreated }) {
             .fail(() => {
                 if (isCurrentSearch) {
                     setUsers([]);
-                    alert("Unable to search for users.");
+                    showToast("danger", "Unable to search for users.", "Search failed");
                 }
             })
             .always(() => {
@@ -72,7 +73,7 @@ export default function CreateComponentForm({ onCreated }) {
         event.preventDefault();
 
         if (!formValues.name.trim()) {
-            alert("Please enter a component name.");
+            showToast("warning", "Please enter a component name.", "Missing information");
             return;
         }
 
@@ -87,7 +88,7 @@ export default function CreateComponentForm({ onCreated }) {
                 setResponsibleUser(null);
                 onCreated();
             })
-            .fail(() => alert("Failed to create the component. Please try again."))
+            .fail(() => showToast("danger", "Failed to create the component. Please try again.", "Component not created"))
             .always(() => setIsSubmitting(false));
     }
 

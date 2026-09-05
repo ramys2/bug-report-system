@@ -3,6 +3,7 @@ import { Modal as BootstrapModal } from "bootstrap";
 import Modal from "../components/Modal";
 import AuthContext from "../components/AuthContext";
 import CreateProjectForm from "../components/CreateProjectForm";
+import { showToast } from "../components/toast";
 import { getAllProjects, updateProjectDescription, updateProjectName } from "../api/project";
 import "./ProjectAdminPage.css";
 
@@ -30,7 +31,7 @@ function EditableName({ project, onNameSaved }) {
                 onNameSaved(project.id, draftName);
                 setIsEditing(false);
             })
-            .fail(() => alert("Unable to update the project name."))
+            .fail(() => showToast("danger", "Unable to update the project name.", "Update failed"))
             .always(() => setIsSaving(false));
     }
 
@@ -94,7 +95,7 @@ export default function ProjectAdminPage() {
     function loadProjects() {
         return getAllProjects()
             .done(setProjects)
-            .fail(() => alert("Unable to fetch projects."))
+            .fail(() => showToast("danger", "Unable to fetch projects.", "Unable to load projects"))
             .always(() => setIsLoading(false));
     }
 
@@ -135,7 +136,7 @@ export default function ProjectAdminPage() {
                 updateProject(projectForDescription.id, { description: draftDescription });
                 closeDescriptionEditor();
             })
-            .fail(() => alert("Unable to update the project description."))
+            .fail(() => showToast("danger", "Unable to update the project description.", "Update failed"))
             .always(() => setIsSavingDescription(false));
     }
 

@@ -11,12 +11,14 @@ import ComponentAdminPage from "./pages/ComponentAdminPage";
 import ProjectAdminPage from "./pages/ProjectAdminPage";
 import Navbar from "./components/Navbar";
 import AuthProvider from "./components/AuthProvider";
+import Toast from "./components/Toast";
 
 export default function App() {
     return (
         <BrowserRouter>
             <AuthProvider>
                 <Navbar />
+                <Toast />
 
                 <Routes>
                     <Route element={<ProtectedRoute />}>

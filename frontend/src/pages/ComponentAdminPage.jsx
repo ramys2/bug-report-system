@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Modal as BootstrapModal } from "bootstrap";
 import Modal from "../components/Modal";
 import CreateComponentForm from "../components/CreateComponentForm";
+import { showToast } from "../components/toast";
 import {
     getAllComponents,
     updateComponentDescription,
@@ -35,7 +36,7 @@ function EditableName({ component, onNameSaved }) {
                 onNameSaved(component.id, draftName);
                 setIsEditing(false);
             })
-            .fail(() => alert("Unable to update the component name."))
+            .fail(() => showToast("danger", "Unable to update the component name.", "Update failed"))
             .always(() => setIsSaving(false));
     }
 
@@ -109,7 +110,7 @@ function EditableResponsibleUser({ component, onResponsibleUserSaved }) {
             .fail(() => {
                 if (isCurrentSearch) {
                     setUsers([]);
-                    alert("Unable to search for users.");
+                    showToast("danger", "Unable to search for users.", "Search failed");
                 }
             })
             .always(() => {
@@ -154,7 +155,7 @@ function EditableResponsibleUser({ component, onResponsibleUserSaved }) {
                 setSearch("");
                 setUsers([]);
             })
-            .fail(() => alert("Unable to update the responsible user."))
+            .fail(() => showToast("danger", "Unable to update the responsible user.", "Update failed"))
             .always(() => setIsSaving(false));
     }
 
@@ -230,7 +231,7 @@ export default function ComponentAdminPage() {
     function loadComponents() {
         return getAllComponents()
             .done(setComponents)
-            .fail(() => alert("Unable to fetch components."))
+            .fail(() => showToast("danger", "Unable to fetch components.", "Unable to load components"))
             .always(() => setIsLoading(false));
     }
 
@@ -271,7 +272,7 @@ export default function ComponentAdminPage() {
                 updateComponent(componentForDescription.id, { description: draftDescription });
                 closeDescriptionEditor();
             })
-            .fail(() => alert("Unable to update the component description."))
+            .fail(() => showToast("danger", "Unable to update the component description.", "Update failed"))
             .always(() => setIsSavingDescription(false));
     }
 

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createReport } from "../api/bug-report";
+import { showToast } from "./toast";
 
 const initialFormValues = {
     title: "",
@@ -31,7 +32,7 @@ function CreateBugReportForm({ developers, projects, components, onCreated }) {
         event.preventDefault();
 
         if (!formValues.title.trim() || !formValues.projectId || !formValues.componentId || !formValues.severity) {
-            alert("Please fill in all required fields.");
+            showToast("warning", "Please fill in all required fields.", "Missing information");
             return;
         }
 
@@ -47,7 +48,7 @@ function CreateBugReportForm({ developers, projects, components, onCreated }) {
                 onCreated();
             })
             .fail(() => {
-                alert("Failed to create the bug report. Please try again.");
+                showToast("danger", "Failed to create the bug report. Please try again.", "Report not created");
             })
             .always(() => {
                 setIsSubmitting(false);

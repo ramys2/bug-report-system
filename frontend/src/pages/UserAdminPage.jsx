@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { getAllAccounts, updateAccountRole } from "../api/account";
+import { showToast } from "../components/toast";
 import "./UserAdminPage.css";
 
 const ROLE_OPTIONS = ["ADMIN", "DEVELOPER", "REPORTER"];
@@ -23,7 +24,7 @@ function EditableRole({ user, onRoleSaved }) {
                 onRoleSaved(user.id, draftRole);
                 setIsEditing(false);
             })
-            .fail(() => alert("Unable to update the user's role."))
+            .fail(() => showToast("danger", "Unable to update the user's role.", "Update failed"))
             .always(() => setIsSaving(false));
     }
 
@@ -84,7 +85,7 @@ export default function UserAdminPage() {
     useEffect(() => {
         getAllAccounts()
             .done(setUsers)
-            .fail(() => alert("Unable to fetch user accounts."))
+            .fail(() => showToast("danger", "Unable to fetch user accounts.", "Unable to load users"))
             .always(() => setIsLoading(false));
     }, []);
 

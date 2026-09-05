@@ -20,6 +20,7 @@ import "./BugReportPage.css";
 import { getComponents, getDevelopers, getProjects } from "../api/create-bug-report-options";
 import AuthContext from "../components/AuthContext";
 import Modal from "../components/Modal";
+import { showToast } from "../components/toast";
 
 const closeBugReportModalId = "close-bug-report-modal";
 const resolutionModalId = "resolution-modal";
@@ -72,7 +73,7 @@ function EditableReportSection({
                 onValueSaved(draftValue);
                 setIsEditing(false);
             })
-            .fail(() => alert(`Unable to update ${title.toLowerCase()}!`))
+            .fail(() => showToast("danger", `Unable to update ${title.toLowerCase()}!`, "Update failed"))
             .always(() => setIsSaving(false));
     }
 
@@ -182,7 +183,7 @@ function EditableSelectField({
                 onValueSaved(getOptionLabel(selectedOption));
                 setIsEditing(false);
             })
-            .fail(() => alert(`Unable to update ${label.toLowerCase()}!`))
+            .fail(() => showToast("danger", `Unable to update ${label.toLowerCase()}!`, "Update failed"))
             .always(() => setIsSaving(false));
     }
 
@@ -262,23 +263,23 @@ export default function BugReportPage() {
     useEffect(() => {
         getReport(id)
             .done((data) => setBugReport(data))
-            .fail(() => alert("Unable to fetch bug report!"));
+            .fail(() => showToast("danger", "Unable to fetch bug report!", "Unable to load report"));
 
         getComments(id)
             .done((data) => setComments(data))
-            .fail(() => alert("Unable to fetch comments!"));
+            .fail(() => showToast("danger", "Unable to fetch comments!", "Unable to load comments"));
 
         getDevelopers()
             .done(setDevelopers)
-            .fail(() => alert("Failed to fetch developers."));
+            .fail(() => showToast("danger", "Failed to fetch developers.", "Unable to load developers"));
 
         getProjects()
             .done(setProjects)
-            .fail(() => alert("Failed to fetch projects."));
+            .fail(() => showToast("danger", "Failed to fetch projects.", "Unable to load projects"));
 
         getComponents()
             .done(setComponents)
-            .fail(() => alert("Failed to fetch components."));
+            .fail(() => showToast("danger", "Failed to fetch components.", "Unable to load components"));
     }, [id]);
 
     function saveComment() {
@@ -290,7 +291,7 @@ export default function BugReportPage() {
                 setCommentDraft("");
                 setIsCommentEditing(false);
             })
-            .fail(() => alert("Unable to save comment!"))
+            .fail(() => showToast("danger", "Unable to save comment!", "Comment not saved"))
             .always(() => setIsCommentSaving(false));
     }
 
@@ -303,7 +304,7 @@ export default function BugReportPage() {
                     existingComments.filter((comment) => comment.id !== commentId)
                 ));
             })
-            .fail(() => alert("Unable to remove comment!"))
+            .fail(() => showToast("danger", "Unable to remove comment!", "Comment not removed"))
             .always(() => setRemovingCommentId(null));
     }
 
@@ -323,7 +324,7 @@ export default function BugReportPage() {
         event.preventDefault();
 
         if (!resolutionDraft.description.trim()) {
-            alert("Resolution description is required.");
+            showToast("warning", "Resolution description is required.", "Missing information");
             return;
         }
 
@@ -347,7 +348,7 @@ export default function BugReportPage() {
                 setResolutionDraft(EMPTY_RESOLUTION);
                 closeResolutionModal();
             })
-            .fail(() => alert("Unable to close issue!"))
+            .fail(() => showToast("danger", "Unable to close issue!", "Issue not closed"))
             .always(() => setIsClosing(false));
     }
 

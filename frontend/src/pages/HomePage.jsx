@@ -4,6 +4,7 @@ import BugReportList from "../components/BugReportList";
 import CreateBugReportForm from "../components/CreateBugReportForm";
 import Modal from "../components/Modal";
 import QuickFilters from "../components/QuickFilters";
+import { showToast } from "../components/toast";
 import "./HomePage.css";
 import { getAllReports, getAssigned, getReported } from "../api/bug-report";
 import { getComponents, getDevelopers, getProjects } from "../api/create-bug-report-options";
@@ -23,7 +24,7 @@ function HomePage() {
                 setBugReports(data);
             })
             .fail(() => {
-                alert("Failed to fetch bug reports!");
+                showToast("danger", "Failed to fetch bug reports!", "Unable to load reports");
             });
     }
 
@@ -34,15 +35,15 @@ function HomePage() {
     useEffect(() => {
         getDevelopers()
             .done(setDevelopers)
-            .fail(() => alert("Failed to fetch developers."));
+            .fail(() => showToast("danger", "Failed to fetch developers.", "Unable to load developers"));
 
         getProjects()
             .done(setProjects)
-            .fail(() => alert("Failed to fetch projects."));
+            .fail(() => showToast("danger", "Failed to fetch projects.", "Unable to load projects"));
 
         getComponents()
             .done(setComponents)
-            .fail(() => alert("Failed to fetch components."));
+            .fail(() => showToast("danger", "Failed to fetch components.", "Unable to load components"));
     }, []);
 
     function onReportedByMe() {
@@ -53,7 +54,7 @@ function HomePage() {
                 setBugReports(data);
             })
             .fail(() => {
-                alert("Couldn't fetch your reported items!");
+                showToast("danger", "Couldn't fetch your reported items!", "Unable to load reports");
             })
     }
 
@@ -65,7 +66,7 @@ function HomePage() {
                 setBugReports(data);
             })
             .fail(() => {
-                alert("Couldn't fetch items assigned to you!");
+                showToast("danger", "Couldn't fetch items assigned to you!", "Unable to load reports");
             })
     }
 
