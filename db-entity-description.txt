@@ -1,0 +1,62 @@
+USER_ACCOUNT
+────────────────────────────────
+id                   CHAR(36) PK
+name                 VARCHAR(255) NOT NULL
+email_address        VARCHAR(255) NOT NULL UNIQUE
+password_hash        VARCHAR(255) NOT NULL
+role                 VARCHAR(32) NOT NULL
+archived_at          DATETIME(6) NULL
+
+
+SOFTWARE_PROJECT
+────────────────────────────────
+id                   CHAR(36) PK
+name                 VARCHAR(255) NOT NULL
+description          TEXT NULL
+archived_at          DATETIME(6) NULL
+
+
+COMPONENT
+────────────────────────────────
+id                   CHAR(36) PK
+name                 VARCHAR(255) NOT NULL
+description          TEXT NULL
+responsible_user_id  CHAR(36) FK NOT NULL
+archived_at          DATETIME(6) NULL
+
+
+BUG_REPORT
+────────────────────────────────
+id                   CHAR(36) PK
+reporter_id          CHAR(36) FK NOT NULL
+assignee_id          CHAR(36) FK NULL
+project_id           CHAR(36) FK NOT NULL
+component_id         CHAR(36) FK NOT NULL
+resolution_id        CHAR(36) FK UNIQUE NULL
+title                VARCHAR(255) NOT NULL
+description          TEXT NULL
+steps_to_reproduce   TEXT NULL
+actual_behavior      TEXT NULL
+expected_behavior    TEXT NULL
+severity             VARCHAR(32) NOT NULL
+status               VARCHAR(32) NOT NULL
+created_at           DATETIME(6) NOT NULL
+updated_at           DATETIME(6) NOT NULL
+
+
+COMMENT
+────────────────────────────────
+id                   CHAR(36) PK
+bug_report_id        CHAR(36) FK NOT NULL
+author_id            CHAR(36) FK NOT NULL
+content              TEXT NOT NULL
+created_at           DATETIME(6) NOT NULL
+
+
+RESOLUTION
+────────────────────────────────
+id                   CHAR(36) PK
+description          TEXT NULL
+resolved_at          DATETIME(6) NOT NULL
+fixed_version        VARCHAR(100) NULL
+commit_url           VARCHAR(2048) NULL
