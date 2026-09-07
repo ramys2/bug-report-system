@@ -91,6 +91,7 @@ public class ComponentService {
     public UpdateComponentResponse updateName(UUID componentId, UpdateComponentNameRequest request) {
         var component = componentById(componentId);
         component.setName(request.name());
+        componentRepository.save(component);
         return updateResponse(component);
     }
 
@@ -101,6 +102,7 @@ public class ComponentService {
     ) {
         var component = componentById(componentId);
         component.setDescription(request.description());
+        componentRepository.save(component);
         return updateResponse(component);
     }
 
@@ -111,6 +113,7 @@ public class ComponentService {
     ) {
         var component = componentById(componentId);
         component.setResponsibleUserId(request.responsibleUserId());
+        componentRepository.save(component);
         return updateResponse(component);
     }
 

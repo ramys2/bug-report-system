@@ -71,6 +71,7 @@ public class SoftwareProjectService {
     ) {
         var project = projectById(projectId);
         project.setName(request.name());
+        softwareProjectRepository.save(project);
         return updateResponse(project);
     }
 
@@ -81,6 +82,7 @@ public class SoftwareProjectService {
     ) {
         var project = projectById(projectId);
         project.setDescription(request.description());
+        softwareProjectRepository.save(project);
         return updateResponse(project);
     }
 

@@ -2,29 +2,20 @@ package com.ramy.bugreport.domain;
 
 import java.util.UUID;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-
-@Entity
 public class SoftwareProject {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
-    
-    @Column(nullable = false)
+
     private String name;
 
     private String description;
 
-    protected SoftwareProject() {
-        // Required by JPA
+    public SoftwareProject(String name, String description) {
+        this(null, name, description);
     }
 
-    public SoftwareProject(String name, String description) {
+    public SoftwareProject(UUID id, String name, String description) {
+        this.id = id;
         this.name = name;
         this.description = description;
     }

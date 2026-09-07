@@ -1,38 +1,23 @@
 package com.ramy.bugreport.domain;
 import java.util.UUID;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Column;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-
-@Entity
 public class UserAccount {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
-    @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false, unique = true)
     private String emailAddress;
 
-    @Column(nullable = false)
     private String passwordHash;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private EUserRole role;
 
-    protected UserAccount() {
-        // Required by JPA
+    public UserAccount(String name, String emailAddress, String passwordHash, EUserRole role) {
+        this(null, name, emailAddress, passwordHash, role);
     }
 
-    public UserAccount(String name, String emailAddress, String passwordHash, EUserRole role) {
+    public UserAccount(UUID id, String name, String emailAddress, String passwordHash, EUserRole role) {
+        this.id = id;
         this.name = name;
         this.emailAddress = emailAddress;
         this.passwordHash = passwordHash;

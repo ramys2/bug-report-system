@@ -196,9 +196,9 @@ public class BugReportService {
         report.setResolution(resolution);
         report.setStatus(EBugStatus.CLOSED);
         
-        bugReportRepository.save(report);
+        report = bugReportRepository.save(report);
         
-        return new CloseBugReportResponse(resolution.getId(), "Task has been closed successfully!");
+        return new CloseBugReportResponse(report.getResolution().getId(), "Task has been closed successfully!");
     }
     
     /*
@@ -219,6 +219,7 @@ public class BugReportService {
         requireDeveloper(assigneeId);
 
         report.setAssigneeId(assigneeId);
+        bugReportRepository.save(report);
         return updateResponse(report);
     }
 
@@ -229,6 +230,7 @@ public class BugReportService {
     public UpdateBugReportResponse updateSeverity(UUID reportId, UpdateSeverityRequest request) {
         var report = reportById(reportId);
         report.setSeverity(request.severity());
+        bugReportRepository.save(report);
         return updateResponse(report);
     }
 
@@ -244,6 +246,7 @@ public class BugReportService {
         }
 
         report.setStatus(request.status());
+        bugReportRepository.save(report);
         return updateResponse(report);
     }
 
@@ -259,6 +262,7 @@ public class BugReportService {
         }
 
         report.setProjectId(projectId);
+        bugReportRepository.save(report);
         return updateResponse(report);
     }
 
@@ -274,6 +278,7 @@ public class BugReportService {
         }
 
         report.setComponentId(componentId);
+        bugReportRepository.save(report);
         return updateResponse(report);
     }
 
@@ -284,6 +289,7 @@ public class BugReportService {
     public UpdateBugReportResponse updateDescription(UUID reportId, UpdateDescriptionRequest request) {
         var report = reportById(reportId);
         report.setDescription(request.description());
+        bugReportRepository.save(report);
         return updateResponse(report);
     }
 
@@ -297,6 +303,7 @@ public class BugReportService {
     ) {
         var report = reportById(reportId);
         report.setStepsToReproduce(request.stepsToReproduce());
+        bugReportRepository.save(report);
         return updateResponse(report);
     }
 
@@ -310,6 +317,7 @@ public class BugReportService {
     ) {
         var report = reportById(reportId);
         report.setExpectedBehavior(request.expectedBehavior());
+        bugReportRepository.save(report);
         return updateResponse(report);
     }
 
@@ -323,6 +331,7 @@ public class BugReportService {
     ) {
         var report = reportById(reportId);
         report.setActualBehavior(request.actualBehavior());
+        bugReportRepository.save(report);
         return updateResponse(report);
     }
 

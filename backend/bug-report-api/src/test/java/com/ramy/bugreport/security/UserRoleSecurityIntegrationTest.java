@@ -127,6 +127,6 @@ class UserRoleSecurityIntegrationTest {
     }
 
     private UserAccount save(String emailAddress, EUserRole role) {
-        return userAccountRepository.saveAndFlush(new UserAccount(emailAddress, emailAddress, "hash", role));
+        return userAccountRepository.save(new UserAccount(emailAddress, emailAddress, "hash", role));
     }
 }

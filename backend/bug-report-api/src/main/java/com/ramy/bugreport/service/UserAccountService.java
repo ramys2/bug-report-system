@@ -129,6 +129,7 @@ public class UserAccountService {
         }
 
         account.setRole(request.role());
+        userAccountRepository.save(account);
     }
 
     private String normalizeEmail(String emailAddress) {

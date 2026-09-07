@@ -267,6 +267,16 @@ class BugReportServiceTest {
         var report = report(UUID.randomUUID());
         var request = new CloseBugReportRequest("Fixed null handling", "1.1.0", "https://example.com/commit/1");
         when(bugReportRepository.findById(report.getId())).thenReturn(Optional.of(report));
+        var resolutionId = UUID.randomUUID();
+        when(bugReportRepository.save(report)).thenAnswer(invocation -> {
+            var saved = report(report.getId());
+            var resolution = report.getResolution();
+            saved.setResolution(new com.ramy.bugreport.domain.Resolution(resolutionId,
+                    resolution.getDescription(), resolution.getResolvedAt(),
+                    resolution.getFixedVersion(), resolution.getCommitUrl()));
+            saved.setStatus(EBugStatus.CLOSED);
+            return saved;
+        });
         var before = LocalDateTime.now();
 
         var result = service.close(report.getId(), request);
@@ -277,7 +287,7 @@ class BugReportServiceTest {
         assertThat(report.getResolution().getCommitUrl()).isEqualTo(request.commitUrl());
         assertThat(report.getResolution().getResolvedAt()).isBetween(before, LocalDateTime.now());
         assertThat(report.getStatus()).isEqualTo(EBugStatus.CLOSED);
-        assertThat(result.reportId()).isEqualTo(report.getResolution().getId());
+        assertThat(result.reportId()).isEqualTo(resolutionId);
         assertThat(result.message()).isEqualTo("Task has been closed successfully!");
         verify(bugReportRepository).findById(report.getId());
         verify(bugReportRepository).save(report);
@@ -325,7 +335,7 @@ class BugReportServiceTest {
         assertUpdateResponse(result, report);
         verify(bugReportRepository).findById(report.getId());
         verify(userAccountRepository).findById(assigneeId);
-        verify(bugReportRepository, never()).save(any());
+        verify(bugReportRepository).save(report);
     }
 
     @Test

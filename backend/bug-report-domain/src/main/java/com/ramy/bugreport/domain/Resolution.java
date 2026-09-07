@@ -3,16 +3,8 @@ package com.ramy.bugreport.domain;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-
-@Entity
 public class Resolution {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     private String description;
@@ -22,11 +14,12 @@ public class Resolution {
 
     private String commitUrl;
 
-    protected Resolution() {
-        // Required by JPA
+    public Resolution(String description, LocalDateTime resolvedAt, String fixedVersion, String commitUrl) {
+        this(null, description, resolvedAt, fixedVersion, commitUrl);
     }
 
-    public Resolution(String description, LocalDateTime resolvedAt, String fixedVersion, String commitUrl) {
+    public Resolution(UUID id, String description, LocalDateTime resolvedAt, String fixedVersion, String commitUrl) {
+        this.id = id;
         this.description = description;
         this.resolvedAt = resolvedAt;
         this.fixedVersion = fixedVersion;

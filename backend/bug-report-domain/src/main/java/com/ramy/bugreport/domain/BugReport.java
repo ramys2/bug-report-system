@@ -1,40 +1,21 @@
 package com.ramy.bugreport.domain;
 
-import jakarta.persistence.CascadeType;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
-
-@Entity
 public class BugReport {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false)
     private UUID reporterId;
 
     private UUID assigneeId;
 
-    @Column(nullable = false)
     private UUID projectId;
 
-    @Column(nullable = false)
     private UUID componentId;
 
-    @Column(nullable = false)
     private String title;
 
     private String description;
@@ -42,24 +23,14 @@ public class BugReport {
     private String expectedBehavior;
     private String actualBehavior;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private EBugSeverity severity;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private EBugStatus status;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "resolution_id", unique = true)
     private Resolution resolution;
-
-    protected BugReport() {
-        // Required by JPA
-    }
 
     private BugReport(Builder builder) {
         reporterId = builder.reporterId;
