@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -23,12 +24,23 @@ import org.springframework.web.context.WebApplicationContext;
 
 import com.ramy.bugreport.domain.EUserRole;
 import com.ramy.bugreport.domain.UserAccount;
+import com.ramy.bugreport.repository.IBugReportRepository;
+import com.ramy.bugreport.repository.ICommentRepository;
+import com.ramy.bugreport.repository.IComponentRepository;
+import com.ramy.bugreport.repository.IResolutionRepository;
+import com.ramy.bugreport.repository.ISoftwareProjectRepository;
 import com.ramy.bugreport.repository.IUserAccountRepository;
 
 @SpringBootTest
 @WebAppConfiguration
+@ActiveProfiles("test")
 class UserRoleSecurityIntegrationTest {
 
+	@Autowired private IBugReportRepository bugReportRepository;
+    @Autowired private ICommentRepository commentRepository;
+    @Autowired private IComponentRepository componentRepository;
+    @Autowired private ISoftwareProjectRepository projectRepository;
+    @Autowired private IResolutionRepository resolutionRepository;
     @Autowired private WebApplicationContext webApplicationContext;
     @Autowired private IUserAccountRepository userAccountRepository;
 
@@ -39,8 +51,13 @@ class UserRoleSecurityIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).apply(springSecurity()).build();
+        commentRepository.deleteAll();
+        bugReportRepository.deleteAll();
+        componentRepository.deleteAll();
+        projectRepository.deleteAll();
+        resolutionRepository.deleteAll();
         userAccountRepository.deleteAll();
+        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).apply(springSecurity()).build();
         admin = save("admin@example.com", EUserRole.ADMIN);
         reporter = save("reporter@example.com", EUserRole.REPORTER);
         developer = save("developer@example.com", EUserRole.DEVELOPER);

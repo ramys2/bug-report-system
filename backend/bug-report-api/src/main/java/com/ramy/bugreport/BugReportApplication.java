@@ -1,6 +1,5 @@
 package com.ramy.bugreport;
 
-import java.nio.file.Path;
 import java.time.LocalDateTime;
 
 import org.slf4j.Logger;
@@ -11,7 +10,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import com.ramy.bugreport.domain.Attachment;
 import com.ramy.bugreport.domain.BugReport;
 import com.ramy.bugreport.domain.Comment;
 import com.ramy.bugreport.domain.Component;
@@ -21,7 +19,6 @@ import com.ramy.bugreport.domain.EUserRole;
 import com.ramy.bugreport.domain.Resolution;
 import com.ramy.bugreport.domain.SoftwareProject;
 import com.ramy.bugreport.domain.UserAccount;
-import com.ramy.bugreport.repository.IAttachementRepository;
 import com.ramy.bugreport.repository.IBugReportRepository;
 import com.ramy.bugreport.repository.ICommentRepository;
 import com.ramy.bugreport.repository.IComponentRepository;
@@ -45,7 +42,7 @@ public class BugReportApplication {
             IComponentRepository componentRepository,
             IBugReportRepository bugReportRepository,
             ICommentRepository commentRepository,
-            IAttachementRepository attachmentRepository,
+//            IAttachementRepository attachmentRepository,
             IResolutionRepository resolutionRepository,
             PasswordEncoder passwordEncoder) {
         return args -> {
@@ -133,18 +130,19 @@ public class BugReportApplication {
                     profileBug.getId(), frontendDeveloper.getId(),
                     "Verified the default-avatar fix in version 0.1.1.", now.minusDays(1)));
 
-            attachmentRepository.save(new Attachment(
-                    loginBug.getId(), reporter.getId(), "login-error.png", "image/png",
-                    Path.of("demo-uploads/login-error.png"), now.minusDays(2)));
-            attachmentRepository.save(new Attachment(
-                    mobileBug.getId(), admin.getId(), "mobile-overflow.png", "image/png",
-                    Path.of("demo-uploads/mobile-overflow.png"), now.minusHours(7)));
+//            attachmentRepository.save(new Attachment(
+//                    loginBug.getId(), reporter.getId(), "login-error.png", "image/png",
+//                    Path.of("demo-uploads/login-error.png"), now.minusDays(2)));
+//            attachmentRepository.save(new Attachment(
+//                    mobileBug.getId(), admin.getId(), "mobile-overflow.png", "image/png",
+//                    Path.of("demo-uploads/mobile-overflow.png"), now.minusHours(7)));
 
             logger.info(
                     "Initialized demo database: {} users, {} projects, {} components, {} bug reports, "
                             + "{} comments, {} attachments and {} resolutions.",
                     userRepository.count(), projectRepository.count(), componentRepository.count(),
-                    bugReportRepository.count(), commentRepository.count(), attachmentRepository.count(),
+                    bugReportRepository.count(), commentRepository.count(),
+//                    attachmentRepository.count(),
                     resolutionRepository.count());
             logger.info("""
                     Test API credentials for curl:

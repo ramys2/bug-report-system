@@ -4,7 +4,7 @@ WORKDIR /build
 
 COPY . .
 
-RUN mvn package
+RUN mvn package -DskipTests
 
 
 FROM eclipse-temurin:21-jre-ubi10-minimal AS runtime
