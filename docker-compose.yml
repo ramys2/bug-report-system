@@ -4,9 +4,32 @@ services:
     image: bug-report-backend
     ports:
       - "8080:8080"
+    depends_on:
+      database:
+        condition: service_healthy
 
   frontend:
     build: ./frontend
     image: bug-report-frontend
     ports:
       - "5173:5173"
+
+  database:
+    image: mariadb:latest
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: bug_report
+      MARIADB_USER: bug_report
+      MARIADB_PASSWORD: bug_report
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  mariadb-data:
