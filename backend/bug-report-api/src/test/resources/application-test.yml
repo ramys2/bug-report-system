@@ -1,0 +1,5 @@
+spring:
+  datasource:
+    url: jdbc:mariadb://localhost:3306/bug_report_test
+    username: bug_report
+    password: bug_report
