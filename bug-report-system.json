@@ -7,22 +7,22 @@
       "name": "To Do",
       "tasks": [
         {
-          "id": "task-4d73c2ab-aacd-479e-b199-aaecf5ceff16",
-          "title": "Explore Authetication apps and how to connect them to the app",
-          "description": "",
-          "color": "#d18b35"
+          "id": "task-754b8d21-38b0-4f75-8c4b-b39d37096d21",
+          "title": "Refactor Dockerfile for frontend",
+          "description": "Refactor Dockerfile for frontend so it is possible to build the application and run it over 'nginx'.",
+          "color": "#4f78c4"
+        },
+        {
+          "id": "task-4944329f-72a8-414d-a93c-e93592730ac8",
+          "title": "Refactor Dockerfiles for frontend and backend",
+          "description": "Refactor Dockerfiles for frontend and backend so that I don't have to run `docker compose up --build -d` every time.",
+          "color": "#4f78c4"
         },
         {
           "id": "task-d6d1101b-53d0-48e3-8f7a-62fc98bc96f0",
           "title": "Add possibility to hot-swap java code without rebuilding the image",
           "description": "",
           "color": "#7a5ab5"
-        },
-        {
-          "id": "task-82206794-fb7f-4267-a4fc-074e04c87613",
-          "title": "Add fake email client",
-          "description": "",
-          "color": "#c45b62"
         },
         {
           "id": "task-ed5b0e2c-8589-4217-bf75-4c0b9a9b9dcd",
@@ -37,22 +37,16 @@
       "name": "In progress",
       "tasks": [
         {
-          "id": "task-4944329f-72a8-414d-a93c-e93592730ac8",
-          "title": "Refactor Dockerfiles for frontend and backend",
-          "description": "Refactor Dockerfiles for frontend and backend so that I don't have to run `docker compose up --build -d` every time.",
-          "color": "#4f78c4"
+          "id": "task-82206794-fb7f-4267-a4fc-074e04c87613",
+          "title": "Add mocked email server",
+          "description": "",
+          "color": "#c45b62"
         },
         {
-          "id": "task-4cd99be2-be6f-4806-8893-601e3a6b3480",
-          "title": "Explore differences between PostgreSQL and MySQL",
+          "id": "task-4d73c2ab-aacd-479e-b199-aaecf5ceff16",
+          "title": "Explore Authetication apps and how to connect them to the app",
           "description": "",
           "color": "#d18b35"
-        },
-        {
-          "id": "task-754b8d21-38b0-4f75-8c4b-b39d37096d21",
-          "title": "Refactor Dockerfile for frontend",
-          "description": "Refactor Dockerfile for frontend so it is possible to build the application and run it over 'nginx'.",
-          "color": "#4f78c4"
         }
       ]
     },
@@ -131,6 +125,12 @@
           "title": "Implement Dockerfile for frontend",
           "description": "",
           "color": "#4f78c4"
+        },
+        {
+          "id": "task-4cd99be2-be6f-4806-8893-601e3a6b3480",
+          "title": "Explore differences between PostgreSQL and MySQL",
+          "description": "",
+          "color": "#d18b35"
         }
       ]
     }
