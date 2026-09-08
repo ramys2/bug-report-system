@@ -46,6 +46,16 @@ services:
         MP_SMTP_AUTH_ACCEPT_ANY: 1
         MP_SMTP_AUTH_ALLOW_INSECURE: 1
 
+  artemis:
+    image: apache/activemq-artemis:latest-alpine
+    container_name: artemis
+    restart: unless-stopped
+    ports:
+      - "8161:8161"
+    environment:
+      ARTEMIS_USER: artemis
+      ARTEMIS_PASSWORD: artemis
+
 volumes:
   mariadb-data:
   mailpit-data:
