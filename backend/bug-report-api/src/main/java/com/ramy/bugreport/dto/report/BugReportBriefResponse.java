@@ -1,7 +1,6 @@
 package com.ramy.bugreport.dto.report;
 
 import java.time.format.DateTimeFormatter;
-import java.util.Locale;
 import java.util.UUID;
 
 import com.ramy.bugreport.domain.BugReport;

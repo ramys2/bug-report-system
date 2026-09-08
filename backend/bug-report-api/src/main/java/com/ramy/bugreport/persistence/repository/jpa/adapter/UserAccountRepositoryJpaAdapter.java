@@ -1,4 +1,4 @@
-package com.ramy.bugreport.persistence.repository;
+package com.ramy.bugreport.persistence.repository.jpa.adapter;
 
 import java.util.List;
 import java.util.Optional;
@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.ramy.bugreport.domain.EUserRole;
 import com.ramy.bugreport.domain.UserAccount;
 import com.ramy.bugreport.persistence.mapper.UserAccountMapper;
-import com.ramy.bugreport.persistence.repository.jpa.UserAccountJpaRepository;
+import com.ramy.bugreport.persistence.repository.jpa.repository.UserAccountJpaRepository;
 import com.ramy.bugreport.repository.IUserAccountRepository;
 
 @Repository

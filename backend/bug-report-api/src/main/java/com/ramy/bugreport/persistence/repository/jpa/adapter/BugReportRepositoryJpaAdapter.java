@@ -1,4 +1,4 @@
-package com.ramy.bugreport.persistence.repository;
+package com.ramy.bugreport.persistence.repository.jpa.adapter;
 
 import java.util.List;
 import java.util.Optional;
@@ -10,7 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.ramy.bugreport.domain.BugReport;
 import com.ramy.bugreport.domain.EBugStatus;
 import com.ramy.bugreport.persistence.mapper.BugReportMapper;
-import com.ramy.bugreport.persistence.repository.jpa.BugReportJpaRepository;
+import com.ramy.bugreport.persistence.repository.jpa.repository.BugReportJpaRepository;
 import com.ramy.bugreport.repository.IBugReportRepository;
 
 @Repository

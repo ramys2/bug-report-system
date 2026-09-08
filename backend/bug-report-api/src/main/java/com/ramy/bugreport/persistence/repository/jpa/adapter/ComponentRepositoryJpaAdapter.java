@@ -1,4 +1,4 @@
-package com.ramy.bugreport.persistence.repository;
+package com.ramy.bugreport.persistence.repository.jpa.adapter;
 
 import java.util.List;
 import java.util.Optional;
@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.ramy.bugreport.domain.Component;
 import com.ramy.bugreport.persistence.mapper.ComponentMapper;
-import com.ramy.bugreport.persistence.repository.jpa.ComponentJpaRepository;
+import com.ramy.bugreport.persistence.repository.jpa.repository.ComponentJpaRepository;
 import com.ramy.bugreport.repository.IComponentRepository;
 
 @Repository

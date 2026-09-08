@@ -1,4 +1,4 @@
-package com.ramy.bugreport.persistence.repository.jpa;
+package com.ramy.bugreport.persistence.repository.jpa.repository;
 
 import java.util.List;
 import java.util.Optional;

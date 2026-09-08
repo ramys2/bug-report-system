@@ -14,6 +14,7 @@ import com.ramy.bugreport.domain.UserAccount;
 
 public class UserAccountDetails implements UserDetails {
 	
+	private static final long serialVersionUID = -3530605535163745849L;
 	private final UserAccount userAccount;
 	
 	public UserAccountDetails(UserAccount userAccount) {
