@@ -21,6 +21,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import com.ramy.bugreport.domain.BugReport;
 import com.ramy.bugreport.domain.Component;
@@ -58,6 +59,9 @@ class BugReportServiceTest {
     private ISoftwareProjectRepository softwareProjectRepository;
     @Mock
     private IComponentRepository componentRepository;
+    
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     private BugReportService service;
 
@@ -67,7 +71,8 @@ class BugReportServiceTest {
                 bugReportRepository,
                 userAccountRepository,
                 softwareProjectRepository,
-                componentRepository);
+                componentRepository,
+                eventPublisher);
     }
 
     @Test

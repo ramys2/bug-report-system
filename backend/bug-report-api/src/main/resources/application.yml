@@ -9,3 +9,9 @@ spring:
     broker-url: tcp://artemis:61616
     user: artemis
     password: artemis
+
+messaging:
+  destinations:
+    assignee-changed: bug-report.assignee-changed
+    # status-changed: bug-report.status-changed
+    # report-closed: bug-report.closed

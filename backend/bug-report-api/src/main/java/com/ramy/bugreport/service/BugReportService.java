@@ -7,6 +7,7 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Function;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
@@ -33,6 +34,8 @@ import com.ramy.bugreport.dto.report.UpdateStatusRequest;
 import com.ramy.bugreport.dto.report.UpdateStepsToReproduceRequest;
 import com.ramy.bugreport.exception.BusinessRuleConflictException;
 import com.ramy.bugreport.exception.ResourceNotFoundException;
+import com.ramy.bugreport.messaging.event.AssigneeChangedEvent;
+import com.ramy.bugreport.messaging.publisher.BugReportEventPublisher;
 import com.ramy.bugreport.repository.IBugReportRepository;
 import com.ramy.bugreport.repository.IComponentRepository;
 import com.ramy.bugreport.repository.ISoftwareProjectRepository;
@@ -45,17 +48,20 @@ public class BugReportService {
     private final IUserAccountRepository userAccountRepository;
     private final ISoftwareProjectRepository softwareProjectRepository;
     private final IComponentRepository componentRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     public BugReportService(
         IBugReportRepository bugBugReportRepository,
         IUserAccountRepository userAccountRepository,
         ISoftwareProjectRepository softwareProjectRepository,
-        IComponentRepository componentRepository
+        IComponentRepository componentRepository,
+        ApplicationEventPublisher eventPublisher
     ) {
         this.bugReportRepository = bugBugReportRepository;
         this.userAccountRepository = userAccountRepository;
         this.softwareProjectRepository = softwareProjectRepository;
         this.componentRepository = componentRepository;
+        this.eventPublisher = eventPublisher;
     }
     
     /*
@@ -216,10 +222,11 @@ public class BugReportService {
     public UpdateBugReportResponse updateAssignee(UUID reportId, UpdateAssigneeRequest request) {
         var report = reportById(reportId);
         var assigneeId = request.assigneeId();
-        requireDeveloper(assigneeId);
+        var assignee = requireDeveloper(assigneeId);
 
         report.setAssigneeId(assigneeId);
         bugReportRepository.save(report);
+        eventPublisher.publishEvent(new AssigneeChangedEvent(assignee.getName(), assignee.getEmailAddress(), report.getTitle()));
         return updateResponse(report);
     }
 
@@ -350,12 +357,14 @@ public class BugReportService {
         return new UpdateBugReportResponse(report.getId(), "Bug report updated successfully!");
     }
 
-    private void requireDeveloper(UUID assigneeId) {
+    private UserAccount requireDeveloper(UUID assigneeId) {
         UserAccount assignee = userAccountRepository.findById(assigneeId)
                 .orElseThrow(() -> new ResourceNotFoundException("User with id=%s does not exist!".formatted(assigneeId)));
         if (assignee.getRole() != EUserRole.DEVELOPER) {
             throw new BusinessRuleConflictException(
                     "Bug reports can only be assigned to developers.");
         }
+        
+        return assignee;
     }
 }
