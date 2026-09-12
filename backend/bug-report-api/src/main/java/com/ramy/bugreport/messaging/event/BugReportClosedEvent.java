@@ -1,9 +1,8 @@
 package com.ramy.bugreport.messaging.event;
 
-public record AssigneeChangedEvent(
-		String assigneeName,
+public record BugReportClosedEvent(
+		String reportTitle,
 		String assigneeEmail,
-		String reporterName,
-		String reportTitle
+		String reporterEmail
 		) implements IBugReportEvent {
 }

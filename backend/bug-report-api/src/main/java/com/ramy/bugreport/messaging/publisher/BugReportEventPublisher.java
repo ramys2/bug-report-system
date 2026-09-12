@@ -6,31 +6,31 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-import com.ramy.bugreport.messaging.event.AssigneeChangedEvent;
+import com.ramy.bugreport.messaging.event.IBugReportEvent;
+
+import tools.jackson.databind.ObjectMapper;
 
 @Component
 public class BugReportEventPublisher {
-	
+
 	private final JmsTemplate template;
-    private final String assigneeChangedDestination;
-	
+	private final ObjectMapper objectMapper;
+	private final String bugReportEventDestination;
+
 	public BugReportEventPublisher(
 			JmsTemplate template,
-			@Value("${messaging.destinations.assignee-changed}")
-			String assigneeChangedDestination
+			ObjectMapper objectMapper,
+			@Value("${messaging.destinations.bug-report-event}")
+			String bugReportEventDestination
 		) {
 		this.template = template;
-		this.assigneeChangedDestination = assigneeChangedDestination;
+		this.objectMapper = objectMapper;
+		this.bugReportEventDestination = bugReportEventDestination;
 	}
-	
+
 	@TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-	public void sendAssigneeChanged(AssigneeChangedEvent event) {
-		var message = "Assignee in report '%s' changed to %s".formatted(event.reportTitle(), event.assigneeName());
-		
-		template.convertAndSend(
-				assigneeChangedDestination,
-				message
-		);
+	public void onBugReportEvent(IBugReportEvent event) {
+		template.convertAndSend(bugReportEventDestination, objectMapper.writeValueAsString(event));
 	}
 
 }

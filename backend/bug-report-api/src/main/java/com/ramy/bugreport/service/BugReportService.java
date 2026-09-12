@@ -222,10 +222,14 @@ public class BugReportService {
         var report = reportById(reportId);
         var assigneeId = request.assigneeId();
         var assignee = requireDeveloper(assigneeId);
+        var reporter = userAccountRepository.findById(report.getReporterId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "User with id=%s does not exist!".formatted(report.getReporterId())));
 
         report.setAssigneeId(assigneeId);
         bugReportRepository.save(report);
-        eventPublisher.publishEvent(new AssigneeChangedEvent(assignee.getName(), assignee.getEmailAddress(), report.getTitle()));
+        eventPublisher.publishEvent(new AssigneeChangedEvent(
+                assignee.getName(), assignee.getEmailAddress(), reporter.getName(), report.getTitle()));
         return updateResponse(report);
     }
 

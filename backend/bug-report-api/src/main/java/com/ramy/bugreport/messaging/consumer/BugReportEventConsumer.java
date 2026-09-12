@@ -12,7 +12,7 @@ public class BugReportEventConsumer {
 
 	private static final Logger logger = LoggerFactory.getLogger(BugReportEventConsumer.class);
 
-	@JmsListener ( destination = "${messaging.destinations.assignee-changed}" )
+	@JmsListener ( destination = "${messaging.destinations.bug-report-event}" )
 	public void onAssigneeChanged(String event) {
 		logger.info("Received: %s", event);
 	}

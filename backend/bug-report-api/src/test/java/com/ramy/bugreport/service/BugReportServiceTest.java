@@ -333,6 +333,8 @@ class BugReportServiceTest {
         var developer = mock(UserAccount.class);
         when(developer.getRole()).thenReturn(EUserRole.DEVELOPER);
         when(userAccountRepository.findById(assigneeId)).thenReturn(Optional.of(developer));
+        var reporter = namedUser("Joe Reporter");
+        when(userAccountRepository.findById(report.getReporterId())).thenReturn(Optional.of(reporter));
 
         var result = service.updateAssignee(report.getId(), request);
 

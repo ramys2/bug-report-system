@@ -12,6 +12,4 @@ spring:
 
 messaging:
   destinations:
-    assignee-changed: bug-report.assignee-changed
-    # status-changed: bug-report.status-changed
-    # report-closed: bug-report.closed
+    bug-report-event: bug-report-event
