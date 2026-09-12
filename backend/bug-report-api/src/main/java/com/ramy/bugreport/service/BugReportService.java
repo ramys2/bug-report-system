@@ -35,7 +35,6 @@ import com.ramy.bugreport.dto.report.UpdateStepsToReproduceRequest;
 import com.ramy.bugreport.exception.BusinessRuleConflictException;
 import com.ramy.bugreport.exception.ResourceNotFoundException;
 import com.ramy.bugreport.messaging.event.AssigneeChangedEvent;
-import com.ramy.bugreport.messaging.publisher.BugReportEventPublisher;
 import com.ramy.bugreport.repository.IBugReportRepository;
 import com.ramy.bugreport.repository.IComponentRepository;
 import com.ramy.bugreport.repository.ISoftwareProjectRepository;
