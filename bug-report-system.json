@@ -29,6 +29,12 @@
           "title": "Setup devcontainer",
           "description": "",
           "color": "#4f78c4"
+        },
+        {
+          "id": "task-15bd425e-8c10-4163-b1b3-37c9f695fde0",
+          "title": "Add Web tests",
+          "description": "",
+          "color": "#7a5ab5"
         }
       ]
     },
@@ -37,16 +43,16 @@
       "name": "In progress",
       "tasks": [
         {
-          "id": "task-82206794-fb7f-4267-a4fc-074e04c87613",
-          "title": "Add mocked email server",
+          "id": "task-4d15053a-32cb-4249-a798-7e0495dcd6d0",
+          "title": "Implement register functionality",
           "description": "",
-          "color": "#c45b62"
+          "color": "#4a9270"
         },
         {
           "id": "task-4d73c2ab-aacd-479e-b199-aaecf5ceff16",
-          "title": "Explore Authetication apps and how to connect them to the app",
+          "title": "Implement second authentication method",
           "description": "",
-          "color": "#d18b35"
+          "color": "#4a9270"
         }
       ]
     },
@@ -54,6 +60,12 @@
       "id": "column-14e7a403-192c-4f53-950b-80997c07901c",
       "name": "Done",
       "tasks": [
+        {
+          "id": "task-82206794-fb7f-4267-a4fc-074e04c87613",
+          "title": "Add mocked email server",
+          "description": "",
+          "color": "#4a9270"
+        },
         {
           "id": "task-d03e0281-a9c4-4e95-82a2-e989b72c2261",
           "title": "Implement custom Toast component",
