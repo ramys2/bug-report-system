@@ -58,6 +58,31 @@ When working on tasks:
 
 ## Engineering Guidance
 
+### Development workflow
+
+Work incrementally and keep changes small and reviewable.
+
+For non-trivial tasks:
+
+1. Inspect the relevant code before making changes.
+2. Propose an implementation approach and define the scope of the **next iteration only**.
+3. Do not modify files until I explicitly approve that iteration.
+4. After approval, implement **only the scope approved for that iteration**.
+5. Summarize what was changed, any decisions made, and what I should review.
+6. **Stop after completing the approved iteration. Do not begin, propose, or implement the next iteration until I explicitly tell you to continue.**
+7. My approval applies only to the iteration currently being discussed. **Never treat approval of one iteration or of the overall approach as permission to complete subsequent iterations.**
+
+Do not:
+
+- Make unrelated changes.
+- Refactor code outside the approved scope.
+- Expand the scope autonomously.
+- Batch multiple implementation iterations together.
+- Continue implementing because the next step seems obvious.
+- Interpret approval of a plan as approval to implement the entire plan.
+
+If you discover during implementation that the approved approach or scope needs to change, stop and explain why. Wait for explicit approval before proceeding with the changed approach.
+
 ### Principles
 
 - Prefer the simplest correct implementation. Avoid speculative features, abstractions, dependencies, configuration, and dead code.
