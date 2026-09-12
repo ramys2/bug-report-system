@@ -35,6 +35,8 @@ import com.ramy.bugreport.dto.report.UpdateStepsToReproduceRequest;
 import com.ramy.bugreport.exception.BusinessRuleConflictException;
 import com.ramy.bugreport.exception.ResourceNotFoundException;
 import com.ramy.bugreport.messaging.event.AssigneeChangedEvent;
+import com.ramy.bugreport.messaging.event.BugReportClosedEvent;
+import com.ramy.bugreport.messaging.event.StatusChangedEvent;
 import com.ramy.bugreport.repository.IBugReportRepository;
 import com.ramy.bugreport.repository.IComponentRepository;
 import com.ramy.bugreport.repository.ISoftwareProjectRepository;
@@ -200,9 +202,23 @@ public class BugReportService {
         
         report.setResolution(resolution);
         report.setStatus(EBugStatus.CLOSED);
-        
+
+        var reporterId = report.getReporterId();
+        var assigneeId = report.getAssigneeId();
+
         report = bugReportRepository.save(report);
-        
+
+        var reporter = userAccountRepository.findById(reporterId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "User with id=%s does not exist!".formatted(reporterId)));
+        var assigneeEmail = assigneeId == null
+                ? null
+                : userAccountRepository.findById(assigneeId)
+                        .orElseThrow(() -> new ResourceNotFoundException(
+                                "User with id=%s does not exist!".formatted(assigneeId)))
+                        .getEmailAddress();
+        eventPublisher.publishEvent(new BugReportClosedEvent(report.getTitle(), assigneeEmail, reporter.getEmailAddress()));
+
         return new CloseBugReportResponse(report.getResolution().getId(), "Task has been closed successfully!");
     }
     
@@ -257,6 +273,17 @@ public class BugReportService {
 
         report.setStatus(request.status());
         bugReportRepository.save(report);
+
+        var reporter = userAccountRepository.findById(report.getReporterId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "User with id=%s does not exist!".formatted(report.getReporterId())));
+        var assigneeEmail = report.getAssigneeId() == null
+                ? null
+                : userAccountRepository.findById(report.getAssigneeId())
+                        .orElseThrow(() -> new ResourceNotFoundException(
+                                "User with id=%s does not exist!".formatted(report.getAssigneeId())))
+                        .getEmailAddress();
+        eventPublisher.publishEvent(new StatusChangedEvent(report.getTitle(), assigneeEmail, reporter.getEmailAddress()));
         return updateResponse(report);
     }
 

@@ -282,6 +282,7 @@ class BugReportServiceTest {
             saved.setStatus(EBugStatus.CLOSED);
             return saved;
         });
+        when(userAccountRepository.findById(any())).thenReturn(Optional.of(mock(UserAccount.class)));
         var before = LocalDateTime.now();
 
         var result = service.close(report.getId(), request);
@@ -363,6 +364,8 @@ class BugReportServiceTest {
         var report = report(UUID.randomUUID());
         var request = new UpdateStatusRequest(EBugStatus.IN_PROGRESS);
         when(bugReportRepository.findById(report.getId())).thenReturn(Optional.of(report));
+        when(userAccountRepository.findById(report.getReporterId())).thenReturn(Optional.of(mock(UserAccount.class)));
+        when(userAccountRepository.findById(report.getAssigneeId())).thenReturn(Optional.of(mock(UserAccount.class)));
 
         var result = service.updateStatus(report.getId(), request);
 
