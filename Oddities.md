@@ -11,6 +11,7 @@ marked in the code comments and were not confirmed by running the application.
 | 1 | `BugReportService` | `updatedAt` is never set on create or update, but `bug_report.updated_at` is `NOT NULL`. How does creating a report succeed against the real database? |
 | 2 | `BugReportAuthorizer`, `CommentAuthorizer` | They throw `ResourceNotFoundException` while a `@PreAuthorize` expression is evaluated. Does that reach the client as 404, or is it wrapped into another error (e.g. 500)? |
 | 3 | `POST /api/components` / `CreateComponentForm` | `responsibleUserId` is not validated, but the column is `NOT NULL`. A missing or unknown user is expected to end as 409 (database error) or an error toast in the UI. Not tested. |
+| 4 | `run-backend.sh` | `application.yml` uses the hosts `database`, `artemis` and `mailpit` (compose service names). How do they resolve when the backend runs directly on the host? |
 
 ## Backend
 
@@ -78,3 +79,11 @@ marked in the code comments and were not confirmed by running the application.
 - The description modals on the admin pages have no close (X) button in the header.
 - `HomePage` and `BugReportPage` load the developers/projects/components lists on mount even if the create form or the select fields are never used.
 - The pages use `document.getElementById` together with Bootstrap's `Modal` API to open and close modals, mixing DOM access with React state.
+
+## Scripts and infrastructure
+
+- `run-backend.sh` called with two or more arguments prints a message but exits with status 0 (a bare `exit`), so it looks like success. An unknown single argument is ignored silently.
+- The Vite proxy target `http://backend:8080` (`frontend/vite.config.js`) only resolves inside the compose network, so `npm run dev` on the host has no working backend.
+- `docker-compose.yml` uses the `latest` tag for `mariadb` and `apache/activemq-artemis`, so versions are not pinned.
+- `backend/Dockerfile` hard-codes the jar name `bug-report-api-0.1.0-SNAPSHOT.jar`; changing the version in the pom breaks the image build.
+- `database/init/01-create-test-database.sql` only runs on an empty database volume, so an existing volume never gets the `bug_report_test` database.
