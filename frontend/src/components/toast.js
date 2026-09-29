@@ -1,7 +1,22 @@
+/**
+ * Name of the browser event that carries toast requests from `showToast()` to the `Toast` component.
+ */
 const toastEventName = "app:toast";
 
+/**
+ * Bootstrap contextual colors accepted as toast severity.
+ */
 const allowedSeverities = new Set(["success", "info", "warning", "danger"]);
 
+/**
+ * Accepts either positional arguments or one options object and returns a valid toast: `"error"` becomes `"danger"`,
+ * unknown severities become `"info"`, and message/summary are turned into strings.
+ *
+ * @param {string|{severity?: string, message?: string, summary?: string}} severity
+ * @param {string} [message]
+ * @param {string} [summary]
+ * @returns {{severity: string, message: string, summary: string}}
+ */
 function normalizeToast(severity, message, summary) {
     const options = typeof severity === "object" && severity !== null
         ? severity

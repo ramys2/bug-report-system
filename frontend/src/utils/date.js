@@ -1,3 +1,9 @@
+/**
+ * Formats a timestamp as `dd-MM-yyyy HH:mm` in the browser's local time zone.
+ *
+ * @param {string|null|undefined} value an ISO-8601 timestamp, or a string already in `dd-MM-yyyy HH:mm` form (returned unchanged)
+ * @returns {string} the formatted text; `""` for an empty value, and the input itself if it cannot be parsed
+ */
 export function formatDateTime(value) {
     if (!value) {
         return "";
