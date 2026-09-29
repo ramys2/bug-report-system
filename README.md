@@ -16,7 +16,7 @@ to a message broker and sent to the people involved as emails.
 4. [Project structure](#project-structure)
 5. [Domain model](#domain-model)
 6. [Backend](#backend) _(coming soon)_
-7. [REST API](#rest-api) _(coming soon)_
+7. [REST API](#rest-api)
 8. [Frontend](#frontend) _(coming soon)_
 9. [Getting started](#getting-started) _(coming soon)_
 10. [Demo credentials](#demo-credentials)
@@ -30,7 +30,8 @@ to a message broker and sent to the people involved as emails.
   in with email and password. An administrator can change roles to `DEVELOPER` or `ADMIN`.
 - **Bug reports.** A signed-in user files a report with a title, severity (`LOW`, `MEDIUM`,
   `HIGH`, `CRITICAL`), project, component and optional details (description, steps to
-  reproduce, expected and actual behavior, assignee).
+  reproduce, expected and actual behavior, assignee). _Currently the create request fails, see
+  [Known limitations](#known-limitations)._
 - **Triage.** The reporter, the assignee or an admin can edit a report, change its severity
   and status, move it to another project or component, and assign it to a developer.
 - **Comments.** Any signed-in user can comment on an open report. A comment can be deleted by
@@ -217,7 +218,60 @@ _Coming soon._
 
 ## REST API
 
-_Coming soon._
+The backend serves a JSON REST API under `/api` (default port 8080). Fields are camelCase.
+Authentication is a session cookie from `POST /api/auth/login`. Every `POST`, `PATCH` and
+`DELETE` request, including login, must send the CSRF token from `GET /api/csrf` in the
+`X-CSRF-TOKEN` header. Errors have the body `{"message": "..."}` with status 400, 401, 403, 404
+or 409. URLs that are not explicitly allowed answer 403.
+
+"Owner" below means: the report's reporter or assignee (an admin is always allowed).
+
+| Method | Path | Purpose | Access |
+| --- | --- | --- | --- |
+| GET | `/api/csrf` | Get the CSRF token | Public |
+| POST | `/api/auth/login` | Sign in (form fields `username` = email, `password`) | Public |
+| POST | `/api/auth/logout` | Sign out | Signed in |
+| GET | `/api/auth/me` | Current user | Signed in |
+| POST | `/api/accounts` | Register (role `REPORTER`) | Public |
+| GET | `/api/accounts` | List all accounts | Admin |
+| GET | `/api/accounts/developers` | List developers | Signed in |
+| GET | `/api/accounts/users?search=` | Search users by name | Admin, developer |
+| PATCH | `/api/accounts/{userId}/role` | Change a user's role | Admin |
+| GET | `/api/projects` | List projects | Signed in |
+| POST | `/api/projects` | Create a project | Admin |
+| PATCH | `/api/projects/{projectId}/name` | Rename a project | Admin, developer |
+| PATCH | `/api/projects/{projectId}/description` | Change a project's description | Admin, developer |
+| GET | `/api/components` | List components | Signed in |
+| POST | `/api/components` | Create a component | Admin, developer |
+| PATCH | `/api/components/{componentId}/name` | Rename a component | Admin, developer |
+| PATCH | `/api/components/{componentId}/description` | Change a component's description | Admin, developer |
+| PATCH | `/api/components/{componentId}/responsibleUserId` | Change the responsible user | Admin, developer |
+| GET | `/api/reports` | List all reports (brief) | Signed in |
+| GET | `/api/reports/{reportId}` | Get one report in full | Signed in |
+| GET | `/api/reports/reported` | Reports filed by me | Signed in |
+| GET | `/api/reports/assigned` | Reports assigned to me | Signed in |
+| POST | `/api/reports` | File a report (currently fails, see below) | Signed in |
+| POST | `/api/reports/{reportId}/resolution` | Close a report | Owner or admin |
+| PATCH | `/api/reports/{reportId}/assignee` | Assign a developer | Owner or admin |
+| PATCH | `/api/reports/{reportId}/severity` | Change severity | Owner or admin |
+| PATCH | `/api/reports/{reportId}/status` | Change status (not to `CLOSED`) | Owner or admin |
+| PATCH | `/api/reports/{reportId}/project` | Move to another project | Owner or admin |
+| PATCH | `/api/reports/{reportId}/component` | Move to another component | Owner or admin |
+| PATCH | `/api/reports/{reportId}/description` | Replace the description | Owner or admin |
+| PATCH | `/api/reports/{reportId}/steps-to-reproduce` | Replace the steps to reproduce | Owner or admin |
+| PATCH | `/api/reports/{reportId}/expected-behavior` | Replace the expected behavior | Owner or admin |
+| PATCH | `/api/reports/{reportId}/actual-behavior` | Replace the actual behavior | Owner or admin |
+| GET | `/api/reports/{reportId}/comments` | List comments of a report | Signed in |
+| POST | `/api/reports/{reportId}/comments` | Add a comment | Signed in |
+| DELETE | `/api/comments/{commentId}` | Delete a comment | Author or admin |
+
+> **Known issue:** `POST /api/reports` currently answers 409 for valid input, because the
+> service never sets `updatedAt` and the database column `bug_report.updated_at` is `NOT NULL`
+> (verified against the running backend). See [Known limitations](#known-limitations).
+
+Request and response examples, validation rules, error cases and sequence diagrams for the sign-in
+and create-report flows are in the [API reference](docs/api-reference.md). An OpenAPI
+specification does not exist yet.
 
 ## Frontend
 
@@ -237,17 +291,16 @@ and three comments.
 | --- | --- | --- |
 | Administrator | `admin@bugreport.local` | `Admin123!` |
 | Backend developer | `developer@bugreport.local` | `Developer123!` |
-| Frontend developer | `frontend@bugreport.local` | `Frontend123!` |
+| Frontend developer | `frontend@bugreport.local` | `Developer123!` |
 | Reporter | `reporter@bugreport.local` | `Reporter123!` |
 
 > **Warning:** these accounts are development fixtures only. Passwords are stored in the
 > database as BCrypt hashes, but the plain-text demo passwords are hard-coded in the source code
 > and written to the application log at startup.
 >
-> TODO(verify): the previous README listed `Frontend123!` for `frontend@bugreport.local`, but
-> `BugReportApplication.seedData` creates that account with the developer password
-> (`Developer123!`). This is checked against the running application in the getting-started
-> iteration.
+> The previous README listed `Frontend123!` for `frontend@bugreport.local`. That is wrong: the
+> seed code gives this account the developer password, and signing in with `Frontend123!` answers
+> 401 (verified).
 
 ## Testing
 
@@ -262,6 +315,8 @@ _Coming soon._
 Nothing below is hidden from the code; this is the honest current state. More detailed
 findings are in [Oddities.md](Oddities.md).
 
+- **Filing a new bug report fails.** `POST /api/reports` answers 409 because `updatedAt` is never
+  set while `bug_report.updated_at` is `NOT NULL` (verified). The seeded demo reports work.
 - **Basic authentication only.** Session cookie and CSRF token, with three fixed roles. There
   is no password policy, password reset, email verification or account lockout.
 - **Demo passwords are hard-coded** and printed to the log at startup.

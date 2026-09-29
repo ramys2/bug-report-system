@@ -25,7 +25,7 @@ Timestamps are `DATETIME(6)` and map to `LocalDateTime`.
 | --- | --- | --- | --- |
 | `id` (`id`) | UUID | yes | Primary key. |
 | `name` (`name`) | string (255) | yes | Display name. |
-| `emailAddress` (`email_address`) | string (255) | yes, unique | Login name. Registration stores it trimmed and lower-cased. |
+| `emailAddress` (`email_address`) | string (255) | yes, unique | Login name. Registration stores it lower-cased (an address with surrounding spaces is rejected by validation). |
 | `passwordHash` (`password_hash`) | string (255) | yes | BCrypt hash of the password. |
 | `role` (`role`) | `EUserRole` | yes | `REPORTER`, `DEVELOPER` or `ADMIN`. |
 | (`archived_at`) | datetime | no | Column exists but is not used by any code. |
@@ -70,16 +70,17 @@ a component independently.
 | `actualBehavior` (`actual_behavior`) | text | no | What happens instead. |
 | `severity` | `EBugSeverity` | yes | `LOW`, `MEDIUM`, `HIGH` or `CRITICAL`. |
 | `status` | `EBugStatus` | yes | Always `OPEN` when built through the builder. |
-| `createdAt` (`created_at`) | datetime | yes | Set by `BugReportService.create`. |
+| `createdAt` (`created_at`) | datetime | yes | Set by `BugReportService.create` (but see the note below). |
 | `updatedAt` (`updated_at`) | datetime | yes | See the note below. |
 | `resolution` (`resolution_id`) | Resolution | no | Unique foreign key to `resolution`; `null` until closed. |
 
 Instances are created with `BugReport.builder(reporterId, projectId, componentId, title,
 severity)`. The builder cannot set the id, the status or the resolution.
 
-> TODO(verify): `updated_at` is `NOT NULL`, but `BugReportService` never sets `updatedAt` on
-> create or update (see [Oddities.md](../Oddities.md), item 1). It is checked when the backend is
-> run in the getting-started iteration.
+> **Known issue (verified):** `updated_at` is `NOT NULL`, but `BugReportService` never sets
+> `updatedAt` on create or update. Creating a report therefore fails with 409 (`Column
+> 'updated_at' cannot be null`), and updates never refresh it. Only the seeded reports have a
+> value. See [Oddities.md](../Oddities.md), item 1.
 
 ### Resolution (`resolution`)
 
