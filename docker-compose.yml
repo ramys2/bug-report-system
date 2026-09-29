@@ -1,4 +1,22 @@
+# Development environment for the bug report system.
+#
+# Services:
+#   backend   Spring Boot API, built from ./backend (port 8080)
+#   frontend  Vite dev server, built from ./frontend (port 5173); it proxies /api to http://backend:8080
+#   database  MariaDB with the bug_report database; ./database/init creates the bug_report_test
+#             database used by the backend tests (init scripts only run the first time, on an empty volume)
+#   mailpit   Fake SMTP server that catches the notification emails; web UI on http://localhost:8025
+#   artemis   ActiveMQ Artemis message broker for bug report events; console on http://localhost:8161
+#
+# Usage:        docker compose up --build      start everything
+#               docker compose up -d database mailpit artemis
+#                                              start only the infrastructure (e.g. to run the backend yourself)
+#               docker compose down            stop; add -v to also delete the stored data
+# Requires:     Docker with the Compose plugin.
+# Note:         The passwords below (root/root, bug_report/bug_report, artemis/artemis) are development defaults only.
+
 services:
+  # Spring Boot API. Starts once the database is healthy and the message broker has started.
   backend:
     build: ./backend
     image: bug-report-backend
@@ -10,12 +28,14 @@ services:
       artemis:
         condition: service_started
 
+  # React frontend served by the Vite dev server.
   frontend:
     build: ./frontend
     image: bug-report-frontend
     ports:
       - "5173:5173"
 
+  # MariaDB; data is kept in the mariadb-data volume.
   database:
     image: mariadb:latest
     environment:
@@ -34,6 +54,7 @@ services:
       timeout: 5s
       retries: 10
 
+  # Catches outgoing emails; open http://localhost:8025 to read them.
   mailpit:
     image: axllent/mailpit
     container_name: mailpit
@@ -48,6 +69,7 @@ services:
         MP_SMTP_AUTH_ACCEPT_ANY: 1
         MP_SMTP_AUTH_ALLOW_INSECURE: 1
 
+  # Message broker between the event publisher and the email consumer.
   artemis:
     image: apache/activemq-artemis:latest-alpine
     container_name: artemis
