@@ -35,6 +35,336 @@
           "title": "Add Web tests",
           "description": "",
           "color": "#7a5ab5"
+        },
+        {
+          "id": "task-6be4ea87-d3bc-40d4-a6ee-2fd74df4b33c",
+          "title": "[Bug] Fix creating a bug report: updated_at is never set",
+          "description": "Oddities.md > Open questions #1.\nVERIFIED: POST /api/reports answers 409 for valid input; backend log shows \"Column 'updated_at' cannot be null\". BugReportService never sets updatedAt on create, but bug_report.updated_at is NOT NULL.\n- set updatedAt on create and on every update\n- add a test that saves through the real database (the mocked service tests do not catch this)",
+          "color": "#c4524f"
+        },
+        {
+          "id": "task-71a70cf0-6d3f-487b-b872-5c41f2fd3a4e",
+          "title": "[Verify] Check 404 for missing comment in CommentAuthorizer",
+          "description": "Oddities.md > Open questions #2.\nPARTLY VERIFIED: PATCH /api/reports/{unknownId}/severity answers 404 (BugReportAuthorizer), so the exception is not turned into a 500 there.\nStill to check: DELETE /api/comments/{unknownId} (CommentAuthorizer), and decide whether authorizers should throw at all or return false (403).",
+          "color": "#d18b35"
+        },
+        {
+          "id": "task-f6405d8a-8381-492b-91ac-72e69889a2f3",
+          "title": "[Bug] Validate responsibleUserId when creating or changing a component",
+          "description": "Oddities.md > Open questions #3 and Backend > Behavior.\nVERIFIED: POST /api/components without a user or with an unknown user answers a generic 409 \"Request conflicts with existing data.\" (database foreign key / NOT NULL). updateResponsibleUserId has the same gap.\n- add @NotNull to CreateComponentRequest.responsibleUserId\n- check the user exists in ComponentService (404, like other services)\n- show a clear message in CreateComponentForm",
+          "color": "#c4524f"
+        },
+        {
+          "id": "task-78a4d917-dc50-4a4f-b8eb-099f1f4fa45a",
+          "title": "[Bug] Make run-backend.sh work on the host",
+          "description": "Oddities.md > Open questions #4.\nVERIFIED: ./run-backend.sh fails with \"Socket fail to connect to database\" because application.yml uses the Compose host names database, artemis and mailpit. Workaround (SPRING_DATASOURCE_URL) is in README, but Artemis 61616 and SMTP 1025 are also not published by docker-compose.yml, so no emails.\nOptions: publish the ports and add a local Spring profile pointing to localhost, or run the backend only through Compose and remove the script.",
+          "color": "#c4524f"
+        },
+        {
+          "id": "task-5e678a68-9f67-41dc-92eb-940ec9114e29",
+          "title": "[Design] Decide how ASSIGNED status and assignment events should work",
+          "description": "Oddities.md > Backend > Behavior.\n- create with an assignee leaves the status OPEN and publishes no event\n- updateAssignee never sets ASSIGNED but publishes an event\n- the UI does not change the status when the assignee changes either\nDecide whether assigning should set ASSIGNED and whether create should notify the assignee.",
+          "color": "#4f78c4"
+        },
+        {
+          "id": "task-fddd36f4-8782-4d1e-9036-afcd82c62665",
+          "title": "[Design] Define status transition rules and skip no-op notifications",
+          "description": "Oddities.md > Backend > Behavior.\nupdateStatus only rejects CLOSED; any other status can be set at any time, and a notification is published even if the status did not change. Decide on allowed transitions (see the lifecycle diagram in the README) and do not email when nothing changed.",
+          "color": "#4f78c4"
+        },
+        {
+          "id": "task-f1dc2d9c-b187-4f64-9d5b-f9ea7908783f",
+          "title": "[Design] Check that a report's component belongs to its project",
+          "description": "Oddities.md > Backend > Behavior.\nupdateComponent does not verify the component belongs to the report's project. The schema has no component -> project link at all, so first decide whether components belong to a project.",
+          "color": "#4f78c4"
+        },
+        {
+          "id": "task-f6c68f8d-329b-429a-9287-49c6e7a95eb3",
+          "title": "[Refactor] Query developers in the database instead of filtering in memory",
+          "description": "Oddities.md > Backend > Behavior.\nUserAccountService.getDevelopers loads all accounts and filters by role in memory. Use a repository query by role (findAllByRole exists).",
+          "color": "#7a5ab5"
+        },
+        {
+          "id": "task-f419fe3e-063d-4517-a37a-22f8de3bdbff",
+          "title": "[Design] Decide on archiving: implement it or drop archived_at",
+          "description": "Oddities.md > Backend > Behavior.\nThe archived_at column exists on user_account, software_project and component, but no entity, mapper or query uses it.",
+          "color": "#4f78c4"
+        },
+        {
+          "id": "task-c641dcae-69f6-4921-897c-e6b5a6b3db42",
+          "title": "[Refactor] Simplify BugReport builder and mapper handling of id, status and resolution",
+          "description": "Oddities.md > Backend > Behavior.\nThe builder always starts a report as OPEN and cannot set id, status or resolution; BugReportMapper.toDomain sets them afterwards with setters. Consider a cleaner way to rebuild a report from the database.",
+          "color": "#7a5ab5"
+        },
+        {
+          "id": "task-77302767-c203-481e-90d9-8a2048187445",
+          "title": "[Refactor] Fix the misleading comment about comment removal in SecurityConfig",
+          "description": "Oddities.md > Backend > Security and access.\nThe comment says comment removal is \"an administrative action\", but the URL rule only needs a signed-in user and the service allows ADMIN or the comment's author. Fix the comment (or change the rule).",
+          "color": "#7a5ab5"
+        },
+        {
+          "id": "task-b9d04b74-2608-461b-bcfb-6a1fa67e80e1",
+          "title": "[Design] Decide who may see which bug reports",
+          "description": "Oddities.md > Backend > Security and access.\nGET /api/reports returns all reports to every signed-in user (no filtering by owner or project).",
+          "color": "#4f78c4"
+        },
+        {
+          "id": "task-e067761c-0b7d-470c-a53c-64dc659cbcad",
+          "title": "[Refactor] Make the CORS origin configurable",
+          "description": "Oddities.md > Backend > Security and access.\nSecurityConfig hard-codes http://localhost:5173 as the only allowed origin. Move it to a property.",
+          "color": "#7a5ab5"
+        },
+        {
+          "id": "task-5dd2d146-394c-459e-b8bd-0b741833d446",
+          "title": "[Refactor] Avoid a database lookup on every request in CurrentUserAuthenticationFilter",
+          "description": "Oddities.md > Backend > Security and access.\nThe filter reloads the user on each request so role changes apply immediately. Decide if that trade-off is fine or if caching is needed.",
+          "color": "#7a5ab5"
+        },
+        {
+          "id": "task-116266d6-2861-4954-8106-a5a6ce5492cc",
+          "title": "[Security] Stop logging demo passwords and hard-coding them at startup",
+          "description": "Oddities.md > Backend > Security and access.\nDemo passwords are hard-coded in BugReportApplication and written to the log at startup (only BCrypt hashes are stored). Limit to a dev profile or read from configuration.",
+          "color": "#a83f6a"
+        },
+        {
+          "id": "task-4f499e8a-b2b0-4e36-9795-26d278c3b0f4",
+          "title": "[Security] Move credentials out of application.yml",
+          "description": "Oddities.md > Backend > Security and access.\napplication.yml contains database, Artemis and mail credentials in plain text (development defaults). Use environment variables or profiles for anything beyond local development.",
+          "color": "#a83f6a"
+        },
+        {
+          "id": "task-f374109a-f039-4e1f-96b9-c9581134317c",
+          "title": "[Verify] Check error responses for unexpected errors, 405 and 415",
+          "description": "Oddities.md > Backend > Security and access.\nApiExceptionHandler handles a fixed list of exceptions. Check what the client receives for unhandled exceptions (500), unsupported methods (405) and media types (415), and whether they should use the {\"message\": ...} body.",
+          "color": "#d18b35"
+        },
+        {
+          "id": "task-60a9316b-5a0d-4f65-b30d-34c38fafcb6b",
+          "title": "[Bug] Return the resolution id with a correct field name from the close endpoint",
+          "description": "Oddities.md > Backend > API design.\nPOST /api/reports/{id}/resolution returns { reportId, message }, but reportId holds the id of the new resolution (VERIFIED). Rename the field or return the report id.",
+          "color": "#c4524f"
+        },
+        {
+          "id": "task-5e312a7f-eec7-4e08-9f80-9609ec1ed16f",
+          "title": "[Refactor] Add a ResolutionResponse DTO",
+          "description": "Oddities.md > Backend > API design.\nBugReportResponse serializes the domain Resolution object directly, tying the API shape to the domain class.",
+          "color": "#7a5ab5"
+        },
+        {
+          "id": "task-4469fe38-d23e-4964-af6b-203b635a8770",
+          "title": "[Design] Unify DTO field names",
+          "description": "Oddities.md > Backend > API design.\nUserAccountResponse.username holds the display name (login name is email); ids are named id / userId / reportId; names are username / name / author. Agree on one naming scheme (this changes the API and the frontend).",
+          "color": "#4f78c4"
+        },
+        {
+          "id": "task-67ac976f-147e-4496-bc8b-6375f7cc3584",
+          "title": "[Design] Use one timestamp format in all responses",
+          "description": "Oddities.md > Backend > API design.\nBugReportBriefResponse.createdAt is a formatted string (dd-MM-yyyy HH:mm); every other timestamp is ISO-8601.",
+          "color": "#4f78c4"
+        },
+        {
+          "id": "task-6da89510-51eb-4806-a573-2ba795b28901",
+          "title": "[Design] Make PATCH /api/accounts/{id}/role consistent with other updates",
+          "description": "Oddities.md > Backend > API design.\nIt returns 204 without a body, while the other update endpoints return 200 with {id, message}.",
+          "color": "#4f78c4"
+        },
+        {
+          "id": "task-dc9e8a35-8e0d-4518-979f-3c6cc4506dc4",
+          "title": "[Design] Use one path style for update endpoints",
+          "description": "Oddities.md > Backend > API design.\nComponent uses the camelCase segment /responsibleUserId; report endpoints use kebab-case (/steps-to-reproduce).",
+          "color": "#4f78c4"
+        },
+        {
+          "id": "task-ff9b3db7-c7ad-42c2-9ed7-84003b1801aa",
+          "title": "[Bug] Use reporterName in the assignee-changed email or remove it",
+          "description": "Oddities.md > Backend > Messaging.\nAssigneeChangedEvent.reporterName is never used in the email text.",
+          "color": "#c4524f"
+        },
+        {
+          "id": "task-042b3297-2e2c-4bd3-89fd-57d11ff31509",
+          "title": "[Refactor] Make the email sender address configurable",
+          "description": "Oddities.md > Backend > Messaging.\nno-reply@bugreport.local is hard-coded in BugReportEventConsumer.",
+          "color": "#7a5ab5"
+        },
+        {
+          "id": "task-e2af467b-1a20-4338-99ca-16da4dc5b46f",
+          "title": "[Design] Handle failures when publishing events",
+          "description": "Oddities.md > Backend > Messaging.\nBugReportEventPublisher does not catch send failures; the database change is already committed when sending fails. Decide on logging, retry or an outbox.",
+          "color": "#4f78c4"
+        },
+        {
+          "id": "task-57f9b2e7-962b-4cf1-b7ab-facbcc0b3a3d",
+          "title": "[Bug] Fix the not-found message in CommentAuthorizer",
+          "description": "Oddities.md > Backend > Small things.\nIt says \"Report with id\" when a comment is missing.",
+          "color": "#c4524f"
+        },
+        {
+          "id": "task-dbddb7d8-a728-4576-84bc-7e623cf5d3dc",
+          "title": "[Refactor] Fix the misleading in-memory database comment in BugReportApplication",
+          "description": "Oddities.md > Backend > Small things.\nThe comment \"These accounts exist only in the in-memory demo database\" is wrong: the app and the tests use MariaDB.",
+          "color": "#7a5ab5"
+        },
+        {
+          "id": "task-6cd4000c-f35a-42ca-921d-57f52cc9bbf7",
+          "title": "[Design] Decide the future of Attachment",
+          "description": "Oddities.md > Backend > Small things.\nAttachment exists only in the domain module (no entity, repository or endpoint); the demo seeding code is commented out. Implement attachments or remove the class.",
+          "color": "#4f78c4"
+        },
+        {
+          "id": "task-a4f5b810-9198-44b3-9f48-be09fed5ae13",
+          "title": "[Design] Decide whether to map JPA associations",
+          "description": "Oddities.md > Backend > Small things.\nOnly BugReportEntity.resolution is a JPA association; other relations are plain UUID columns with foreign keys only in V1__Base.sql, so services load related rows by hand.",
+          "color": "#4f78c4"
+        },
+        {
+          "id": "task-02e77085-aa21-42ca-9bb6-91488eb7a208",
+          "title": "[Bug] Prevent write requests before the CSRF token is loaded",
+          "description": "Oddities.md > Frontend.\ngetCsrfToken() returns null fields until the token is loaded, so a write request sent too early would use a header named \"null\".",
+          "color": "#c4524f"
+        },
+        {
+          "id": "task-70c47ecf-7510-4f74-a52a-ce603332b99c",
+          "title": "[Refactor] Replace jQuery ($.ajax) with fetch",
+          "description": "Oddities.md > Frontend.\njQuery is used for all requests although fetch is available.",
+          "color": "#7a5ab5"
+        },
+        {
+          "id": "task-95318641-408e-4605-bd73-9b04a89daef8",
+          "title": "[Refactor] Clean up the api modules",
+          "description": "Oddities.md > Frontend.\n- api files differ in style (quoted \"url\" keys, missing semicolons)\n- api/create-bug-report-options.js duplicates getAllProjects and getAllComponents",
+          "color": "#7a5ab5"
+        },
+        {
+          "id": "task-61537eca-f4ef-4b0d-9589-71e3394d3ffc",
+          "title": "[UX] Show a message when login fails",
+          "description": "Oddities.md > Frontend.\nA failed login is only written to the browser console; the user sees nothing. (The Register button is covered by the existing task \"Implement register functionality\".)",
+          "color": "#3a9ab5"
+        },
+        {
+          "id": "task-85e0049f-8789-4de2-af58-dde62213863c",
+          "title": "[Bug] Use the router link in BugReportRow",
+          "description": "Oddities.md > Frontend.\nBugReportRow uses a plain <a href>, which reloads the whole page; use React Router's Link.",
+          "color": "#c4524f"
+        },
+        {
+          "id": "task-d1fc99ce-f0be-4ec2-80e1-c6b6dbb14999",
+          "title": "[UX] Show a loading indicator in ProtectedRoute",
+          "description": "Oddities.md > Frontend.\nProtectedRoute renders nothing while the session check is running.",
+          "color": "#3a9ab5"
+        },
+        {
+          "id": "task-760fb4c5-b2a0-4eee-89b5-e3e2a867e613",
+          "title": "[Refactor] Replace Bootstrap modal DOM handling with React state",
+          "description": "Oddities.md > Frontend.\nModal relies on Bootstrap's JavaScript, and pages open and close modals with document.getElementById plus the Bootstrap Modal API, mixing DOM access with React state.",
+          "color": "#7a5ab5"
+        },
+        {
+          "id": "task-49bbf58d-f318-43f0-b922-db70f5187273",
+          "title": "[Bug] Do not send empty strings for optional fields in CreateBugReportForm",
+          "description": "Oddities.md > Frontend.\nOptional text fields left empty are sent as empty strings; omit them or send null.",
+          "color": "#c4524f"
+        },
+        {
+          "id": "task-a4f36f79-db06-490f-b84f-79dcf63f5033",
+          "title": "[Refactor] Make the Toast timeout configurable",
+          "description": "Oddities.md > Frontend.\nToast uses a hard-coded 5-second timeout.",
+          "color": "#7a5ab5"
+        },
+        {
+          "id": "task-fc682a63-631c-4cd1-92b9-7d2701afb355",
+          "title": "[Bug] Add a route for unknown paths and redirect signed-in users away from /login",
+          "description": "Oddities.md > Frontend.\nApp.jsx has no route for unknown paths, and /login stays reachable for signed-in users.",
+          "color": "#c4524f"
+        },
+        {
+          "id": "task-5407105f-384d-4166-84c3-6600b41fe0a9",
+          "title": "[Bug] Show an error state when loading a bug report fails",
+          "description": "Oddities.md > Frontend > BugReportPage.\nIf GET /api/reports/{id} fails, the page shows \"Loading bug report...\" forever (only a toast appears).",
+          "color": "#c4524f"
+        },
+        {
+          "id": "task-f33b05a6-f294-4247-abcc-333246e22e64",
+          "title": "[Bug] Select the current option by id, not by name, in BugReportPage",
+          "description": "Oddities.md > Frontend > BugReportPage.\nThe current option of a select is found by comparing the displayed name with option labels, so duplicate names can select the wrong option. The report response only has names, so the API needs to return ids too.",
+          "color": "#c4524f"
+        },
+        {
+          "id": "task-5429d2aa-abc7-41c5-a9af-323817ca3348",
+          "title": "[Bug] Refresh the report after closing it in BugReportPage",
+          "description": "Oddities.md > Frontend > BugReportPage.\nAfter closing, the local state stores the form draft as the resolution (no id, no resolvedAt) and does not refresh updatedAt until the page is reloaded.",
+          "color": "#c4524f"
+        },
+        {
+          "id": "task-4cf5f225-4f7f-44c5-8a6a-07c672292699",
+          "title": "[UX] Check for blank comment text in the UI",
+          "description": "Oddities.md > Frontend > BugReportPage.\nThe backend rejects a blank comment (400) and only a generic error toast appears.",
+          "color": "#3a9ab5"
+        },
+        {
+          "id": "task-507699ce-5c1d-4ed0-85c4-f4bf4426f24e",
+          "title": "[Refactor] Share EditableName and description-modal code between the admin pages",
+          "description": "Oddities.md > Frontend.\nProjectAdminPage and ComponentAdminPage duplicate the inline EditableName component and the description-modal logic.",
+          "color": "#7a5ab5"
+        },
+        {
+          "id": "task-89b0e4fe-96c9-4a65-a538-68a5a3fbd9ea",
+          "title": "[Refactor] Guard auth.currentUser in ProjectAdminPage",
+          "description": "Oddities.md > Frontend.\nProjectAdminPage reads auth.currentUser.role without a null check; it is only safe because ProtectedRoute guards the page.",
+          "color": "#7a5ab5"
+        },
+        {
+          "id": "task-280e6da5-309f-411e-b6cf-3ddb81e9ad6f",
+          "title": "[UX] Stop admins from editing their own role in UserAdminPage",
+          "description": "Oddities.md > Frontend.\nAn admin can start editing their own role although the backend refuses it (only a generic toast is shown).",
+          "color": "#3a9ab5"
+        },
+        {
+          "id": "task-4ee32e3a-c17b-4657-9aef-703e58bd0c74",
+          "title": "[Refactor] Filter and page users on the server in UserAdminPage",
+          "description": "Oddities.md > Frontend.\nUserAdminPage loads all users and filters and pages them in the browser.",
+          "color": "#7a5ab5"
+        },
+        {
+          "id": "task-846252b7-e180-43ff-863b-ab1163340afc",
+          "title": "[UX] Add a close (X) button to the description modals of the admin pages",
+          "description": "Oddities.md > Frontend.",
+          "color": "#3a9ab5"
+        },
+        {
+          "id": "task-f1e9731b-869e-4d1e-9fbb-929aa9bf8dd1",
+          "title": "[Refactor] Load form option lists lazily in HomePage and BugReportPage",
+          "description": "Oddities.md > Frontend.\nDevelopers, projects and components are loaded on mount even if the create form or the select fields are never used.",
+          "color": "#7a5ab5"
+        },
+        {
+          "id": "task-a00d1b27-8028-4c93-8c59-6be6d54bdfb2",
+          "title": "[Bug] Fix argument handling in run-backend.sh",
+          "description": "Oddities.md > Scripts and infrastructure.\nWith two or more arguments it prints a message but exits with status 0 (a bare exit); an unknown single argument is ignored silently.",
+          "color": "#c4524f"
+        },
+        {
+          "id": "task-71939e8c-ed7a-4b2c-a47e-28a391669be2",
+          "title": "[Bug] Make the Vite proxy target configurable",
+          "description": "Oddities.md > Scripts and infrastructure.\nfrontend/vite.config.js proxies /api to http://backend:8080, which only resolves inside the Compose network, so npm run dev on the host has no working backend (VERIFIED by config; documented in README).",
+          "color": "#c4524f"
+        },
+        {
+          "id": "task-b71d4c09-7f3a-40a7-aac0-dc42f94320bf",
+          "title": "[Infra] Pin Docker image versions",
+          "description": "Oddities.md > Scripts and infrastructure.\ndocker-compose.yml uses the latest tag for mariadb and apache/activemq-artemis (and axllent/mailpit has no tag either), so versions are not pinned.",
+          "color": "#5f6b7a"
+        },
+        {
+          "id": "task-0000f374-181a-443f-be21-dd7dc5cfd5c8",
+          "title": "[Infra] Remove the hard-coded jar name from backend/Dockerfile",
+          "description": "Oddities.md > Scripts and infrastructure.\nThe Dockerfile copies bug-report-api-0.1.0-SNAPSHOT.jar, so changing the version in the pom breaks the image build.",
+          "color": "#5f6b7a"
+        },
+        {
+          "id": "task-3add6583-e139-44c0-8462-c027e13b5d90",
+          "title": "[Infra] Create the bug_report_test database on existing volumes",
+          "description": "Oddities.md > Scripts and infrastructure.\ndatabase/init/01-create-test-database.sql only runs on an empty volume, so an existing volume never gets bug_report_test and the integration tests fail. (README documents a manual command, VERIFIED.)",
+          "color": "#5f6b7a"
         }
       ]
     },
