@@ -12,9 +12,22 @@ import {
 import { searchUsers } from "../api/account";
 import "./ComponentAdminPage.css";
 
+/**
+ * Element id of the modal for editing a component's description.
+ */
 const descriptionModalId = "component-description-modal";
+/**
+ * Element id of the modal for creating a component.
+ */
 const createModalId = "create-component-modal";
 
+/**
+ * Table cell that shows a component's name and lets the user rename it inline. Save calls `PATCH /api/components/{id}/name` and is disabled for empty or unchanged names.
+ *
+ * @param {object} props
+ * @param {{id: string, name: string}} props.component the component shown
+ * @param {(componentId: string, name: string) => void} props.onNameSaved called with the new name after it was saved
+ */
 function EditableName({ component, onNameSaved }) {
     const [isEditing, setIsEditing] = useState(false);
     const [draftName, setDraftName] = useState(component.name);
@@ -85,6 +98,14 @@ function EditableName({ component, onNameSaved }) {
     );
 }
 
+/**
+ * Table cell that shows the responsible user and lets the user pick another one by searching users by name (`GET /api/accounts/users?search=...`).
+ * Clicking a search result saves it immediately with `PATCH /api/components/{id}/responsibleUserId`. Results of outdated searches are ignored.
+ *
+ * @param {object} props
+ * @param {{id: string, name: string, responsibleUserName: string|null}} props.component the component shown
+ * @param {(componentId: string, userName: string) => void} props.onResponsibleUserSaved called with the new user's name after it was saved
+ */
 function EditableResponsibleUser({ component, onResponsibleUserSaved }) {
     const [isEditing, setIsEditing] = useState(false);
     const [search, setSearch] = useState("");
@@ -217,6 +238,11 @@ function EditableResponsibleUser({ component, onResponsibleUserSaved }) {
     );
 }
 
+/**
+ * Admin page at `/admin/components` (ADMIN or DEVELOPER): all components in a table with inline name and responsible-user editing and a modal for the description.
+ *
+ * Components are loaded with `GET /api/components`; changes use the `PATCH /api/components/{id}/...` endpoints and "Create new" opens `CreateComponentForm`. Takes no props.
+ */
 export default function ComponentAdminPage() {
     const [components, setComponents] = useState([]);
     const [isLoading, setIsLoading] = useState(true);

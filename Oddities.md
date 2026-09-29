@@ -66,3 +66,15 @@ marked in the code comments and were not confirmed by running the application.
 - `Modal` relies on Bootstrap's own JavaScript instead of React state.
 - `CreateBugReportForm` sends empty strings for optional text fields left empty.
 - `Toast` uses a hard-coded 5-second timeout.
+- `App.jsx` has no route for unknown paths, and `/login` stays reachable for signed-in users (`LoginPage` does not redirect them).
+- `BugReportPage`: if `GET /api/reports/{id}` fails, the page keeps showing "Loading bug report..." forever (only a toast is shown).
+- `BugReportPage`: the current option of a select field is found by comparing the displayed **name** with option labels (the report response has names, not ids), so duplicate names could select the wrong option.
+- `BugReportPage`: after closing a report, the local state stores the form draft as the resolution (no `id`, no `resolvedAt`) and does not refresh `updatedAt`, until the page is reloaded.
+- `BugReportPage`: adding a comment does not check for blank text in the UI; the backend rejects it and only a generic error toast appears.
+- `BugReportPage`: changing the assignee in the UI does not change the status (same as the backend).
+- The admin pages `ProjectAdminPage` and `ComponentAdminPage` duplicate the inline `EditableName` component and the description-modal logic.
+- `ProjectAdminPage` reads `auth.currentUser.role` without a null check; this is only safe because `ProtectedRoute` guards the page.
+- `UserAdminPage` lets an admin start editing their own role, although the backend refuses it (only a generic toast is shown). It also loads all users and filters and pages them in the browser.
+- The description modals on the admin pages have no close (X) button in the header.
+- `HomePage` and `BugReportPage` load the developers/projects/components lists on mount even if the create form or the select fields are never used.
+- The pages use `document.getElementById` together with Bootstrap's `Modal` API to open and close modals, mixing DOM access with React state.

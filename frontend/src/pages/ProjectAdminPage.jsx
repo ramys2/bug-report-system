@@ -7,9 +7,22 @@ import { showToast } from "../components/toast";
 import { getAllProjects, updateProjectDescription, updateProjectName } from "../api/project";
 import "./ProjectAdminPage.css";
 
+/**
+ * Element id of the modal for editing a project's description.
+ */
 const descriptionModalId = "project-description-modal";
+/**
+ * Element id of the modal for creating a project.
+ */
 const createModalId = "create-project-modal";
 
+/**
+ * Table cell that shows a project's name and lets the user rename it inline. Save calls `PATCH /api/projects/{id}/name` and is disabled for empty or unchanged names.
+ *
+ * @param {object} props
+ * @param {{id: string, name: string}} props.project the project shown
+ * @param {(projectId: string, name: string) => void} props.onNameSaved called with the new name after it was saved
+ */
 function EditableName({ project, onNameSaved }) {
     const [isEditing, setIsEditing] = useState(false);
     const [draftName, setDraftName] = useState(project.name);
@@ -80,6 +93,12 @@ function EditableName({ project, onNameSaved }) {
     );
 }
 
+/**
+ * Admin page at `/admin/projects` (ADMIN or DEVELOPER): all projects in a table with inline name editing and a modal for the description.
+ *
+ * Projects are loaded with `GET /api/projects`. Names and descriptions are saved with `PATCH /api/projects/{id}/name` and `/description`.
+ * The "Create new" button (`POST /api/projects` through `CreateProjectForm`) is only shown to admins, matching the backend rule. Takes no props.
+ */
 export default function ProjectAdminPage() {
     const auth = useContext(AuthContext);
     const [projects, setProjects] = useState([]);

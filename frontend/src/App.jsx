@@ -13,6 +13,17 @@ import Navbar from "./components/Navbar";
 import AuthProvider from "./components/AuthProvider";
 import Toast from "./components/Toast";
 
+/**
+ * Root component: sets up routing and the app-wide providers.
+ *
+ * `AuthProvider` wraps everything, `Navbar` and `Toast` are always visible. Routes:
+ * - `/login`: public, `LoginPage`.
+ * - `/` and `/reports/:id`: any signed-in user (`ProtectedRoute`).
+ * - `/admin/components` and `/admin/projects`: ADMIN or DEVELOPER (`DeveloperRoute`).
+ * - `/admin/users`: ADMIN only (`AdminRoute`).
+ *
+ * The route guards only control what the UI shows; the backend enforces access itself. There is no route for unknown paths.
+ */
 export default function App() {
     return (
         <BrowserRouter>

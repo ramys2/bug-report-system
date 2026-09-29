@@ -9,8 +9,18 @@ import "./HomePage.css";
 import { getAllReports, getAssigned, getReported } from "../api/bug-report";
 import { getComponents, getDevelopers, getProjects } from "../api/create-bug-report-options";
 
+/**
+ * Element id of the "create bug report" modal, used to open it (via `data-bs-target`) and to close it from code.
+ */
 const createBugReportModalId = "create-bug-report-modal";
 
+/**
+ * Home page at `/`: the list of bug reports with quick filters and a "Create new" button that opens `CreateBugReportForm` in a modal.
+ *
+ * On mount it loads all reports (`GET /api/reports`) and the developers, projects and components that the create form offers as choices.
+ * "Reported by me" and "Assigned to me" replace the list with `GET /api/reports/reported` or `/assigned`; Reset reloads all reports.
+ * After a report is created the list is reloaded and the modal is closed. Failed requests show an error toast. Takes no props.
+ */
 function HomePage() {
     const [bugReports, setBugReports] = useState([]);
     const [isQuickFilterActive, setIsQuickFilterActive] = useState(false);

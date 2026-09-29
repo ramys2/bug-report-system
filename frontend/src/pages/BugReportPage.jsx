@@ -22,18 +22,37 @@ import AuthContext from "../components/AuthContext";
 import Modal from "../components/Modal";
 import { showToast } from "../components/toast";
 
+/**
+ * Element id of the modal with the "close issue" form.
+ */
 const closeBugReportModalId = "close-bug-report-modal";
+/**
+ * Element id of the modal that shows the resolution of a closed report.
+ */
 const resolutionModalId = "resolution-modal";
+/**
+ * Empty state of the "close issue" form.
+ */
 const EMPTY_RESOLUTION = {
     description: "",
     fixedVersion: "",
     commitUrl: "",
 };
 
+/**
+ * Text shown for a value; empty or missing values become "Not provided".
+ */
 function displayValue(value) {
     return value || "Not provided";
 }
 
+/**
+ * Read-only label and value pair (`<dt>`/`<dd>`) in the report's detail list.
+ *
+ * @param {object} props
+ * @param {string} props.label
+ * @param {string|null} [props.value] shown through `displayValue`
+ */
 function ReportDetail({ label, value }) {
     return (
         <div className="col-12 col-sm-6">
@@ -43,6 +62,18 @@ function ReportDetail({ label, value }) {
     );
 }
 
+/**
+ * Card with a heading and a long text (description, steps to reproduce, ...) that can be edited in place with a textarea.
+ * Save calls `updateValue(reportId, text)` (one of the `PATCH /api/reports/{id}/...` functions); on success `onValueSaved` is called, on failure an error toast is shown.
+ *
+ * @param {object} props
+ * @param {string} props.title heading, also used in the error message
+ * @param {string} props.reportId id of the report being edited
+ * @param {string|null} props.value current text
+ * @param {boolean} [props.isEditable=true] `false` hides the edit button (used for closed reports)
+ * @param {(reportId: string, value: string) => JQuery.jqXHR} props.updateValue api function that saves the new text
+ * @param {(value: string) => void} props.onValueSaved called with the saved text
+ */
 function EditableReportSection({
     title,
     reportId,
@@ -128,6 +159,9 @@ function EditableReportSection({
     );
 }
 
+/**
+ * Statuses that can be chosen in the page. `CLOSED` is missing on purpose: reports are closed through the resolution form.
+ */
 const STATUS_OPTIONS = [
     "OPEN",
     "ASSIGNED",
@@ -137,8 +171,28 @@ const STATUS_OPTIONS = [
     "REJECTED",
 ];
 
+/**
+ * Severities that can be chosen, same values as the backend enum.
+ */
 const SEVERITY_OPTIONS = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
 
+/**
+ * Detail-list entry (`<dt>`/`<dd>`) whose value can be changed in place with a select box (assignee, severity, status, project, component).
+ * Save calls `updateValue(reportId, selectedValue)` (one of the `PATCH /api/reports/{id}/...` functions). The current option is found by comparing
+ * the displayed `value` with each option's label, since the report only carries names, not ids.
+ *
+ * @param {object} props
+ * @param {string} props.label
+ * @param {string} props.reportId id of the report being edited
+ * @param {string|null} props.value currently displayed label
+ * @param {Array} props.options choices to offer
+ * @param {(option: any) => string} props.getOptionValue value sent to the backend for an option (e.g. an id)
+ * @param {(option: any) => string} props.getOptionLabel text shown for an option
+ * @param {string} [props.placeholder] if given, an empty first option is shown and nothing is preselected
+ * @param {boolean} [props.isEditable=true] `false` disables editing (used for closed reports)
+ * @param {(reportId: string, value: string) => JQuery.jqXHR} props.updateValue api function that saves the choice
+ * @param {(label: string) => void} props.onValueSaved called with the label of the saved option
+ */
 function EditableSelectField({
     label,
     reportId,
@@ -243,6 +297,17 @@ function EditableSelectField({
     );
 }
 
+/**
+ * Report detail page at `/reports/:id`.
+ *
+ * On load it fetches the report (`GET /api/reports/{id}`), its comments (`GET /api/reports/{id}/comments`) and the developers, projects and components
+ * used by the select fields. It shows the report with in-place editing of assignee, severity, status, project, component, description,
+ * steps to reproduce, expected and actual behavior, and a comment section (add: `POST .../comments`, remove: `DELETE /api/comments/{id}`).
+ *
+ * "Close issue" opens a modal that sends `POST /api/reports/{id}/resolution` after a confirmation dialog; afterwards the page treats the report as
+ * closed (nothing is editable, no comments can be added or removed) and offers "Show resolution" instead. Whether a comment can be removed is
+ * decided in the UI (own comments or ADMIN); the backend checks it again. Takes no props; the id comes from the URL.
+ */
 export default function BugReportPage() {
     const { id } = useParams();
     const { currentUser } = useContext(AuthContext);
@@ -678,6 +743,16 @@ export default function BugReportPage() {
     );
 }
 
+/**
+ * One comment as a card: author, time and text. The current user's comments are aligned right and get a different style.
+ *
+ * @param {object} props
+ * @param {{id: string, authorId: string, authorName: string, content: string, createdAt: string}} props.comment
+ * @param {boolean} props.canRemove whether to show the remove button
+ * @param {boolean} props.isCurrentUser whether the signed-in user wrote the comment
+ * @param {boolean} props.isRemoving whether a removal is in progress (disables the button)
+ * @param {(commentId: string) => void} props.onRemove called with the comment id when the button is clicked
+ */
 function CommentCard({ canRemove, comment, isCurrentUser, isRemoving, onRemove }) {
     return (
         <div className="row">

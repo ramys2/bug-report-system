@@ -3,9 +3,23 @@ import { getAllAccounts, updateAccountRole } from "../api/account";
 import { showToast } from "../components/toast";
 import "./UserAdminPage.css";
 
+/**
+ * Roles that can be chosen, same values as the backend enum.
+ */
 const ROLE_OPTIONS = ["ADMIN", "DEVELOPER", "REPORTER"];
+/**
+ * Number of users shown per page.
+ */
 const PAGE_SIZE = 10;
 
+/**
+ * Table cell that shows a user's role and lets an admin change it inline (edit, choose a role, Save or Cancel).
+ * Save calls `PATCH /api/accounts/{id}/role`; on success `onRoleSaved` is called, on failure an error toast is shown (the backend refuses e.g. removing the last admin or changing your own role).
+ *
+ * @param {object} props
+ * @param {{id: string, username: string, email: string, role: string}} props.user the account shown
+ * @param {(userId: string, role: string) => void} props.onRoleSaved called with the new role after it was saved
+ */
 function EditableRole({ user, onRoleSaved }) {
     const [isEditing, setIsEditing] = useState(false);
     const [draftRole, setDraftRole] = useState(user.role);
@@ -76,6 +90,12 @@ function EditableRole({ user, onRoleSaved }) {
     );
 }
 
+/**
+ * Admin page at `/admin/users` (ADMIN only): all accounts in a table with role editing.
+ *
+ * Loads every account once (`GET /api/accounts`); filtering by id, username, email and role and paging (10 per page) are done in the browser.
+ * Takes no props.
+ */
 export default function UserAdminPage() {
     const [users, setUsers] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
