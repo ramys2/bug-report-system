@@ -25,6 +25,7 @@ import com.ramy.bugreport.repository.IUserAccountRepository;
 
 import jakarta.transaction.Transactional;
 
+/** Business logic for user accounts: listing, searching, registration and role changes. */
 @Service
 public class UserAccountService {
     private final IUserAccountRepository userAccountRepository;
@@ -49,6 +50,7 @@ public class UserAccountService {
     * ============================================
     */
 
+    /** Returns all accounts. */
     public List<UserAccountResponse> getAll() {
         return userAccountRepository.findAll()
                 .stream()
@@ -56,6 +58,7 @@ public class UserAccountService {
                 .toList();
     }
 
+    /** Returns the accounts with the {@code DEVELOPER} role. Filtering happens in memory after loading all accounts. */
     public List<DeveloperResponse> getDevelopers() {
         return userAccountRepository.findAll()
                 .stream()
@@ -64,6 +67,12 @@ public class UserAccountService {
                 .toList();
     }
 
+    /**
+     * Finds accounts whose name contains the search text, ignoring case.
+     *
+     * @param search text to look for; surrounding whitespace is trimmed
+     * @return the matches, or an empty list if {@code search} is {@code null} or blank
+     */
     public List<UserAccountBriefResponse> searchUsers(String search) {
         if (search == null || search.isBlank()) {
             return List.of();
@@ -83,6 +92,12 @@ public class UserAccountService {
     * ============================================
     */
 
+    /**
+     * Registers a new account with the {@code REPORTER} role. The email is trimmed and lower-cased and the password is stored as a hash produced by the configured {@code PasswordEncoder}.
+     *
+     * @return the id of the new account
+     * @throws DuplicateEmailException if an account with the normalized email already exists
+     */
     @Transactional
     public CreateUserAccountResponse create(CreateUserAccountRequest request) {
         String emailAddress = normalizeEmail(request.email());
@@ -109,6 +124,18 @@ public class UserAccountService {
      * ============================================
      */
     
+    /**
+     * Changes an account's role.
+     *
+     * <p>Requires the ADMIN role, and admins cannot change their own role
+     * (checked by {@code UserAccountAuthorizer.canUpdateRole}).
+     *
+     * @param userId id of the account to change
+     * @param request the new role
+     * @throws ResourceNotFoundException if the account does not exist
+     * @throws BusinessRuleConflictException if this would demote the last admin, or would take the
+     *         {@code DEVELOPER} role from a user who still has unclosed assigned reports
+     */
     @Transactional
     @PreAuthorize("hasRole('ADMIN') and @userAccountAuthorizer.canUpdateRole(#userId, authentication)")
     public void updateRole(UUID userId, UpdateRoleRequest request) {
@@ -132,6 +159,7 @@ public class UserAccountService {
         userAccountRepository.save(account);
     }
 
+    /** Trims the email and lower-cases it, so that lookups are not case-sensitive. */
     private String normalizeEmail(String emailAddress) {
         return emailAddress.trim().toLowerCase(Locale.ROOT);
     }

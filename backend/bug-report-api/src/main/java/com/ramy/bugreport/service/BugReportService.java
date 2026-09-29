@@ -43,6 +43,18 @@ import com.ramy.bugreport.repository.ISoftwareProjectRepository;
 import com.ramy.bugreport.repository.IUserAccountRepository;
 import jakarta.transaction.Transactional;
 
+/**
+ * Business logic for bug reports: reading, creating, updating field by field and closing them.
+ *
+ * <p>Methods that change a report run in a transaction. Closed reports are read-only: every update
+ * rejects them. Notification events ({@link com.ramy.bugreport.messaging.event.IBugReportEvent}) are
+ * published through Spring's event mechanism and only sent to the message queue after the
+ * transaction commits.
+ *
+ * @implNote {@code updatedAt} is never set by this service (neither on creation nor on update),
+ * although the {@code updated_at} column is NOT NULL. TODO(verify): how creating a report
+ * succeeds against the real database.
+ */
 @Service
 public class BugReportService {
     private final IBugReportRepository bugReportRepository;
@@ -73,10 +85,21 @@ public class BugReportService {
     * ============================================
     */
 
+    /**
+     * Returns all bug reports in brief form, with reporter and assignee names resolved.
+     *
+     * @throws ResourceNotFoundException if a report references a user that does not exist
+     */
     public List<BugReportBriefResponse> getAll() {
         return mapToBriefResponses(bugReportRepository.findAll());
     }
     
+    /**
+     * Returns the full detail of one report, including its reporter, assignee, project and component.
+     *
+     * @param reportId id of the report
+     * @throws ResourceNotFoundException if the report, or any user, project or component it refers to, does not exist
+     */
     public BugReportResponse getReport(UUID reportId) {
         BugReport report = bugReportRepository.findById(reportId)
                 .orElseThrow(() -> new ResourceNotFoundException("Report with id: %s".formatted(reportId)));
@@ -99,14 +122,25 @@ public class BugReportService {
         return BugReportResponse.from(report, reporter, assignee, project, component);
     }
     
+    /**
+     * Returns the brief form of all reports filed by the given user (empty list if there are none).
+     *
+     * @param reporterId id of the reporting user
+     */
     public List<BugReportBriefResponse> getReportsByReporter(UUID reporterId) {
         return mapToBriefResponses(bugReportRepository.findByReporterId(reporterId));
     }
     
+    /**
+     * Returns the brief form of all reports assigned to the given user, including closed ones.
+     *
+     * @param assigneeId id of the assigned user
+     */
     public List<BugReportBriefResponse> getReportsByAssignee(UUID assigneeId) {
         return mapToBriefResponses(bugReportRepository.findByAssigneeId(assigneeId));
     }
 
+    /** Converts reports to brief responses, loading all needed users with a single query instead of one per report. */
     private List<BugReportBriefResponse> mapToBriefResponses(List<BugReport> reports) {
         var userIds = reports.stream()
                 .flatMap(report -> java.util.stream.Stream.of(report.getReporterId(), report.getAssigneeId()))
@@ -143,6 +177,18 @@ public class BugReportService {
     * ============================================
     */
     
+    /**
+     * Creates a new report with status {@link EBugStatus#OPEN} and the current time as {@code createdAt}.
+     *
+     * <p>If the request contains an assignee, the report is created with that assignee but its status
+     * stays {@code OPEN} and no notification event is published.
+     *
+     * @param reporterId id of the user filing the report
+     * @param request the report data; project, component, title and severity are required
+     * @return the id of the new report
+     * @throws ResourceNotFoundException if the reporter, project or component does not exist
+     * @throws BusinessRuleConflictException if an assignee is given who is not a developer
+     */
     @Transactional
     public CreateBugReportResponse create(UUID reporterId, CreateBugReportRequest request) {
         var projectId = request.projectId();
@@ -186,6 +232,21 @@ public class BugReportService {
         return new CreateBugReportResponse(report.getId(), "Successfully created!");
     }
     
+    /**
+     * Closes a report by attaching a resolution and setting its status to {@link EBugStatus#CLOSED}.
+     *
+     * <p>{@code resolvedAt} is set to the current time. A {@link com.ramy.bugreport.messaging.event.BugReportClosedEvent}
+     * addressed to the reporter and, if present, the assignee is published.
+     *
+     * <p>Requires the ADMIN role, or the caller being the report's reporter or assignee
+     * (checked by {@code BugReportAuthorizer.canUpdate}); otherwise access is denied.
+     *
+     * @param reportId id of the report to close
+     * @param request resolution description, fixed version and commit URL
+     * @return the id of the new resolution
+     * @throws ResourceNotFoundException if the report, its reporter or its assignee does not exist
+     * @throws BusinessRuleConflictException if the report is already closed
+     */
     @Transactional
     @PreAuthorize(
     	"hasRole('ADMIN') or @bugReportAuthorizer.canUpdate(#reportId, authentication)"
@@ -230,6 +291,19 @@ public class BugReportService {
     * ============================================
     */
     
+    /**
+     * Assigns the report to a developer and publishes an {@link com.ramy.bugreport.messaging.event.AssigneeChangedEvent}.
+     * The status is not changed.
+     *
+     * <p>Requires the ADMIN role, or the caller being the report's reporter or assignee
+     * (checked by {@code BugReportAuthorizer.canUpdate}); otherwise access is denied.
+     *
+     * @param reportId id of the report to change
+     * @param request the new value
+     * @return confirmation containing the report id
+     * @throws ResourceNotFoundException if the report, the new assignee or the reporter does not exist
+     * @throws BusinessRuleConflictException if the report is closed or the new assignee is not a developer
+     */
     @Transactional
     @PreAuthorize(
     		"hasRole('ADMIN') or @bugReportAuthorizer.canUpdate(#reportId, authentication)"
@@ -249,6 +323,18 @@ public class BugReportService {
         return updateResponse(report);
     }
 
+    /**
+     * Changes the severity.
+     *
+     * <p>Requires the ADMIN role, or the caller being the report's reporter or assignee
+     * (checked by {@code BugReportAuthorizer.canUpdate}); otherwise access is denied.
+     *
+     * @param reportId id of the report to change
+     * @param request the new value
+     * @return confirmation containing the report id
+     * @throws ResourceNotFoundException if the report does not exist
+     * @throws BusinessRuleConflictException if the report is already closed
+     */
     @Transactional
     @PreAuthorize(
             "hasRole('ADMIN') or @bugReportAuthorizer.canUpdate(#reportId, authentication)"
@@ -260,6 +346,21 @@ public class BugReportService {
         return updateResponse(report);
     }
 
+    /**
+     * Changes the status and publishes a {@link com.ramy.bugreport.messaging.event.StatusChangedEvent}
+     * to the reporter and, if present, the assignee. The event is also published when the status is set to its current value.
+     *
+     * <p>{@link EBugStatus#CLOSED} cannot be set here; use {@link #close} instead. No other transition rules are checked.
+     *
+     * <p>Requires the ADMIN role, or the caller being the report's reporter or assignee
+     * (checked by {@code BugReportAuthorizer.canUpdate}); otherwise access is denied.
+     *
+     * @param reportId id of the report to change
+     * @param request the new value
+     * @return confirmation containing the report id
+     * @throws ResourceNotFoundException if the report does not exist
+     * @throws BusinessRuleConflictException if the report is already closed, or the requested status is {@code CLOSED}
+     */
     @Transactional
     @PreAuthorize(
             "hasRole('ADMIN') or @bugReportAuthorizer.canUpdate(#reportId, authentication)"
@@ -287,6 +388,18 @@ public class BugReportService {
         return updateResponse(report);
     }
 
+    /**
+     * Moves the report to another project.
+     *
+     * <p>Requires the ADMIN role, or the caller being the report's reporter or assignee
+     * (checked by {@code BugReportAuthorizer.canUpdate}); otherwise access is denied.
+     *
+     * @param reportId id of the report to change
+     * @param request the new value
+     * @return confirmation containing the report id
+     * @throws ResourceNotFoundException if the report or the project does not exist
+     * @throws BusinessRuleConflictException if the report is already closed
+     */
     @Transactional
     @PreAuthorize(
             "hasRole('ADMIN') or @bugReportAuthorizer.canUpdate(#reportId, authentication)"
@@ -303,6 +416,19 @@ public class BugReportService {
         return updateResponse(report);
     }
 
+    /**
+     * Moves the report to another component.
+     * The component is not checked against the report's project.
+     *
+     * <p>Requires the ADMIN role, or the caller being the report's reporter or assignee
+     * (checked by {@code BugReportAuthorizer.canUpdate}); otherwise access is denied.
+     *
+     * @param reportId id of the report to change
+     * @param request the new value
+     * @return confirmation containing the report id
+     * @throws ResourceNotFoundException if the report or the component does not exist
+     * @throws BusinessRuleConflictException if the report is already closed
+     */
     @Transactional
     @PreAuthorize(
             "hasRole('ADMIN') or @bugReportAuthorizer.canUpdate(#reportId, authentication)"
@@ -319,6 +445,18 @@ public class BugReportService {
         return updateResponse(report);
     }
 
+    /**
+     * Replaces the description.
+     *
+     * <p>Requires the ADMIN role, or the caller being the report's reporter or assignee
+     * (checked by {@code BugReportAuthorizer.canUpdate}); otherwise access is denied.
+     *
+     * @param reportId id of the report to change
+     * @param request the new value
+     * @return confirmation containing the report id
+     * @throws ResourceNotFoundException if the report does not exist
+     * @throws BusinessRuleConflictException if the report is already closed
+     */
     @Transactional
     @PreAuthorize(
             "hasRole('ADMIN') or @bugReportAuthorizer.canUpdate(#reportId, authentication)"
@@ -330,6 +468,18 @@ public class BugReportService {
         return updateResponse(report);
     }
 
+    /**
+     * Replaces the steps to reproduce.
+     *
+     * <p>Requires the ADMIN role, or the caller being the report's reporter or assignee
+     * (checked by {@code BugReportAuthorizer.canUpdate}); otherwise access is denied.
+     *
+     * @param reportId id of the report to change
+     * @param request the new value
+     * @return confirmation containing the report id
+     * @throws ResourceNotFoundException if the report does not exist
+     * @throws BusinessRuleConflictException if the report is already closed
+     */
     @Transactional
     @PreAuthorize(
             "hasRole('ADMIN') or @bugReportAuthorizer.canUpdate(#reportId, authentication)"
@@ -344,6 +494,18 @@ public class BugReportService {
         return updateResponse(report);
     }
 
+    /**
+     * Replaces the expected behavior.
+     *
+     * <p>Requires the ADMIN role, or the caller being the report's reporter or assignee
+     * (checked by {@code BugReportAuthorizer.canUpdate}); otherwise access is denied.
+     *
+     * @param reportId id of the report to change
+     * @param request the new value
+     * @return confirmation containing the report id
+     * @throws ResourceNotFoundException if the report does not exist
+     * @throws BusinessRuleConflictException if the report is already closed
+     */
     @Transactional
     @PreAuthorize(
             "hasRole('ADMIN') or @bugReportAuthorizer.canUpdate(#reportId, authentication)"
@@ -358,6 +520,18 @@ public class BugReportService {
         return updateResponse(report);
     }
 
+    /**
+     * Replaces the actual behavior.
+     *
+     * <p>Requires the ADMIN role, or the caller being the report's reporter or assignee
+     * (checked by {@code BugReportAuthorizer.canUpdate}); otherwise access is denied.
+     *
+     * @param reportId id of the report to change
+     * @param request the new value
+     * @return confirmation containing the report id
+     * @throws ResourceNotFoundException if the report does not exist
+     * @throws BusinessRuleConflictException if the report is already closed
+     */
     @Transactional
     @PreAuthorize(
             "hasRole('ADMIN') or @bugReportAuthorizer.canUpdate(#reportId, authentication)"
@@ -372,6 +546,7 @@ public class BugReportService {
         return updateResponse(report);
     }
 
+    /** Loads a report for modification; unlike a plain lookup it also rejects closed reports. */
     private BugReport reportById(UUID reportId) {
         var report = bugReportRepository.findById(reportId)
                 .orElseThrow(() -> new ResourceNotFoundException("Report with id: %s".formatted(reportId)));
@@ -387,6 +562,7 @@ public class BugReportService {
         return new UpdateBugReportResponse(report.getId(), "Bug report updated successfully!");
     }
 
+    /** Loads the user and checks that they have the {@code DEVELOPER} role (admins are not accepted). */
     private UserAccount requireDeveloper(UUID assigneeId) {
         UserAccount assignee = userAccountRepository.findById(assigneeId)
                 .orElseThrow(() -> new ResourceNotFoundException("User with id=%s does not exist!".formatted(assigneeId)));

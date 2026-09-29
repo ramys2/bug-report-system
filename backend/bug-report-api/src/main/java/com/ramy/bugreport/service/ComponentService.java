@@ -22,6 +22,7 @@ import com.ramy.bugreport.repository.IUserAccountRepository;
 
 import jakarta.transaction.Transactional;
 
+/** Business logic for components (parts of a project that reports are filed against). */
 @Service
 public class ComponentService {
     private final IComponentRepository componentRepository;
@@ -43,6 +44,7 @@ public class ComponentService {
     * ============================================
     */
 
+    /** Returns all components together with their responsible user, which is loaded with one query for all components. */
     public List<ComponentResponse> getAll() {
         var components = componentRepository.findAll();
         var responsibleUserIds = components.stream()
@@ -68,6 +70,14 @@ public class ComponentService {
     * ============================================
     */
 
+    /**
+     * Creates a component.
+     *
+     * <p>The responsible user id is not checked against existing users here; a missing user is only
+     * caught by the database foreign key.
+     *
+     * @return the id of the new component
+     */
     @Transactional
     public CreateComponentResponse create(CreateComponentRequest request) {
         Component component = new Component(
@@ -87,6 +97,11 @@ public class ComponentService {
     * ============================================
     */
 
+    /**
+     * Renames a component.
+     *
+     * @throws ResourceNotFoundException if the component does not exist
+     */
     @Transactional
     public UpdateComponentResponse updateName(UUID componentId, UpdateComponentNameRequest request) {
         var component = componentById(componentId);
@@ -95,6 +110,11 @@ public class ComponentService {
         return updateResponse(component);
     }
 
+    /**
+     * Replaces a component's description.
+     *
+     * @throws ResourceNotFoundException if the component does not exist
+     */
     @Transactional
     public UpdateComponentResponse updateDescription(
             UUID componentId,
@@ -106,6 +126,11 @@ public class ComponentService {
         return updateResponse(component);
     }
 
+    /**
+     * Changes the user responsible for a component. The user id is not validated by the service (see {@link #create}).
+     *
+     * @throws ResourceNotFoundException if the component does not exist
+     */
     @Transactional
     public UpdateComponentResponse updateResponsibleUserId(
             UUID componentId,

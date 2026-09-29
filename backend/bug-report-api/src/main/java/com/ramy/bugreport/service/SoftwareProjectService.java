@@ -17,6 +17,7 @@ import com.ramy.bugreport.repository.ISoftwareProjectRepository;
 
 import jakarta.transaction.Transactional;
 
+/** Business logic for software projects that bug reports belong to. */
 @Service
 public class SoftwareProjectService {
     private final ISoftwareProjectRepository softwareProjectRepository;
@@ -33,6 +34,7 @@ public class SoftwareProjectService {
     * ============================================
     */
 
+    /** Returns all projects. */
     public List<SoftwareProjectResponse> getAll() {
         return softwareProjectRepository.findAll()
                 .stream()
@@ -48,6 +50,11 @@ public class SoftwareProjectService {
     * ============================================
     */
 
+    /**
+     * Creates a project.
+     *
+     * @return the id of the new project
+     */
     @Transactional
     public CreateSoftwareProjectResponse create(CreateSoftwareProjectRequest request) {
         SoftwareProject project = new SoftwareProject(request.name(), request.description());
@@ -64,6 +71,11 @@ public class SoftwareProjectService {
     * ============================================
     */
 
+    /**
+     * Renames a project.
+     *
+     * @throws ResourceNotFoundException if the project does not exist
+     */
     @Transactional
     public UpdateSoftwareProjectResponse updateName(
             UUID projectId,
@@ -75,6 +87,11 @@ public class SoftwareProjectService {
         return updateResponse(project);
     }
 
+    /**
+     * Replaces a project's description.
+     *
+     * @throws ResourceNotFoundException if the project does not exist
+     */
     @Transactional
     public UpdateSoftwareProjectResponse updateDescription(
             UUID projectId,
