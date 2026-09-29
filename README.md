@@ -17,7 +17,7 @@ to a message broker and sent to the people involved as emails.
 5. [Domain model](#domain-model)
 6. [Backend](#backend)
 7. [REST API](#rest-api)
-8. [Frontend](#frontend) _(coming soon)_
+8. [Frontend](#frontend)
 9. [Getting started](#getting-started) _(coming soon)_
 10. [Demo credentials](#demo-credentials)
 11. [Testing](#testing) _(coming soon)_
@@ -325,7 +325,46 @@ specification does not exist yet.
 
 ## Frontend
 
-_Coming soon._
+A single-page React application in [frontend/](frontend/), built with Vite, styled with
+Bootstrap and using React Router for navigation. Requests to the backend are sent with jQuery
+`$.ajax`. Source layout (`frontend/src/`):
+
+- `api/`: one module per resource (`bug-report.js`, `comment.js`, `project.js`, ...); each
+  function returns the jQuery promise of one REST call.
+- `components/`: reusable UI, the auth context and provider, and the route guards.
+- `pages/`: one component per route.
+
+| Route | Page | Access |
+| --- | --- | --- |
+| `/login` | Sign-in form | Public |
+| `/` | Report list with quick filters ("Reported by me", "Assigned to me") and a "Create new" dialog | Signed in |
+| `/reports/:id` | Report detail: inline editing, comments, closing with a resolution | Signed in |
+| `/admin/projects` | Project administration | Admin, developer |
+| `/admin/components` | Component administration | Admin, developer |
+| `/admin/users` | User roles | Admin |
+
+```mermaid
+flowchart LR
+    Page["Page or component"] -->|"calls"| Api["api/*.js"]
+    Api -->|"$.ajax + X-CSRF-TOKEN"| Vite["Vite dev server :5173<br/>proxy /api"]
+    Vite -->|"http://backend:8080"| Be["Spring Boot API"]
+    Be -->|"JSON"| Page
+    Page --> State["React state or<br/>error toast"]
+```
+
+_Figure 5: How the frontend talks to the API. The browser only contacts the Vite server, which
+forwards `/api` requests to the backend, so no cross-origin requests happen in development._
+
+The current user is loaded with `GET /api/auth/me` when the app starts and shared through
+`AuthContext`. `ProtectedRoute`, `DeveloperRoute` and `AdminRoute` redirect users who lack access;
+the backend enforces the same rules. The CSRF token is fetched from `GET /api/csrf` and sent with
+every request that changes data.
+
+There are no frontend tests. `npm ci`, `npm run build` and `npm run lint` pass. The frontend is
+run as a Vite development server; the Docker image does not build a production bundle.
+
+More details, including the route and session diagrams, are in the
+[frontend reference](docs/frontend.md).
 
 ## Getting started
 
