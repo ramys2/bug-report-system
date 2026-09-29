@@ -21,11 +21,41 @@ import com.ramy.bugreport.repository.IUserAccountRepository;
 
 import jakarta.servlet.http.HttpServletResponse;
 
+/**
+ * Spring Security configuration: which URLs need which role, session-based form login,
+ * CORS for the frontend, and password hashing.
+ *
+ * <p>Authentication is a session cookie created by {@code POST /api/auth/login}. Every URL not listed
+ * in the rules is denied ({@code denyAll}). CSRF protection stays at Spring's default (enabled), so
+ * state-changing requests need the token from {@code GET /api/csrf}. Rules that depend on the
+ * individual resource (report ownership, comment author) are checked in the services with {@code @PreAuthorize}.
+ */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
 	
+	/**
+	 * Defines the HTTP security rules.
+	 *
+	 * <ul>
+	 * <li>Public: {@code GET /api/csrf} and {@code POST /api/accounts} (registration). Login and logout are handled by their own filters before these rules apply.</li>
+	 * <li>ADMIN: listing accounts, changing roles, creating projects.</li>
+	 * <li>ADMIN or DEVELOPER: searching users, updating projects, creating and updating components.</li>
+	 * <li>Any signed-in user: everything else that is explicitly listed (all reads, creating, updating and closing reports,
+	 *     commenting, deleting comments).</li>
+	 * <li>Anything not listed: denied.</li>
+	 * </ul>
+	 *
+	 * <p>Login uses form fields to {@code /api/auth/login} and answers 200 or 401 without redirects; logout answers 200.
+	 * Errors use {@link ApiAuthenticationEntryPoint} and {@link ApiAccessDeniedHandler}.
+	 *
+	 * @param http the builder provided by Spring
+	 * @param currentUserAuthenticationFilter refreshes the user on every request
+	 * @param apiAuthenticationEntryPoint answers 401
+	 * @param apiAccessDeniedHandler answers 403
+	 * @throws Exception if the filter chain cannot be built
+	 */
 	@Bean
 	public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
@@ -115,6 +145,10 @@ public class SecurityConfig {
 		return http.build();
 	}
 	
+	/**
+	 * Allows the Vite dev server ({@code http://localhost:5173}) to call the API with cookies.
+	 * Other origins are rejected; the origin is hard-coded and would need changing for a deployed frontend.
+	 */
 	@Bean
 	UrlBasedCorsConfigurationSource corsConfigurationSource() {
 	    CorsConfiguration configuration = new CorsConfiguration();
@@ -141,12 +175,14 @@ public class SecurityConfig {
 	    return source;
 	}
 
+	/** Authenticates form-login credentials against the application's own accounts. */
 	@Bean
 	public UserDetailsService userDetailsService(IUserAccountRepository userRepository) {
 		// Authenticate form-login credentials against application accounts.
 		return new UserAccountDetailsService(userRepository);
 	}
 	
+	/** BCrypt encoder used to hash passwords on registration and to check them at login. */
 	@Bean
 	public PasswordEncoder passwordEncoder() {
 		// Store passwords as BCrypt hashes rather than plain text.

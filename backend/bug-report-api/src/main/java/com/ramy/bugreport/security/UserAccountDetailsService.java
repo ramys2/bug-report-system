@@ -9,6 +9,7 @@ import java.util.Locale;
 import com.ramy.bugreport.domain.UserAccount;
 import com.ramy.bugreport.repository.IUserAccountRepository;
 
+/** Loads accounts for form login by email address. */
 public class UserAccountDetailsService implements UserDetailsService {
 	private final IUserAccountRepository userRepository;
 	
@@ -17,6 +18,12 @@ public class UserAccountDetailsService implements UserDetailsService {
 	}
 	
 
+	/**
+	 * Finds the account whose email matches the given login name, ignoring case and surrounding whitespace.
+	 *
+	 * @param username the email address entered at login
+	 * @throws UsernameNotFoundException if no account has this email
+	 */
 	@Override
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 		UserAccount account = this.userRepository.findByEmailAddress(normalizeEmail(username))

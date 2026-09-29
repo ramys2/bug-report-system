@@ -10,6 +10,10 @@ import org.springframework.stereotype.Component;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+/**
+ * Answers requests that fail a URL-based access rule (signed in, but wrong role) with 403 and
+ * {@code {"message":"Access denied."}} instead of Spring's default HTML page.
+ */
 @Component
 public class ApiAccessDeniedHandler implements AccessDeniedHandler {
 

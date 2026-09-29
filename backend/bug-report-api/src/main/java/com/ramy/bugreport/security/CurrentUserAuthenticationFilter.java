@@ -15,6 +15,12 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+/**
+ * Re-loads the signed-in user from the database on every request, so that changes such as a new role
+ * apply immediately instead of only after the next login.
+ *
+ * <p>If the account no longer exists, the security context is cleared and the request continues as anonymous.
+ */
 @Component
 public class CurrentUserAuthenticationFilter extends OncePerRequestFilter {
 
@@ -24,6 +30,10 @@ public class CurrentUserAuthenticationFilter extends OncePerRequestFilter {
         this.userAccountRepository = userAccountRepository;
     }
 
+    /**
+     * Replaces the authentication in the security context with one built from the current database state
+     * (same credentials and details, fresh {@link UserAccountDetails}). Does nothing for anonymous requests.
+     */
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,

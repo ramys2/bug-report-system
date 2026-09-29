@@ -10,6 +10,10 @@ import org.springframework.stereotype.Component;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+/**
+ * Answers requests that need authentication but have none with 401 and
+ * {@code {"message":"Authentication is required."}} instead of redirecting to a login page.
+ */
 @Component
 public class ApiAuthenticationEntryPoint implements AuthenticationEntryPoint {
 

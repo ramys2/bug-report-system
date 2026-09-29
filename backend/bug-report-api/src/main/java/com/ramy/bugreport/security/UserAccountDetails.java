@@ -12,11 +12,18 @@ import org.springframework.security.core.userdetails.UserDetails;
 import com.ramy.bugreport.domain.EUserRole;
 import com.ramy.bugreport.domain.UserAccount;
 
+/**
+ * Adapts a domain {@link com.ramy.bugreport.domain.UserAccount} to Spring Security's {@link UserDetails}.
+ *
+ * <p>The login name is the email address, and the single authority is {@code ROLE_} plus the role name,
+ * which is what {@code hasRole('ADMIN')} checks. Controllers receive it via {@code @AuthenticationPrincipal}.
+ */
 public class UserAccountDetails implements UserDetails {
 	
 	private static final long serialVersionUID = -3530605535163745849L;
 	private final UserAccount userAccount;
 	
+	/** Wraps the given account. */
 	public UserAccountDetails(UserAccount userAccount) {
 		this.userAccount = userAccount;
 	}
