@@ -21,6 +21,7 @@ to a message broker and sent to the people involved as emails.
 11. [Testing](#testing)
 12. [Configuration reference](#configuration-reference)
 13. [Known limitations](#known-limitations)
+14. [Task board](#task-board)
 
 ## Features
 
@@ -599,3 +600,39 @@ findings are in [Oddities.md](Oddities.md).
 - **The frontend runs as a Vite development server**, not as a production build.
 - **No OpenAPI specification exists yet.**
 - **No license file** is part of the repository.
+
+## Task board
+
+The project's to-do list is kept in [bug-report-system.json](bug-report-system.json), not in an
+external tracker. It is displayed with a small, vibe-coded kanban board of my own:
+[ramys2/kanban-board](https://github.com/ramys2/kanban-board). It is a separate project, not
+part of this repository, and it is not needed to build or run the bug report system.
+
+According to its README, the board is plain HTML, CSS and JavaScript with no backend and no build
+step: open `index.html` in a modern desktop browser, then use **Load** to import
+`bug-report-system.json`. **Save JSON** downloads the board again, and the current board is also
+kept automatically in the browser's `localStorage`. To share changes, replace the JSON file in
+this repository with the saved one.
+
+The JSON file has this structure (version 1): a board `name` and a list of `columns` (currently
+"To Do", "In progress" and "Done"), each with a list of `tasks`. A task has an `id`, a `title`, a
+`description` and a `color`.
+
+```json
+{
+  "version": 1,
+  "name": "Bug Report System",
+  "columns": [
+    {
+      "id": "column-...",
+      "name": "To Do",
+      "tasks": [
+        { "id": "task-...", "title": "[Bug] Fix ...", "description": "...", "color": "#c4524f" }
+      ]
+    }
+  ]
+}
+```
+
+Tasks that came from [Oddities.md](Oddities.md) have a category in the title: `[Bug]`,
+`[Verify]`, `[Design]`, `[Refactor]`, `[UX]`, `[Security]` or `[Infra]`.
