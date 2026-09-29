@@ -89,7 +89,7 @@ public class BugReportController {
      *         stepsToReproduce, expectedBehavior, actualBehavior, severity, status, createdAt, updatedAt, resolution}};
      *         {@code resolution} is {@code null} until the report is closed, otherwise
      *         {@code {id, description, resolvedAt, fixedVersion, commitUrl}}
-     * @throws ResourceNotFoundException 404 if the report or a user, project or component it refers to does not exist
+     * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the report or a user, project or component it refers to does not exist
      */
     @GetMapping("/{reportId}")
     public BugReportResponse getReport(
@@ -142,8 +142,8 @@ public class BugReportController {
      * @param request body {@code {projectId, componentId, title, severity}} are required (title must not be blank);
      *         {@code assigneeId, description, stepsToReproduce, expectedBehavior, actualBehavior} are optional
      * @return 201 with {@code {id, message}}
-     * @throws ResourceNotFoundException 404 if the project or component does not exist
-     * @throws BusinessRuleConflictException 409 if {@code assigneeId} is not a developer
+     * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the project or component does not exist
+     * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if {@code assigneeId} is not a developer
      */
     @PostMapping
     public ResponseEntity<CreateBugReportResponse> create(
@@ -165,8 +165,8 @@ public class BugReportController {
      * @param reportId id of the report
      * @param request body {@code {description}} is required and not blank; {@code fixedVersion, commitUrl} are optional
      * @return 201 with {@code {reportId, message}}; note that {@code reportId} actually contains the id of the new resolution
-     * @throws ResourceNotFoundException 404 if the report does not exist
-     * @throws BusinessRuleConflictException 409 if the report is already closed
+     * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the report does not exist
+     * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if the report is already closed
      */
     @PostMapping("/{reportId}/resolution")
     public ResponseEntity<CloseBugReportResponse> close(
@@ -196,8 +196,8 @@ public class BugReportController {
      * @param reportId id of the report
      * @param request body {@code assigneeId}; required, must be the id of a user with the DEVELOPER role
      * @return 200 with the report id and a confirmation message
-     * @throws ResourceNotFoundException 404 if the report, the assignee or the reporter does not exist
-     * @throws BusinessRuleConflictException 409 if the report is closed or the assignee is not a developer
+     * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the report, the assignee or the reporter does not exist
+     * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if the report is closed or the assignee is not a developer
      */
     @PatchMapping("/{reportId}/assignee")
     public ResponseEntity<UpdateBugReportResponse> updateAssignee(
@@ -215,8 +215,8 @@ public class BugReportController {
      * @param reportId id of the report
      * @param request body {@code severity}; required, one of LOW, MEDIUM, HIGH, CRITICAL
      * @return 200 with the report id and a confirmation message
-     * @throws ResourceNotFoundException 404 if the report does not exist
-     * @throws BusinessRuleConflictException 409 if the report is closed
+     * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the report does not exist
+     * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if the report is closed
      */
     @PatchMapping("/{reportId}/severity")
     public ResponseEntity<UpdateBugReportResponse> updateSeverity(
@@ -234,8 +234,8 @@ public class BugReportController {
      * @param reportId id of the report
      * @param request body {@code status}; required, one of OPEN, ASSIGNED, IN_PROGRESS, NEEDS_INFORMATION, REVIEWING, REJECTED, CLOSED
      * @return 200 with the report id and a confirmation message
-     * @throws ResourceNotFoundException 404 if the report does not exist
-     * @throws BusinessRuleConflictException 409 if the report is closed, or the requested status is {@code CLOSED}
+     * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the report does not exist
+     * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if the report is closed, or the requested status is {@code CLOSED}
      */
     @PatchMapping("/{reportId}/status")
     public ResponseEntity<UpdateBugReportResponse> updateStatus(
@@ -253,8 +253,8 @@ public class BugReportController {
      * @param reportId id of the report
      * @param request body {@code projectId}; required
      * @return 200 with the report id and a confirmation message
-     * @throws ResourceNotFoundException 404 if the report, or the project, does not exist
-     * @throws BusinessRuleConflictException 409 if the report is closed
+     * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the report, or the project, does not exist
+     * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if the report is closed
      */
     @PatchMapping("/{reportId}/project")
     public ResponseEntity<UpdateBugReportResponse> updateProject(
@@ -272,8 +272,8 @@ public class BugReportController {
      * @param reportId id of the report
      * @param request body {@code componentId}; required
      * @return 200 with the report id and a confirmation message
-     * @throws ResourceNotFoundException 404 if the report, or the component, does not exist
-     * @throws BusinessRuleConflictException 409 if the report is closed
+     * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the report, or the component, does not exist
+     * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if the report is closed
      */
     @PatchMapping("/{reportId}/component")
     public ResponseEntity<UpdateBugReportResponse> updateComponent(
@@ -291,8 +291,8 @@ public class BugReportController {
      * @param reportId id of the report
      * @param request body {@code description}; required, may be empty but not null
      * @return 200 with the report id and a confirmation message
-     * @throws ResourceNotFoundException 404 if the report does not exist
-     * @throws BusinessRuleConflictException 409 if the report is closed
+     * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the report does not exist
+     * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if the report is closed
      */
     @PatchMapping("/{reportId}/description")
     public ResponseEntity<UpdateBugReportResponse> updateDescription(
@@ -310,8 +310,8 @@ public class BugReportController {
      * @param reportId id of the report
      * @param request body {@code stepsToReproduce}; required, may be empty but not null
      * @return 200 with the report id and a confirmation message
-     * @throws ResourceNotFoundException 404 if the report does not exist
-     * @throws BusinessRuleConflictException 409 if the report is closed
+     * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the report does not exist
+     * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if the report is closed
      */
     @PatchMapping("/{reportId}/steps-to-reproduce")
     public ResponseEntity<UpdateBugReportResponse> updateStepsToReproduce(
@@ -329,8 +329,8 @@ public class BugReportController {
      * @param reportId id of the report
      * @param request body {@code expectedBehavior}; required, may be empty but not null
      * @return 200 with the report id and a confirmation message
-     * @throws ResourceNotFoundException 404 if the report does not exist
-     * @throws BusinessRuleConflictException 409 if the report is closed
+     * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the report does not exist
+     * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if the report is closed
      */
     @PatchMapping("/{reportId}/expected-behavior")
     public ResponseEntity<UpdateBugReportResponse> updateExpectedBehavior(
@@ -348,8 +348,8 @@ public class BugReportController {
      * @param reportId id of the report
      * @param request body {@code actualBehavior}; required, may be empty but not null
      * @return 200 with the report id and a confirmation message
-     * @throws ResourceNotFoundException 404 if the report does not exist
-     * @throws BusinessRuleConflictException 409 if the report is closed
+     * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the report does not exist
+     * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if the report is closed
      */
     @PatchMapping("/{reportId}/actual-behavior")
     public ResponseEntity<UpdateBugReportResponse> updateActualBehavior(

@@ -51,7 +51,7 @@ import jakarta.transaction.Transactional;
  * published through Spring's event mechanism and only sent to the message queue after the
  * transaction commits.
  *
- * @implNote {@code updatedAt} is never set by this service (neither on creation nor on update),
+ * <p><b>Note:</b> {@code updatedAt} is never set by this service (neither on creation nor on update),
  * although the {@code updated_at} column is NOT NULL. TODO(verify): how creating a report
  * succeeds against the real database.
  */

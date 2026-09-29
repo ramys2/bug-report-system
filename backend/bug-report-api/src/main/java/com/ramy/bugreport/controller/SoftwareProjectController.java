@@ -102,7 +102,7 @@ public class SoftwareProjectController {
      * @param projectId id of the project
      * @param request body {@code name}; required, not blank
      * @return 200 with {@code {id, message}}
-     * @throws ResourceNotFoundException 404 if the project does not exist
+     * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the project does not exist
      */
     @PatchMapping("/{projectId}/name")
     public ResponseEntity<UpdateSoftwareProjectResponse> updateName(
@@ -120,7 +120,7 @@ public class SoftwareProjectController {
      * @param projectId id of the project
      * @param request body {@code description}; required, may be empty but not null
      * @return 200 with {@code {id, message}}
-     * @throws ResourceNotFoundException 404 if the project does not exist
+     * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the project does not exist
      */
     @PatchMapping("/{projectId}/description")
     public ResponseEntity<UpdateSoftwareProjectResponse> updateDescription(

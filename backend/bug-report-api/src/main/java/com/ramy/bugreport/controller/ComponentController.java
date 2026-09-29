@@ -106,7 +106,7 @@ public class ComponentController {
      * @param componentId id of the component
      * @param request body {@code name}; required, not blank
      * @return 200 with {@code {id, message}}
-     * @throws ResourceNotFoundException 404 if the component does not exist
+     * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the component does not exist
      */
     @PatchMapping("/{componentId}/name")
     public ResponseEntity<UpdateComponentResponse> updateName(
@@ -124,7 +124,7 @@ public class ComponentController {
      * @param componentId id of the component
      * @param request body {@code description}; required, may be empty but not null
      * @return 200 with {@code {id, message}}
-     * @throws ResourceNotFoundException 404 if the component does not exist
+     * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the component does not exist
      */
     @PatchMapping("/{componentId}/description")
     public ResponseEntity<UpdateComponentResponse> updateDescription(
@@ -142,7 +142,7 @@ public class ComponentController {
      * @param componentId id of the component
      * @param request body {@code responsibleUserId}; required; a non-existing user fails with 409 from the database foreign key
      * @return 200 with {@code {id, message}}
-     * @throws ResourceNotFoundException 404 if the component does not exist
+     * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the component does not exist
      */
     @PatchMapping("/{componentId}/responsibleUserId")
     public ResponseEntity<UpdateComponentResponse> updateResponsibleUserId(

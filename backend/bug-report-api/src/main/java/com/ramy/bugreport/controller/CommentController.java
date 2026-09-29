@@ -46,7 +46,7 @@ public class CommentController {
      *
      * @param reportId id of the report
      * @return 200 with a list of {@code {id, bugReportId, authorId, authorName, content, createdAt}}; empty if there are none
-     * @throws ResourceNotFoundException 404 if the report does not exist
+     * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the report does not exist
      */
     @GetMapping("/reports/{reportId}/comments")
     public List<CommentResponse> getComments(
@@ -63,8 +63,8 @@ public class CommentController {
      * @param reportId id of the report
      * @param request body {@code {content}}, required and not blank
      * @return 201 with {@code {id, authorId, authorName, content, createdAt}}
-     * @throws ResourceNotFoundException 404 if the report does not exist
-     * @throws BusinessRuleConflictException 409 if the report is closed
+     * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the report does not exist
+     * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if the report is closed
      */
     @PostMapping("/reports/{reportId}/comments")
     public ResponseEntity<CreateCommentResponse> create(
@@ -86,8 +86,8 @@ public class CommentController {
      *
      * @param commentId id of the comment
      * @return 204 with no body
-     * @throws ResourceNotFoundException 404 if the comment or its report does not exist
-     * @throws BusinessRuleConflictException 409 if the report is closed
+     * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the comment or its report does not exist
+     * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if the report is closed
      */
     @DeleteMapping("/comments/{commentId}")
     public ResponseEntity<Void> delete(

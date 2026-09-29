@@ -102,7 +102,7 @@ public class UserAccountController {
      *
      * @param request body {@code {username, email, password}}, all required and not blank; {@code email} must be a valid address
      * @return 201 with {@code {id, message}}
-     * @throws DuplicateEmailException 409 if the (trimmed, lower-cased) email is already registered
+     * @throws com.ramy.bugreport.exception.DuplicateEmailException 409 if the (trimmed, lower-cased) email is already registered
      */
     @PostMapping
     public ResponseEntity<CreateUserAccountResponse> create(
@@ -129,8 +129,8 @@ public class UserAccountController {
      *
      * @param userId id of the account
      * @param request body {@code {role}}, required, one of REPORTER, DEVELOPER, ADMIN
-     * @throws ResourceNotFoundException 404 if the account does not exist
-     * @throws BusinessRuleConflictException 409 if this would remove the last admin or would demote a developer who still has unclosed assigned reports
+     * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the account does not exist
+     * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if this would remove the last admin or would demote a developer who still has unclosed assigned reports
      */
     @PatchMapping("/{userId}/role")
     @ResponseStatus(HttpStatus.NO_CONTENT)

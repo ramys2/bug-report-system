@@ -54,7 +54,7 @@ public class BugReportApplication {
      * {@code developer@bugreport.local / Developer123!} and {@code reporter@bugreport.local / Reporter123!}
      * ({@code frontend@bugreport.local} uses the developer password).
      *
-     * @implNote The credentials are hard-coded and are also written to the application log at startup.
+     * <p><b>Note:</b> The credentials are hard-coded and are also written to the application log at startup.
      * Only their BCrypt hashes are stored. This is acceptable for a demo but must not be used in production.
      * The data is written to the configured database (MariaDB in {@code application.yml}); the inline comment
      * about an "in-memory demo database" in the method body does not match the current configuration.
