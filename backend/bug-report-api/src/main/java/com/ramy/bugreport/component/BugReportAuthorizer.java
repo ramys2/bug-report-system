@@ -10,6 +10,10 @@ import com.ramy.bugreport.exception.ResourceNotFoundException;
 import com.ramy.bugreport.repository.IBugReportRepository;
 import com.ramy.bugreport.security.UserAccountDetails;
 
+/**
+ * Authorization helper used in {@code @PreAuthorize} expressions of {@code BugReportService}
+ * (as the bean {@code bugReportAuthorizer}).
+ */
 @Component
 public class BugReportAuthorizer {
 	
@@ -19,6 +23,14 @@ public class BugReportAuthorizer {
 		this.reportRepository = reportRepository;
 	}
 	
+	/**
+	 * Checks whether the signed-in user is the report's reporter or its assignee. Admins are handled separately in the expression.
+	 *
+	 * @param reportId id of the report
+	 * @param auth the current authentication; its principal must be a {@link com.ramy.bugreport.security.UserAccountDetails}
+	 * @return {@code true} if the user is the reporter or the assignee
+	 * @throws ResourceNotFoundException if the report does not exist. TODO(verify): whether this reaches the client as 404, since it is thrown while evaluating a security expression
+	 */
 	public boolean canUpdate(UUID reportId, Authentication auth) {
         BugReport report = this.reportRepository.findById(reportId)
                 .orElseThrow(() ->

@@ -23,6 +23,14 @@ import com.ramy.bugreport.service.SoftwareProjectService;
 
 import jakarta.validation.Valid;
 
+/**
+ * REST endpoints for software projects, under {@code /api/projects}.
+ *
+ * <p>Errors are returned as JSON {@code {"message": "..."}} ({@link com.ramy.bugreport.exception.ApiErrorResponse}):
+ * 400 for invalid input, 401 when not signed in, 403 when the role or ownership check fails,
+ * 404 when a referenced resource does not exist, 409 for business rule conflicts. Requests that
+ * change data ({@code POST}, {@code PATCH}, {@code DELETE}) also need a CSRF token, see {@code GET /api/csrf}.
+ */
 @RestController
 @RequestMapping("/api/projects")
 public class SoftwareProjectController {
@@ -40,6 +48,13 @@ public class SoftwareProjectController {
     * ============================================
     */
 
+    /**
+     * {@code GET /api/projects}: lists all projects.
+     *
+     * <p>Access: any signed-in user.
+     *
+     * @return 200 with a list of {@code {id, name, description}}
+     */
     @GetMapping
     public List<SoftwareProjectResponse> getAll() {
         return softwareProjectService.getAll();
@@ -53,6 +68,14 @@ public class SoftwareProjectController {
     * ============================================
     */
 
+    /**
+     * {@code POST /api/projects}: creates a project.
+     *
+     * <p>Access: ADMIN role.
+     *
+     * @param request body {@code {name}} is required and not blank; {@code description} is optional
+     * @return 201 with {@code {id, message}}
+     */
     @PostMapping
     public ResponseEntity<CreateSoftwareProjectResponse> create(
             @Valid @RequestBody CreateSoftwareProjectRequest request
@@ -71,6 +94,16 @@ public class SoftwareProjectController {
     * ============================================
     */
 
+    /**
+     * {@code PATCH /api/projects/{projectId}/name}: Renames a project.
+     *
+     * <p>Access: ADMIN or DEVELOPER role.
+     *
+     * @param projectId id of the project
+     * @param request body {@code name}; required, not blank
+     * @return 200 with {@code {id, message}}
+     * @throws ResourceNotFoundException 404 if the project does not exist
+     */
     @PatchMapping("/{projectId}/name")
     public ResponseEntity<UpdateSoftwareProjectResponse> updateName(
             @PathVariable UUID projectId,
@@ -79,6 +112,16 @@ public class SoftwareProjectController {
         return updateResponse(softwareProjectService.updateName(projectId, request));
     }
 
+    /**
+     * {@code PATCH /api/projects/{projectId}/description}: Replaces a project's description.
+     *
+     * <p>Access: ADMIN or DEVELOPER role.
+     *
+     * @param projectId id of the project
+     * @param request body {@code description}; required, may be empty but not null
+     * @return 200 with {@code {id, message}}
+     * @throws ResourceNotFoundException 404 if the project does not exist
+     */
     @PatchMapping("/{projectId}/description")
     public ResponseEntity<UpdateSoftwareProjectResponse> updateDescription(
             @PathVariable UUID projectId,

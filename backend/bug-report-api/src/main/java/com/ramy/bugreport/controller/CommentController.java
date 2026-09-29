@@ -22,6 +22,14 @@ import com.ramy.bugreport.service.CommentService;
 
 import jakarta.validation.Valid;
 
+/**
+ * REST endpoints for comments on bug reports: {@code /api/reports/{reportId}/comments} and {@code /api/comments/{commentId}}.
+ *
+ * <p>Errors are returned as JSON {@code {"message": "..."}} ({@link com.ramy.bugreport.exception.ApiErrorResponse}):
+ * 400 for invalid input, 401 when not signed in, 403 when the role or ownership check fails,
+ * 404 when a referenced resource does not exist, 409 for business rule conflicts. Requests that
+ * change data ({@code POST}, {@code PATCH}, {@code DELETE}) also need a CSRF token, see {@code GET /api/csrf}.
+ */
 @RestController
 @RequestMapping("/api")
 public class CommentController {
@@ -31,6 +39,15 @@ public class CommentController {
         this.commentService = commentService;
     }
 
+    /**
+     * {@code GET /api/reports/{reportId}/comments}: lists the comments of a report, newest first.
+     *
+     * <p>Access: any signed-in user.
+     *
+     * @param reportId id of the report
+     * @return 200 with a list of {@code {id, bugReportId, authorId, authorName, content, createdAt}}; empty if there are none
+     * @throws ResourceNotFoundException 404 if the report does not exist
+     */
     @GetMapping("/reports/{reportId}/comments")
     public List<CommentResponse> getComments(
             @PathVariable UUID reportId
@@ -38,6 +55,17 @@ public class CommentController {
         return commentService.getComments(reportId);
     }
 
+    /**
+     * {@code POST /api/reports/{reportId}/comments}: adds a comment as the signed-in user.
+     *
+     * <p>Access: any signed-in user.
+     *
+     * @param reportId id of the report
+     * @param request body {@code {content}}, required and not blank
+     * @return 201 with {@code {id, authorId, authorName, content, createdAt}}
+     * @throws ResourceNotFoundException 404 if the report does not exist
+     * @throws BusinessRuleConflictException 409 if the report is closed
+     */
     @PostMapping("/reports/{reportId}/comments")
     public ResponseEntity<CreateCommentResponse> create(
             @PathVariable UUID reportId,
@@ -50,6 +78,17 @@ public class CommentController {
                 .body(response);
     }
 
+    /**
+     * {@code DELETE /api/comments/{commentId}}: deletes a comment.
+     *
+     * <p>Access: signed-in user; the service further requires the ADMIN role or being the comment's author
+     * (so the "administrative action" comment in {@code SecurityConfig} is stricter than what is implemented).
+     *
+     * @param commentId id of the comment
+     * @return 204 with no body
+     * @throws ResourceNotFoundException 404 if the comment or its report does not exist
+     * @throws BusinessRuleConflictException 409 if the report is closed
+     */
     @DeleteMapping("/comments/{commentId}")
     public ResponseEntity<Void> delete(
             @PathVariable UUID commentId
