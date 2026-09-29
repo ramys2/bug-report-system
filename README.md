@@ -14,7 +14,7 @@ to a message broker and sent to the people involved as emails.
 2. [Architecture overview](#architecture-overview)
 3. [Tech stack](#tech-stack)
 4. [Project structure](#project-structure)
-5. [Domain model](#domain-model) _(coming soon)_
+5. [Domain model](#domain-model)
 6. [Backend](#backend) _(coming soon)_
 7. [REST API](#rest-api) _(coming soon)_
 8. [Frontend](#frontend) _(coming soon)_
@@ -136,7 +136,80 @@ bug-report-system/
 
 ## Domain model
 
-_Coming soon._
+The system stores six entities. A seventh class, `Attachment`, exists in the domain module but
+is not persisted or exposed, so attachments are not a working feature yet.
+
+```mermaid
+erDiagram
+    USER_ACCOUNT ||--o{ BUG_REPORT : "reports (reporter_id)"
+    USER_ACCOUNT |o--o{ BUG_REPORT : "is assigned (assignee_id)"
+    USER_ACCOUNT ||--o{ COMPONENT : "is responsible for"
+    USER_ACCOUNT ||--o{ COMMENT : "writes (author_id)"
+    SOFTWARE_PROJECT ||--o{ BUG_REPORT : "has"
+    COMPONENT ||--o{ BUG_REPORT : "has"
+    BUG_REPORT ||--o{ COMMENT : "has"
+    RESOLUTION |o--o| BUG_REPORT : "closes (resolution_id)"
+
+    USER_ACCOUNT {
+        char36 id PK
+        varchar name
+        varchar email_address UK
+        varchar password_hash
+        varchar role
+    }
+    SOFTWARE_PROJECT {
+        char36 id PK
+        varchar name
+        text description
+    }
+    COMPONENT {
+        char36 id PK
+        varchar name
+        text description
+        char36 responsible_user_id FK
+    }
+    BUG_REPORT {
+        char36 id PK
+        char36 reporter_id FK
+        char36 assignee_id FK
+        char36 project_id FK
+        char36 component_id FK
+        char36 resolution_id FK
+        varchar title
+        varchar severity
+        varchar status
+        datetime created_at
+        datetime updated_at
+    }
+    RESOLUTION {
+        char36 id PK
+        text description
+        datetime resolved_at
+        varchar fixed_version
+        varchar commit_url
+    }
+    COMMENT {
+        char36 id PK
+        char36 bug_report_id FK
+        char36 author_id FK
+        text content
+        datetime created_at
+    }
+```
+
+_Figure 3: Database tables and their relations, as created by
+[V1__Base.sql](backend/bug-report-api/src/main/resources/db/migration/V1__Base.sql). Text columns
+of `bug_report` (`description`, `steps_to_reproduce`, `expected_behavior`, `actual_behavior`) and the
+unused `archived_at` columns are left out of the diagram._
+
+| Enum | Values |
+| --- | --- |
+| `EUserRole` | `REPORTER`, `DEVELOPER`, `ADMIN` |
+| `EBugSeverity` | `LOW`, `MEDIUM`, `HIGH`, `CRITICAL` |
+| `EBugStatus` | `OPEN`, `ASSIGNED`, `IN_PROGRESS`, `NEEDS_INFORMATION`, `REVIEWING`, `REJECTED`, `CLOSED` |
+
+Field descriptions, business rules and class diagrams are in the
+[domain model reference](docs/domain-model.md).
 
 ## Backend
 
