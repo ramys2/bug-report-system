@@ -2,6 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import "./Toast.css";
 import { toastEventName } from "./toast";
 
+/**
+ * Renders the stack of notifications shown by `showToast()` (see toast.js).
+ *
+ * Listens for the `app:toast` browser event, shows each toast in the top-right stack and removes it after 5 seconds or when the user
+ * closes it. Mount it once in the app; it takes no props.
+ */
 function Toast() {
     const [toasts, setToasts] = useState([]);
     const timeoutIds = useRef(new Map());

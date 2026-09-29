@@ -1,6 +1,12 @@
 import BugReportRow from "./BugReportRow";
 import "./BugReportList.css";
 
+/**
+ * Table-like list of reports with a header row (visible from the `md` breakpoint up) and one `BugReportRow` per report.
+ *
+ * @param {object} props
+ * @param {import("../api/bug-report.js").BugReportBrief[]} props.reports reports as returned by `GET /api/reports` (or `/reported`, `/assigned`)
+ */
 function BugReportList({ reports }) {
     return (
         <section aria-label="Bug reports" className="bug-report-list border rounded-4 p-2 overflow-auto">

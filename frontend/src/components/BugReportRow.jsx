@@ -1,6 +1,12 @@
 import "./BugReportRow.css";
 import { formatDateTime } from "../utils/date";
 
+/**
+ * One report as a card row: title (a plain link to `/reports/{reportId}`, which reloads the page), author, status, severity and creation time.
+ *
+ * @param {object} props
+ * @param {import("../api/bug-report.js").BugReportBrief} props.report the report to show
+ */
 function BugReportRow({ report }) {
     return (
         <article className="border rounded-4 px-3 py-3">

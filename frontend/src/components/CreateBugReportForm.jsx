@@ -2,6 +2,9 @@ import { useState } from "react";
 import { createReport } from "../api/bug-report";
 import { showToast } from "./toast";
 
+/**
+ * Empty form state; also used to reset the form after a successful submit.
+ */
 const initialFormValues = {
     title: "",
     assigneeId: "",
@@ -14,8 +17,24 @@ const initialFormValues = {
     severity: ""
 };
 
+/**
+ * Severity options offered in the form, same values as the backend enum.
+ */
 const severities = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
 
+/**
+ * Form (meant to sit inside a `Modal`) for filing a new report with `POST /api/reports`.
+ *
+ * Title, project, component and severity are required; if one is missing a warning toast is shown and nothing is sent.
+ * An empty assignee is sent as `null`. On success the form is cleared and `onCreated` is called; on failure an error toast is shown.
+ * The submit button is disabled while the request runs.
+ *
+ * @param {object} props
+ * @param {{id: string, name: string}[]} props.developers users that can be chosen as assignee
+ * @param {{id: string, name: string}[]} props.projects projects to choose from
+ * @param {{id: string, name: string}[]} props.components components to choose from
+ * @param {() => void} props.onCreated called after the report was created
+ */
 function CreateBugReportForm({ developers, projects, components, onCreated }) {
     const [formValues, setFormValues] = useState(initialFormValues);
     const [isSubmitting, setIsSubmitting] = useState(false);

@@ -3,8 +3,21 @@ import { createComponent } from "../api/component";
 import { searchUsers } from "../api/account";
 import { showToast } from "./toast";
 
+/**
+ * Empty form state for name and description; also used to reset the form after a successful submit.
+ */
 const initialFormValues = { name: "", description: "" };
 
+/**
+ * Form (meant to sit inside a `Modal`) for creating a component with `POST /api/components`.
+ *
+ * The responsible user is picked by searching users by name (`GET /api/accounts/users?search=...`); results of outdated searches are ignored.
+ * Only the name is required by the form, but the backend needs a responsible user, so submitting without one is expected to fail and show the error toast (TODO(verify): not tested).
+ * On success the form is cleared and `onCreated` is called.
+ *
+ * @param {object} props
+ * @param {() => void} props.onCreated called after the component was created
+ */
 export default function CreateComponentForm({ onCreated }) {
     const [formValues, setFormValues] = useState(initialFormValues);
     const [responsibleUser, setResponsibleUser] = useState(null);

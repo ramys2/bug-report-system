@@ -3,6 +3,11 @@ import "./Navbar.css";
 import { useContext } from "react";
 import AuthContext from "./AuthContext";
 
+/**
+ * Top navigation bar. Shows only the brand while nobody is signed in; otherwise links to Home, and by role also to
+ * Users (ADMIN) and Components and Projects (ADMIN or DEVELOPER), plus the user's name and a log-out button.
+ * Logging out calls `auth.logout()` and then navigates to `/login`. Takes no props; reads `AuthContext`.
+ */
 function Navbar() {
     const auth = useContext(AuthContext);
     const navigate = useNavigate();

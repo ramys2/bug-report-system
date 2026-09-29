@@ -4,6 +4,13 @@ import "./LoginForm.css";
 import { useLocation, useNavigate } from "react-router";
 import AuthContext from "./AuthContext";
 
+/**
+ * Email and password form.
+ *
+ * On submit it calls `login()` (`POST /api/auth/login`); on success it reloads the current user through `AuthContext` and navigates back to the
+ * page the user originally requested (`location.state.from`) or to `/`. A failed login is only written to the browser console; nothing is shown to the user.
+ * The Register button is a placeholder and does nothing yet. Takes no props.
+ */
 function LoginForm() {
     const auth = useContext(AuthContext);
     const [email, setEmail] = useState("");

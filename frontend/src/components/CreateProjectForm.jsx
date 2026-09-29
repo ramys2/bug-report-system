@@ -2,8 +2,18 @@ import { useState } from "react";
 import { createProject } from "../api/project";
 import { showToast } from "./toast";
 
+/**
+ * Empty form state; also used to reset the form after a successful submit.
+ */
 const initialFormValues = { name: "", description: "" };
 
+/**
+ * Form (meant to sit inside a `Modal`) for creating a project with `POST /api/projects`. Only the name is required.
+ * On success the form is cleared and `onCreated` is called; on failure an error toast is shown.
+ *
+ * @param {object} props
+ * @param {() => void} props.onCreated called after the project was created
+ */
 export default function CreateProjectForm({ onCreated }) {
     const [formValues, setFormValues] = useState(initialFormValues);
     const [isSubmitting, setIsSubmitting] = useState(false);
