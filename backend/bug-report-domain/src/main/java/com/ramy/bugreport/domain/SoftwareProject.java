@@ -2,14 +2,29 @@ package com.ramy.bugreport.domain;
 
 import java.util.UUID;
 
+/**
+ * A software project that bug reports are filed against.
+ */
 public class SoftwareProject {
 
+    /**
+     * Unique identifier. {@code null} until the project is saved.
+     */
     private UUID id;
 
+    /**
+     * Display name.
+     */
     private String name;
 
+    /**
+     * Free-text description. May be {@code null}.
+     */
     private String description;
 
+    /**
+     * Creates a new, not yet saved project ({@code id} is {@code null}).
+     */
     public SoftwareProject(String name, String description) {
         this(null, name, description);
     }
