@@ -15,7 +15,7 @@ to a message broker and sent to the people involved as emails.
 3. [Tech stack](#tech-stack)
 4. [Project structure](#project-structure)
 5. [Domain model](#domain-model)
-6. [Backend](#backend) _(coming soon)_
+6. [Backend](#backend)
 7. [REST API](#rest-api)
 8. [Frontend](#frontend) _(coming soon)_
 9. [Getting started](#getting-started) _(coming soon)_
@@ -214,7 +214,57 @@ Field descriptions, business rules and class diagrams are in the
 
 ## Backend
 
-_Coming soon._
+The backend is a Maven multi-module project in [backend/](backend/) (Java 21, Spring Boot 4.1.0):
+
+- **`bug-report-domain`**: plain Java domain classes, enums and repository interfaces, without
+  any framework dependency.
+- **`bug-report-api`**: the Spring Boot application with the REST controllers, services,
+  security, persistence and messaging. It depends on the domain module.
+
+Packages of `bug-report-api` (under `com.ramy.bugreport`):
+
+| Package | Purpose |
+| --- | --- |
+| `controller` | REST endpoints; translate HTTP to service calls |
+| `dto` | Request and response records with validation annotations |
+| `service` | Business rules, transactions and ownership checks (`@PreAuthorize`) |
+| `component` | Authorizers used by `@PreAuthorize` expressions |
+| `security` | Session login, roles by URL, CSRF, CORS, 401 and 403 handlers |
+| `exception` | Exceptions and their translation into JSON error responses |
+| `persistence` | JPA entities, mappers and the repository implementations |
+| `messaging` | Events, publisher (Artemis) and the email-sending consumer |
+
+```mermaid
+flowchart LR
+    Client["HTTP client"] --> Sec["Security filter chain"]
+    Sec --> Ctl["controller"]
+    Ctl --> Svc["service"]
+    Svc --> Repo["I...Repository<br/>(domain module)"]
+    Repo --> Adp["JPA adapter + mapper"]
+    Adp --> DB[("MariaDB")]
+    Svc -.->|"events after commit"| MQ["Artemis queue"]
+    MQ -.-> Mail["email consumer<br/>-> Mailpit"]
+```
+
+_Figure 4: Layers of the backend. Services depend only on repository interfaces from the domain
+module; the persistence package implements them with Spring Data JPA._
+
+**Database.** MariaDB (database `bug_report`, user `bug_report`), not an in-memory database. The
+schema is created by Flyway from
+[V1__Base.sql](backend/bug-report-api/src/main/resources/db/migration/V1__Base.sql). Data is kept
+in the `mariadb-data` Docker volume, so it survives restarts.
+
+**Demo data.** On startup, `BugReportApplication.seedData` fills an empty database (it does
+nothing if a user already exists) with 4 users, 1 project, 2 components, 3 bug reports and 3
+comments. See [Demo credentials](#demo-credentials).
+
+**Notifications.** Assigning a report, changing its status and closing it publish an event to
+the Artemis queue `bug-report-event` after the transaction commits. A listener in the same
+application sends an email through SMTP (Mailpit in development). If sending fails, the API
+request is not affected.
+
+Details, including the security setup, error handling, the messaging and close-report sequence
+diagram, and the startup and seeding flow, are in the [backend reference](docs/backend.md).
 
 ## REST API
 
