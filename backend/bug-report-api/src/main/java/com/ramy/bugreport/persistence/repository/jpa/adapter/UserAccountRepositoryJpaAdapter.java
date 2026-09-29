@@ -13,6 +13,15 @@ import com.ramy.bugreport.persistence.mapper.UserAccountMapper;
 import com.ramy.bugreport.persistence.repository.jpa.repository.UserAccountJpaRepository;
 import com.ramy.bugreport.repository.IUserAccountRepository;
 
+/**
+ * Implements {@link com.ramy.bugreport.repository.IUserAccountRepository} with Spring Data JPA: calls {@link com.ramy.bugreport.persistence.repository.jpa.repository.UserAccountJpaRepository} and converts between
+ * entities and domain objects with {@link com.ramy.bugreport.persistence.mapper.UserAccountMapper}.
+ *
+ * <p>The class is read-only transactional; methods that write ({@code save}, {@code delete}, {@code deleteAll}) override this
+ * with a normal transaction.
+ *
+ * <p>{@code findAllByRole} is also a normal (non read-only) transaction, because the lock it takes needs one.
+ */
 @Repository
 @Transactional(readOnly = true)
 public class UserAccountRepositoryJpaAdapter implements IUserAccountRepository {

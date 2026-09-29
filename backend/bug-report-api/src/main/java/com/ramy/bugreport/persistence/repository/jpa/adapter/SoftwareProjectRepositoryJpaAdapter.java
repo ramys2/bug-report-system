@@ -12,6 +12,13 @@ import com.ramy.bugreport.persistence.mapper.SoftwareProjectMapper;
 import com.ramy.bugreport.persistence.repository.jpa.repository.SoftwareProjectJpaRepository;
 import com.ramy.bugreport.repository.ISoftwareProjectRepository;
 
+/**
+ * Implements {@link com.ramy.bugreport.repository.ISoftwareProjectRepository} with Spring Data JPA: calls {@link com.ramy.bugreport.persistence.repository.jpa.repository.SoftwareProjectJpaRepository} and converts between
+ * entities and domain objects with {@link com.ramy.bugreport.persistence.mapper.SoftwareProjectMapper}.
+ *
+ * <p>The class is read-only transactional; methods that write ({@code save}, {@code delete}, {@code deleteAll}) override this
+ * with a normal transaction.
+ */
 @Repository
 @Transactional(readOnly = true)
 public class SoftwareProjectRepositoryJpaAdapter implements ISoftwareProjectRepository {

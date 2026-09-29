@@ -12,6 +12,13 @@ import com.ramy.bugreport.persistence.mapper.CommentMapper;
 import com.ramy.bugreport.persistence.repository.jpa.repository.CommentJpaRepository;
 import com.ramy.bugreport.repository.ICommentRepository;
 
+/**
+ * Implements {@link com.ramy.bugreport.repository.ICommentRepository} with Spring Data JPA: calls {@link com.ramy.bugreport.persistence.repository.jpa.repository.CommentJpaRepository} and converts between
+ * entities and domain objects with {@link com.ramy.bugreport.persistence.mapper.CommentMapper}.
+ *
+ * <p>The class is read-only transactional; methods that write ({@code save}, {@code delete}, {@code deleteAll}) override this
+ * with a normal transaction.
+ */
 @Repository
 @Transactional(readOnly = true)
 public class CommentRepositoryJpaAdapter implements ICommentRepository {

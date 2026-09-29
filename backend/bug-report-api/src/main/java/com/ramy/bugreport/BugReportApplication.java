@@ -26,15 +26,39 @@ import com.ramy.bugreport.repository.IResolutionRepository;
 import com.ramy.bugreport.repository.ISoftwareProjectRepository;
 import com.ramy.bugreport.repository.IUserAccountRepository;
 
+/** Entry point of the Spring Boot application. */
 @SpringBootApplication
 public class BugReportApplication {
 
     private static final Logger logger = LoggerFactory.getLogger(BugReportApplication.class);
 
+    /** Starts the application. */
     public static void main(String[] args) {
         SpringApplication.run(BugReportApplication.class, args);
     }
 
+    /**
+     * Fills an empty database with demo data at startup.
+     *
+     * <p>Does nothing if at least one user already exists. Otherwise it creates:
+     * <ul>
+     * <li>4 users: an admin, two developers and a reporter (see the credentials below);</li>
+     * <li>1 project ("Bug Report System") and 2 components ("Backend API" and "Web Client"), each with a developer responsible;</li>
+     * <li>3 bug reports: a critical, assigned {@code IN_PROGRESS} one; a medium one that is {@code CLOSED} with a resolution;
+     *     and a low-severity, unassigned {@code OPEN} one;</li>
+     * <li>3 comments on the first two reports.</li>
+     * </ul>
+     * Attachments are not seeded (that code is commented out; see {@link com.ramy.bugreport.domain.Attachment}).
+     *
+     * <p>Demo logins (email / password): {@code admin@bugreport.local / Admin123!},
+     * {@code developer@bugreport.local / Developer123!} and {@code reporter@bugreport.local / Reporter123!}
+     * ({@code frontend@bugreport.local} uses the developer password).
+     *
+     * @implNote The credentials are hard-coded and are also written to the application log at startup.
+     * Only their BCrypt hashes are stored. This is acceptable for a demo but must not be used in production.
+     * The data is written to the configured database (MariaDB in {@code application.yml}); the inline comment
+     * about an "in-memory demo database" in the method body does not match the current configuration.
+     */
     @Bean
     public CommandLineRunner seedData(
             IUserAccountRepository userRepository,

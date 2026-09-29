@@ -12,6 +12,13 @@ import com.ramy.bugreport.persistence.mapper.ComponentMapper;
 import com.ramy.bugreport.persistence.repository.jpa.repository.ComponentJpaRepository;
 import com.ramy.bugreport.repository.IComponentRepository;
 
+/**
+ * Implements {@link com.ramy.bugreport.repository.IComponentRepository} with Spring Data JPA: calls {@link com.ramy.bugreport.persistence.repository.jpa.repository.ComponentJpaRepository} and converts between
+ * entities and domain objects with {@link com.ramy.bugreport.persistence.mapper.ComponentMapper}.
+ *
+ * <p>The class is read-only transactional; methods that write ({@code save}, {@code delete}, {@code deleteAll}) override this
+ * with a normal transaction.
+ */
 @Repository
 @Transactional(readOnly = true)
 public class ComponentRepositoryJpaAdapter implements IComponentRepository {

@@ -13,6 +13,13 @@ import com.ramy.bugreport.persistence.mapper.BugReportMapper;
 import com.ramy.bugreport.persistence.repository.jpa.repository.BugReportJpaRepository;
 import com.ramy.bugreport.repository.IBugReportRepository;
 
+/**
+ * Implements {@link com.ramy.bugreport.repository.IBugReportRepository} with Spring Data JPA: calls {@link com.ramy.bugreport.persistence.repository.jpa.repository.BugReportJpaRepository} and converts between
+ * entities and domain objects with {@link com.ramy.bugreport.persistence.mapper.BugReportMapper}.
+ *
+ * <p>The class is read-only transactional; methods that write ({@code save}, {@code delete}, {@code deleteAll}) override this
+ * with a normal transaction.
+ */
 @Repository
 @Transactional(readOnly = true)
 public class BugReportRepositoryJpaAdapter implements IBugReportRepository {

@@ -17,6 +17,7 @@ import com.ramy.bugreport.messaging.event.StatusChangedEvent;
 
 import tools.jackson.databind.ObjectMapper;
 
+/** Reads bug report events from the message queue and sends an email for each one (in development, to Mailpit). */
 @Component
 public class BugReportEventConsumer {
 
@@ -31,6 +32,14 @@ public class BugReportEventConsumer {
 		this.mailSender = mailSender;
 	}
 
+	/**
+	 * Handles one queued message: parses the JSON into the matching event type and sends the email.
+	 * If the event has no recipients (e.g. an unassigned report), nothing is sent and the skip is logged.
+	 *
+	 * <p>Recipients: assignee-changed goes to the new assignee; status-changed and closed go to the reporter and the assignee.
+	 *
+	 * @param event the JSON text of an {@link IBugReportEvent}
+	 */
 	@JmsListener ( destination = "${messaging.destinations.bug-report-event}" )
 	public void onBugReportEvent(String event) {
 		var bugReportEvent = objectMapper.readValue(event, IBugReportEvent.class);
@@ -44,6 +53,7 @@ public class BugReportEventConsumer {
 		mailSender.send(message);
 	}
 
+	/** Builds the email subject, text and recipients for each event type. */
 	private SimpleMailMessage toMailMessage(IBugReportEvent event) {
 		return switch (event) {
 			case AssigneeChangedEvent assigneeChanged -> mailMessage(
@@ -62,6 +72,7 @@ public class BugReportEventConsumer {
 		};
 	}
 
+	/** Creates a plain-text email from the fixed sender address; {@code null} recipients are dropped. */
 	private SimpleMailMessage mailMessage(String subject, String text, String... recipients) {
 		var message = new SimpleMailMessage();
 		message.setFrom(FROM_ADDRESS);
