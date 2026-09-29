@@ -4,6 +4,12 @@ import java.util.UUID;
 
 import com.ramy.bugreport.domain.UserAccount;
 
+/**
+ * A developer in {@code GET /api/accounts/developers}.
+ *
+ * @param id account id
+ * @param name display name
+ */
 public record DeveloperResponse(
         UUID id,
         String name

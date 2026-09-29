@@ -3,6 +3,10 @@ package com.ramy.bugreport.persistence.mapper;
 import com.ramy.bugreport.domain.BugReport;
 import com.ramy.bugreport.persistence.entity.BugReportEntity;
 
+/**
+ * Converts between the domain class {@link com.ramy.bugreport.domain.BugReport} and its JPA entity {@link com.ramy.bugreport.persistence.entity.BugReportEntity}.
+ * Both directions copy every field one to one (including the nested resolution, via {@link ResolutionMapper}); a {@code null} input gives a {@code null} result.
+ */
 public final class BugReportMapper {
     private BugReportMapper() {
     }
@@ -30,6 +34,10 @@ public final class BugReportMapper {
         return entity;
     }
 
+    /**
+     * Rebuilds a domain report from an entity. The builder always starts a report as {@code OPEN},
+     * so the stored id, status and resolution are set afterwards on the built object.
+     */
     public static BugReport toDomain(BugReportEntity entity) {
         if (entity == null) {
             return null;

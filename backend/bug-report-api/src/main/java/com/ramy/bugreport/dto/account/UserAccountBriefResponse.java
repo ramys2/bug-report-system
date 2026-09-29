@@ -4,6 +4,12 @@ import java.util.UUID;
 
 import com.ramy.bugreport.domain.UserAccount;
 
+/**
+ * A search hit in {@code GET /api/accounts/users}.
+ *
+ * @param userId account id
+ * @param name display name
+ */
 public record UserAccountBriefResponse(
         UUID userId,
         String name

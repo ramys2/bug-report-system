@@ -3,6 +3,10 @@ package com.ramy.bugreport.persistence.mapper;
 import com.ramy.bugreport.domain.Comment;
 import com.ramy.bugreport.persistence.entity.CommentEntity;
 
+/**
+ * Converts between the domain class {@link com.ramy.bugreport.domain.Comment} and its JPA entity {@link com.ramy.bugreport.persistence.entity.CommentEntity}.
+ * Both directions copy every field one to one; a {@code null} input gives a {@code null} result.
+ */
 public final class CommentMapper {
     private CommentMapper() {
     }

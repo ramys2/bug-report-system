@@ -4,6 +4,13 @@ import java.util.UUID;
 
 import com.ramy.bugreport.domain.SoftwareProject;
 
+/**
+ * A project in {@code GET /api/projects}.
+ *
+ * @param id project id
+ * @param name display name
+ * @param description description; may be null
+ */
 public record SoftwareProjectResponse(
         UUID id,
         String name,

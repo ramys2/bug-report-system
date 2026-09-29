@@ -10,6 +10,25 @@ import com.ramy.bugreport.domain.EBugStatus;
 import com.ramy.bugreport.domain.Resolution;
 import com.ramy.bugreport.domain.SoftwareProject;
 import com.ramy.bugreport.domain.UserAccount;
+/**
+ * Full detail of one report, returned by {@code GET /api/reports/{reportId}}.
+ *
+ * @param id report id
+ * @param reporterName display name of the reporter
+ * @param assigneeName display name of the assignee; null if unassigned
+ * @param projectName name of the project
+ * @param componentName name of the component
+ * @param title short summary
+ * @param description description; may be null
+ * @param stepsToReproduce steps to reproduce; may be null
+ * @param expectedBehavior expected behavior; may be null
+ * @param actualBehavior actual behavior; may be null
+ * @param severity severity
+ * @param status workflow status
+ * @param createdAt creation time (ISO-8601)
+ * @param updatedAt last modification time (ISO-8601)
+ * @param resolution the domain {@link com.ramy.bugreport.domain.Resolution}, serialized directly; null until the report is closed
+ */
 public record BugReportResponse(
     UUID id,
     String reporterName,
