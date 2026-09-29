@@ -6,8 +6,6 @@ resolution. A Spring Boot REST API stores the data in MariaDB, and a React web c
 that API. Changes to a report (new assignee, new status, closing) are published as events
 to a message broker and sent to the people involved as emails.
 
-> **Status:** work in progress. Sections marked _Coming soon_ are added step by step.
-
 ## Table of contents
 
 1. [Features](#features)
@@ -18,10 +16,10 @@ to a message broker and sent to the people involved as emails.
 6. [Backend](#backend)
 7. [REST API](#rest-api)
 8. [Frontend](#frontend)
-9. [Getting started](#getting-started) _(coming soon)_
+9. [Getting started](#getting-started)
 10. [Demo credentials](#demo-credentials)
-11. [Testing](#testing) _(coming soon)_
-12. [Configuration reference](#configuration-reference) _(coming soon)_
+11. [Testing](#testing)
+12. [Configuration reference](#configuration-reference)
 13. [Known limitations](#known-limitations)
 
 ## Features
@@ -368,7 +366,114 @@ More details, including the route and session diagrams, are in the
 
 ## Getting started
 
-_Coming soon._
+### Prerequisites
+
+| To do this | You need |
+| --- | --- |
+| Run everything (recommended) | Docker with the Compose plugin |
+| Build and test the backend on your machine | JDK 21 and Maven (3.9 is used in the Docker build; 3.8.7 was also tested), plus Docker for the database |
+| Build or lint the frontend on your machine | Node.js 24 and npm |
+
+```shell
+git clone <repository-url>
+cd bug-report-system
+```
+
+### Run everything with Docker Compose
+
+```shell
+docker compose up --build
+```
+
+This builds the backend and frontend images and starts five services. The first start seeds the
+demo data (see [Demo credentials](#demo-credentials)).
+
+```mermaid
+flowchart LR
+    Browser["Browser"] -->|"5173"| FE["frontend<br/>Vite dev server"]
+    Browser -->|"8025"| MP["mailpit"]
+    Browser -->|"8161"| AR["artemis"]
+    FE -->|"/api proxy, 8080"| BE["backend<br/>Spring Boot"]
+    BE -->|"3306"| DB[("database<br/>MariaDB")]
+    BE -->|"61616"| AR
+    BE -->|"SMTP 1025"| MP
+    DB --- V1[/"volume mariadb-data"/]
+    MP --- V2[/"volume mailpit-data"/]
+    Init["database/init/<br/>creates bug_report_test"] -.->|"first start only"| DB
+```
+
+_Figure 6: Docker Compose services and volumes. Published on the host: 5173 (frontend), 8080
+(backend), 3306 (database), 8025 (Mailpit web UI) and 8161 (Artemis console). Artemis port 61616
+and SMTP port 1025 exist only inside the Compose network._
+
+| URL | What |
+| --- | --- |
+| <http://localhost:5173> | Web application (sign in with a [demo account](#demo-credentials)) |
+| <http://localhost:8080/api/csrf> | Backend API (see [REST API](#rest-api)) |
+| <http://localhost:8025> | Mailpit: the notification emails sent by the backend |
+| <http://localhost:8161> | Artemis console (user `artemis`, password `artemis`) |
+| `localhost:3306` | MariaDB (database `bug_report`, user `bug_report`, password `bug_report`) |
+
+The backend starts after the database is healthy and Artemis has started. Stop the services with
+`docker compose down`. The database and Mailpit data are kept in Docker volumes; to delete them and
+start again with fresh demo data, run `docker compose down -v`.
+
+To start only the infrastructure (for example to work on the backend), run
+`docker compose up -d database mailpit artemis`.
+
+### Run the backend on your machine
+
+The backend needs MariaDB, so start the database first:
+
+```shell
+docker compose up -d database mailpit artemis
+```
+
+`application.yml` uses the Compose host names `database`, `artemis` and `mailpit`, which do not
+resolve on your machine. Running `./run-backend.sh` as is therefore fails with
+`Socket fail to connect to database`. Override the database URL with a Spring environment
+variable:
+
+```shell
+cd backend
+mvn clean install -DskipTests
+cd bug-report-api
+SPRING_DATASOURCE_URL=jdbc:mariadb://localhost:3306/bug_report mvn spring-boot:run
+```
+
+The API is then available at <http://localhost:8080>. **Limitation:** Artemis port 61616 and
+SMTP port 1025 are not published by `docker-compose.yml`, so the backend cannot reach them from
+your machine. Everything works except the notification emails, and the log shows Artemis
+connection errors. To get emails, run the backend through Docker Compose instead.
+
+`mvn spring-boot:run -pl bug-report-api -am` from the `backend` directory does **not** work: it
+fails with `Unable to find a suitable main class`, because the plugin also runs on the parent
+project. `mvn install` in `backend` first, then run from `bug-report-api` as shown above.
+
+### Scripts
+
+Both scripts must be run from the repository root.
+
+| Script | What it does |
+| --- | --- |
+| `./build-backend.sh` | `mvn clean install` in `backend/`: compiles both modules, **runs the tests** (which need MariaDB, see [Testing](#testing)) and installs the modules into the local Maven repository |
+| `./run-backend.sh` | `mvn spring-boot:run` in `backend/bug-report-api` (see the host-name limitation above) |
+| `./run-backend.sh build` | Runs `build-backend.sh` first, then starts the backend |
+
+### Frontend on your machine
+
+`npm run dev` on your machine cannot reach a backend: the Vite proxy in
+[vite.config.js](frontend/vite.config.js) points to `http://backend:8080`, a host name that exists
+only inside the Compose network. Run the frontend with Docker Compose (`docker compose up
+--build frontend backend` starts it with the backend and database). These commands work on the
+host:
+
+```shell
+cd frontend
+npm ci
+npm run build
+npm run lint
+```
 
 ## Demo credentials
 
@@ -393,11 +498,85 @@ and three comments.
 
 ## Testing
 
-_Coming soon._
+The backend has 95 automated tests (JUnit 5, Mockito, Spring MockMvc). There are no frontend
+tests.
+
+| Kind | Tests | What is covered |
+| --- | --- | --- |
+| Service unit tests (Mockito, no Spring) | 58 | Business rules of `BugReportService` (28), `UserAccountService` (9), `CommentService` (9), `ComponentService` (7) and `SoftwareProjectService` (5) |
+| Controller tests (standalone MockMvc, mocked services) | 25 | Routes, status codes and request handling of the five controllers |
+| Integration tests (`@SpringBootTest`, profile `test`) | 12 | `PersistenceIntegrationTest` (6): repositories and mapping against MariaDB; `UserRoleSecurityIntegrationTest` (6): role rules on the URLs with a real security configuration |
+
+The integration tests use the database `bug_report_test` on `localhost:3306`
+([application-test.yml](backend/bug-report-api/src/test/resources/application-test.yml)), so start
+the database first. The unit and controller tests need nothing.
+
+```shell
+docker compose up -d database
+cd backend
+mvn test                                                    # all tests
+mvn test -pl bug-report-api -am -Dtest=BugReportServiceTest -Dsurefire.failIfNoSpecifiedTests=false   # one test class
+```
+
+`./build-backend.sh` also runs the tests. To build without them, use
+`mvn clean install -DskipTests` in `backend/`.
+
+Notes:
+
+- `bug_report_test` is created by [database/init](database/init/01-create-test-database.sql) only
+  when the database volume is created. If your volume is older, create it once:
+
+  ```shell
+  docker compose exec database mariadb -uroot -proot -e "CREATE DATABASE IF NOT EXISTS bug_report_test; GRANT ALL PRIVILEGES ON bug_report_test.* TO 'bug_report'@'%'; FLUSH PRIVILEGES;"
+  ```
+
+- The test log contains Artemis connection errors (`AMQ219007`), because the broker host is not
+  reachable from your machine. The tests still pass.
+- The tests do not catch the `POST /api/reports` failure described in
+  [Known limitations](#known-limitations): the service tests use mocked repositories, so the
+  `NOT NULL` column is never hit.
 
 ## Configuration reference
 
-_Coming soon._
+The backend is configured in
+[application.yml](backend/bug-report-api/src/main/resources/application.yml). Any property can be
+overridden with a Spring environment variable (dots become underscores, upper case), for example
+`SPRING_DATASOURCE_URL`; this was verified for the datasource URL.
+
+| Property | Default | Purpose |
+| --- | --- | --- |
+| `spring.datasource.url` | `jdbc:mariadb://database:3306/bug_report` | Database connection |
+| `spring.datasource.username` / `password` | `bug_report` / `bug_report` | Database login |
+| `spring.artemis.mode` | `native` | Connect to an Artemis broker |
+| `spring.artemis.broker-url` | `tcp://artemis:61616` | Broker address |
+| `spring.artemis.user` / `password` | `artemis` / `artemis` | Broker login |
+| `spring.mail.host` / `port` | `mailpit` / `1025` | SMTP server for notification emails |
+| `messaging.destinations.bug-report-event` | `bug-report-event` | Queue name for report events |
+| `server.port` | not set, so Spring Boot's default `8080` | HTTP port of the backend |
+
+Test profile (`application-test.yml`): `spring.datasource.url` is
+`jdbc:mariadb://localhost:3306/bug_report_test`.
+
+Values that are **hard-coded in the source** and cannot be configured:
+
+| Value | Where |
+| --- | --- |
+| Allowed CORS origin `http://localhost:5173` | `SecurityConfig` |
+| Email sender `no-reply@bugreport.local` | `BugReportEventConsumer` |
+| Backend address `http://backend:8080` for the frontend proxy | `frontend/vite.config.js` |
+| Toast display time (5 seconds) | `frontend/src/components/Toast.jsx` |
+
+Docker Compose ([docker-compose.yml](docker-compose.yml)) sets:
+
+| Service | Settings |
+| --- | --- |
+| `database` | `MARIADB_ROOT_PASSWORD=root`, `MARIADB_DATABASE=bug_report`, `MARIADB_USER=bug_report`, `MARIADB_PASSWORD=bug_report`; port 3306; volume `mariadb-data`; `./database/init` mounted read-only |
+| `artemis` | `ARTEMIS_USER=artemis`, `ARTEMIS_PASSWORD=artemis`; console on 8161 |
+| `mailpit` | Web UI on 8025; `MP_DATABASE=/data/mailpit.db`, `MP_MAX_MESSAGES=5000`, accepts any SMTP login; volume `mailpit-data` |
+| `backend` | Port 8080; no environment variables (uses `application.yml`) |
+| `frontend` | Port 5173 |
+
+All passwords above are development defaults. Do not use them in production.
 
 ## Known limitations
 
