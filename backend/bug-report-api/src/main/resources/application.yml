@@ -14,6 +14,17 @@ spring:
     host: mailpit
     port: 1025
 
+app:
+  # Filled in from the Maven project version by resource filtering.
+  version: "@project.version@"
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+
 messaging:
   destinations:
     bug-report-event: bug-report-event

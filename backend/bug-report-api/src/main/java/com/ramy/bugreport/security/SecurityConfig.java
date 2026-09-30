@@ -69,6 +69,12 @@ public class SecurityConfig {
 					.requestMatchers(HttpMethod.GET, "/api/csrf")
 					.permitAll()
 
+					// API documentation: the OpenAPI spec (JSON and YAML) and Swagger UI.
+					.requestMatchers(HttpMethod.GET,
+							"/v3/api-docs", "/v3/api-docs.yaml", "/v3/api-docs/**",
+							"/swagger-ui.html", "/swagger-ui/**")
+					.permitAll()
+
 					// Anyone may register; only admins can view all accounts.
 					.requestMatchers(HttpMethod.POST, "/api/accounts")
 					.permitAll()
