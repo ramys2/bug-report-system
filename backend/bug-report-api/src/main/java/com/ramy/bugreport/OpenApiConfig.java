@@ -13,6 +13,7 @@ import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
 import io.swagger.v3.oas.models.media.StringSchema;
+import io.swagger.v3.oas.models.parameters.Parameter;
 import io.swagger.v3.oas.models.parameters.RequestBody;
 import io.swagger.v3.oas.models.responses.ApiResponse;
 import io.swagger.v3.oas.models.responses.ApiResponses;
@@ -36,6 +37,7 @@ public class OpenApiConfig {
             2. Sign in with `POST /api/auth/login` (form fields `username` and `password`, where `username` is the email),
                sending the token in the `X-CSRF-TOKEN` header.
             3. Send the session cookie with every request, and the `X-CSRF-TOKEN` header with every `POST`, `PATCH` and `DELETE`.
+               The token changes when you sign in, so call `GET /api/csrf` again after login and use the new token.
 
             Only `GET /api/csrf` and `POST /api/accounts` (registration) are public. Missing sign-in answers 401,
             a missing role, ownership rule or CSRF token answers 403. Errors have the body `{"message": "..."}`.
@@ -58,16 +60,34 @@ public class OpenApiConfig {
     }
 
     /**
-     * Adds {@code POST /api/auth/login} and {@code POST /api/auth/logout} to the spec.
+     * Adds {@code POST /api/auth/login} and {@code POST /api/auth/logout} to the spec, and the CSRF header to every
+     * operation that changes data.
      *
-     * <p>Spring Security handles both in {@code SecurityConfig} (there is no controller), so springdoc cannot find them on its own.
+     * <p>Spring Security handles login and logout in {@code SecurityConfig} (there is no controller), so springdoc cannot find them on its own.
+     * The {@code X-CSRF-TOKEN} header is checked by Spring Security for all {@code POST}, {@code PATCH} and {@code DELETE} requests,
+     * so it is not visible on the controller methods; declaring it here lets Swagger UI send it.
      */
     @Bean
     public OpenApiCustomizer authenticationEndpointsCustomizer() {
         return openApi -> {
             openApi.path("/api/auth/login", new PathItem().post(loginOperation()));
             openApi.path("/api/auth/logout", new PathItem().post(logoutOperation()));
+
+            openApi.getPaths().values().forEach(pathItem -> pathItem.readOperationsMap().forEach((method, operation) -> {
+                if (method != PathItem.HttpMethod.GET) {
+                    operation.addParametersItem(csrfHeader());
+                }
+            }));
         };
+    }
+
+    private Parameter csrfHeader() {
+        return new Parameter()
+                .in("header")
+                .name("X-CSRF-TOKEN")
+                .required(true)
+                .description("CSRF token from `GET /api/csrf`. The token changes when you sign in, so fetch a new one after login.")
+                .schema(new StringSchema());
     }
 
     private Operation loginOperation() {
@@ -82,7 +102,7 @@ public class OpenApiConfig {
                 .operationId("login")
                 .summary("Sign in")
                 .description("Signs in with form fields and starts a session (`JSESSIONID` cookie). Handled by Spring Security, not by a controller. "
-                        + "Send the CSRF token from `GET /api/csrf` in the `X-CSRF-TOKEN` header. Access: public.")
+                        + "Access: public.")
                 .requestBody(new RequestBody().required(true).content(new Content()
                         .addMediaType("application/x-www-form-urlencoded", new MediaType().schema(form))))
                 .responses(new ApiResponses()
@@ -96,8 +116,7 @@ public class OpenApiConfig {
                 .addTagsItem("Authentication")
                 .operationId("logout")
                 .summary("Sign out")
-                .description("Ends the session. Handled by Spring Security, not by a controller. "
-                        + "Send the CSRF token from `GET /api/csrf` in the `X-CSRF-TOKEN` header.")
+                .description("Ends the session. Handled by Spring Security, not by a controller.")
                 .responses(new ApiResponses()
                         .addApiResponse("200", new ApiResponse().description("Signed out. The body is empty."))
                         .addApiResponse("403", errorResponse("The CSRF token is missing or invalid.")));
