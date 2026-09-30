@@ -64,7 +64,6 @@ marked in the code comments and were not confirmed by running the application.
 - `BugReportRow` links to a report with a plain `<a href>`, which reloads the whole page instead of using the router.
 - `ProtectedRoute` renders nothing while the session check is running.
 - `Modal` relies on Bootstrap's own JavaScript instead of React state.
-- `CreateBugReportForm` sends empty strings for optional text fields left empty.
 - `Toast` uses a hard-coded 5-second timeout.
 - `App.jsx` has no route for unknown paths, and `/login` stays reachable for signed-in users (`LoginPage` does not redirect them).
 - `BugReportPage`: if `GET /api/reports/{id}` fails, the page keeps showing "Loading bug report..." forever (only a toast is shown).

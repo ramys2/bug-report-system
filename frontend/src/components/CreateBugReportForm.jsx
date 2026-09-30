@@ -26,7 +26,7 @@ const severities = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
  * Form (meant to sit inside a `Modal`) for filing a new report with `POST /api/reports`.
  *
  * Title, project, component and severity are required; if one is missing a warning toast is shown and nothing is sent.
- * An empty assignee is sent as `null`. On success the form is cleared and `onCreated` is called; on failure an error toast is shown.
+ * Empty optional fields (assignee, description, steps to reproduce, expected and actual behavior) are sent as `null`. On success the form is cleared and `onCreated` is called; on failure an error toast is shown.
  * The submit button is disabled while the request runs.
  *
  * @param {object} props
@@ -60,7 +60,11 @@ function CreateBugReportForm({ developers, projects, components, onCreated }) {
         createReport({
             ...formValues,
             title: formValues.title.trim(),
-            assigneeId: formValues.assigneeId || null
+            assigneeId: formValues.assigneeId || null,
+            description: formValues.description || null,
+            stepsToReproduce: formValues.stepsToReproduce || null,
+            expectedBehavior: formValues.expectedBehavior || null,
+            actualBehavior: formValues.actualBehavior || null
         })
             .done(() => {
                 setFormValues(initialFormValues);
