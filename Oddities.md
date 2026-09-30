@@ -43,7 +43,6 @@ marked in the code comments and were not confirmed by running the application.
 - `BugReportEventPublisher` does not catch send failures; the database change is already committed when sending fails.
 
 ### Small things
-- `CommentAuthorizer` says "Report with id" in its not-found message for a missing comment.
 - The comment "These accounts exist only in the in-memory demo database" in `BugReportApplication` does not match the configuration: both the application and the tests use MariaDB.
 - `Attachment` exists only in the domain module (no entity, repository or endpoint); its demo seeding code is commented out.
 - `findAllByRole` in `UserAccountRepositoryJpaAdapter` is a normal transaction while the rest of the class is read-only, which is needed for its pessimistic lock.
