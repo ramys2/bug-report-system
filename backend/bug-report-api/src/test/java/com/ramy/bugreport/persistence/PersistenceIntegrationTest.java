@@ -30,6 +30,7 @@ import com.ramy.bugreport.dto.component.UpdateComponentResponsibleUserRequest;
 import com.ramy.bugreport.dto.project.UpdateSoftwareProjectDescriptionRequest;
 import com.ramy.bugreport.dto.project.UpdateSoftwareProjectNameRequest;
 import com.ramy.bugreport.dto.report.CloseBugReportRequest;
+import com.ramy.bugreport.dto.report.CreateBugReportRequest;
 import com.ramy.bugreport.dto.report.UpdateActualBehaviorRequest;
 import com.ramy.bugreport.dto.report.UpdateAssigneeRequest;
 import com.ramy.bugreport.dto.report.UpdateComponentRequest;
@@ -40,6 +41,7 @@ import com.ramy.bugreport.dto.report.UpdateSeverityRequest;
 import com.ramy.bugreport.dto.report.UpdateStatusRequest;
 import com.ramy.bugreport.dto.report.UpdateStepsToReproduceRequest;
 import com.ramy.bugreport.exception.BusinessRuleConflictException;
+import com.ramy.bugreport.exception.ResourceNotFoundException;
 import com.ramy.bugreport.repository.IBugReportRepository;
 import com.ramy.bugreport.repository.ICommentRepository;
 import com.ramy.bugreport.repository.IComponentRepository;
@@ -159,11 +161,34 @@ class PersistenceIntegrationTest {
         assertThat(saved.getExpectedBehavior()).isEqualTo("Updated expected");
         assertThat(saved.getActualBehavior()).isEqualTo("Updated actual");
         assertThat(saved.getCreatedAt()).isEqualTo(now);
-        assertThat(saved.getUpdatedAt()).isEqualTo(now);
+        assertThat(saved.getUpdatedAt()).isAfter(now);
         assertThat(reports.findByReporterId(reporter.getId())).extracting(BugReport::getId).containsExactly(report.getId());
         assertThat(reports.findByAssigneeId(developer.getId())).extracting(BugReport::getId).containsExactly(report.getId());
         assertThat(reports.existsByAssigneeIdAndStatusNot(developer.getId(), EBugStatus.CLOSED)).isTrue();
         assertThat(reports.count()).isEqualTo(1);
+    }
+
+    @Test
+    void createSetsCreatedAtAndUpdatedAtInRealDatabase() {
+        var request = new CreateBugReportRequest(
+                null, project.getId(), component.getId(), "New bug", null, null, null, null, EBugSeverity.LOW);
+
+        var response = reportService.create(reporter.getId(), request);
+
+        var saved = reports.findById(response.id()).orElseThrow();
+        assertThat(saved.getCreatedAt()).isNotNull();
+        assertThat(saved.getUpdatedAt()).isEqualTo(saved.getCreatedAt());
+    }
+
+    @Test
+    void createWithUnknownReporterFailsWithNotFound() {
+        var request = new CreateBugReportRequest(
+                null, project.getId(), component.getId(), "New bug", null, null, null, null, EBugSeverity.LOW);
+
+        assertThatThrownBy(() -> reportService.create(UUID.randomUUID(), request))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("does not exist");
+        assertThat(reports.count()).isZero();
     }
 
     @Test

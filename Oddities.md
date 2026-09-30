@@ -8,7 +8,6 @@ marked in the code comments and were not confirmed by running the application.
 
 | # | Where | Question |
 |---|---|---|
-| 1 | `BugReportService` | `updatedAt` is never set on create or update, but `bug_report.updated_at` is `NOT NULL`. How does creating a report succeed against the real database? |
 | 2 | `BugReportAuthorizer`, `CommentAuthorizer` | They throw `ResourceNotFoundException` while a `@PreAuthorize` expression is evaluated. Does that reach the client as 404, or is it wrapped into another error (e.g. 500)? |
 | 3 | `POST /api/components` / `CreateComponentForm` | `responsibleUserId` is not validated, but the column is `NOT NULL`. A missing or unknown user is expected to end as 409 (database error) or an error toast in the UI. Not tested. |
 | 4 | `run-backend.sh` | `application.yml` uses the hosts `database`, `artemis` and `mailpit` (compose service names). How do they resolve when the backend runs directly on the host? |

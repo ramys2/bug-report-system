@@ -51,9 +51,7 @@ import jakarta.transaction.Transactional;
  * published through Spring's event mechanism and only sent to the message queue after the
  * transaction commits.
  *
- * <p><b>Note:</b> {@code updatedAt} is never set by this service (neither on creation nor on update),
- * although the {@code updated_at} column is NOT NULL. TODO(verify): how creating a report
- * succeeds against the real database.
+ * <p>{@code updatedAt} is set on creation and refreshed on every change (the column is NOT NULL).
  */
 @Service
 public class BugReportService {
@@ -178,7 +176,7 @@ public class BugReportService {
     */
     
     /**
-     * Creates a new report with status {@link EBugStatus#OPEN} and the current time as {@code createdAt}.
+     * Creates a new report with status {@link EBugStatus#OPEN} and the current time as {@code createdAt} and {@code updatedAt}.
      *
      * <p>If the request contains an assignee, the report is created with that assignee but its status
      * stays {@code OPEN} and no notification event is published.
@@ -218,13 +216,15 @@ public class BugReportService {
             requireDeveloper(request.assigneeId());
         }
 
+        var now = LocalDateTime.now();
         BugReport report = BugReport.builder(reporterId, projectId, componentId, title, severity)
             .assigneeId(request.assigneeId())
             .description(request.description())
             .stepsToReproduce(request.stepsToReproduce())
             .expectedBehavior(request.expectedBehavior())
             .actualBehavior(request.actualBehavior())
-            .createdAt(LocalDateTime.now())
+            .createdAt(now)
+            .updatedAt(now)
             .build();
 
         report = bugReportRepository.save(report);
@@ -267,7 +267,7 @@ public class BugReportService {
         var reporterId = report.getReporterId();
         var assigneeId = report.getAssigneeId();
 
-        report = bugReportRepository.save(report);
+        report = saveUpdated(report);
 
         var reporter = userAccountRepository.findById(reporterId)
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -314,7 +314,7 @@ public class BugReportService {
         var assignee = requireDeveloper(assigneeId);
 
         report.setAssigneeId(assigneeId);
-        bugReportRepository.save(report);
+        saveUpdated(report);
         eventPublisher.publishEvent(new AssigneeChangedEvent(
                 assignee.getName(), assignee.getEmailAddress(), report.getTitle()));
         return updateResponse(report);
@@ -339,7 +339,7 @@ public class BugReportService {
     public UpdateBugReportResponse updateSeverity(UUID reportId, UpdateSeverityRequest request) {
         var report = reportById(reportId);
         report.setSeverity(request.severity());
-        bugReportRepository.save(report);
+        saveUpdated(report);
         return updateResponse(report);
     }
 
@@ -370,7 +370,7 @@ public class BugReportService {
         }
 
         report.setStatus(request.status());
-        bugReportRepository.save(report);
+        saveUpdated(report);
 
         var reporter = userAccountRepository.findById(report.getReporterId())
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -409,7 +409,7 @@ public class BugReportService {
         }
 
         report.setProjectId(projectId);
-        bugReportRepository.save(report);
+        saveUpdated(report);
         return updateResponse(report);
     }
 
@@ -438,7 +438,7 @@ public class BugReportService {
         }
 
         report.setComponentId(componentId);
-        bugReportRepository.save(report);
+        saveUpdated(report);
         return updateResponse(report);
     }
 
@@ -461,7 +461,7 @@ public class BugReportService {
     public UpdateBugReportResponse updateDescription(UUID reportId, UpdateDescriptionRequest request) {
         var report = reportById(reportId);
         report.setDescription(request.description());
-        bugReportRepository.save(report);
+        saveUpdated(report);
         return updateResponse(report);
     }
 
@@ -487,7 +487,7 @@ public class BugReportService {
     ) {
         var report = reportById(reportId);
         report.setStepsToReproduce(request.stepsToReproduce());
-        bugReportRepository.save(report);
+        saveUpdated(report);
         return updateResponse(report);
     }
 
@@ -513,7 +513,7 @@ public class BugReportService {
     ) {
         var report = reportById(reportId);
         report.setExpectedBehavior(request.expectedBehavior());
-        bugReportRepository.save(report);
+        saveUpdated(report);
         return updateResponse(report);
     }
 
@@ -539,7 +539,7 @@ public class BugReportService {
     ) {
         var report = reportById(reportId);
         report.setActualBehavior(request.actualBehavior());
-        bugReportRepository.save(report);
+        saveUpdated(report);
         return updateResponse(report);
     }
 
@@ -553,6 +553,12 @@ public class BugReportService {
         }
 
         return report;
+    }
+
+    /** Sets {@code updatedAt} to the current time and saves the report. */
+    private BugReport saveUpdated(BugReport report) {
+        report.setUpdatedAt(LocalDateTime.now());
+        return bugReportRepository.save(report);
     }
 
     private UpdateBugReportResponse updateResponse(BugReport report) {
