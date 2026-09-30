@@ -1,0 +1,7 @@
+# Redocly lint configuration for docs/openapi/openapi.yaml.
+# Run: npx -y @redocly/cli lint docs/openapi/openapi.yaml (see docs/openapi/VALIDATION.md).
+extends:
+  - recommended
+rules:
+  # No security scheme is declared on purpose: the session cookie and CSRF flow is described in the API description.
+  security-defined: off
