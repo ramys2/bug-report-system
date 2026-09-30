@@ -103,4 +103,86 @@
 		</plugins>
 	</build>
 
+	<profiles>
+		<!--
+			Regenerates the committed OpenAPI spec (docs/openapi/openapi.yaml).
+			Run from backend/ with: mvn verify -Popenapi -DskipTests
+			In the integration-test phase it starts the application, downloads the spec from the running
+			application and stops it again. The application needs MariaDB, Artemis and Mailpit
+			(docker compose up -d database mailpit artemis), reached on localhost by default.
+			Override any property with -D, for example -Dopenapi.port=8090.
+			See docs/openapi/GENERATE.md.
+		-->
+		<profile>
+			<id>openapi</id>
+
+			<properties>
+				<openapi.port>8089</openapi.port>
+				<openapi.output.dir>${project.basedir}/../../docs/openapi</openapi.output.dir>
+				<openapi.datasource.url>jdbc:mariadb://localhost:3306/bug_report</openapi.datasource.url>
+				<openapi.artemis.url>tcp://localhost:61616</openapi.artemis.url>
+				<openapi.mail.host>localhost</openapi.mail.host>
+			</properties>
+
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.springframework.boot</groupId>
+						<artifactId>spring-boot-maven-plugin</artifactId>
+						<configuration>
+							<!-- Properties are passed as arguments so they override application.yml. -->
+							<arguments>
+								<argument>--server.port=${openapi.port}</argument>
+								<argument>--spring.datasource.url=${openapi.datasource.url}</argument>
+								<argument>--spring.artemis.broker-url=${openapi.artemis.url}</argument>
+								<argument>--spring.mail.host=${openapi.mail.host}</argument>
+							</arguments>
+							<!-- Wait up to 2 minutes (maxAttempts x wait ms) for the application to be ready. -->
+							<maxAttempts>60</maxAttempts>
+							<wait>2000</wait>
+						</configuration>
+						<executions>
+							<execution>
+								<id>start-app-for-openapi</id>
+								<phase>pre-integration-test</phase>
+								<goals>
+									<goal>start</goal>
+								</goals>
+							</execution>
+							<execution>
+								<id>stop-app-after-openapi</id>
+								<phase>post-integration-test</phase>
+								<goals>
+									<goal>stop</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+
+					<plugin>
+						<groupId>org.springdoc</groupId>
+						<artifactId>springdoc-openapi-maven-plugin</artifactId>
+						<version>1.5</version>
+						<configuration>
+							<outputDir>${openapi.output.dir}</outputDir>
+						</configuration>
+						<executions>
+							<execution>
+								<id>generate-openapi-yaml</id>
+								<phase>integration-test</phase>
+								<goals>
+									<goal>generate</goal>
+								</goals>
+								<configuration>
+									<apiDocsUrl>http://localhost:${openapi.port}/v3/api-docs.yaml</apiDocsUrl>
+									<outputFileName>openapi.yaml</outputFileName>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+
 </project>

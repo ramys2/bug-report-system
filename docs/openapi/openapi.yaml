@@ -1,0 +1,2656 @@
+openapi: 3.1.0
+info:
+  description: |
+    REST API of the Bug Report System, a minimalistic Jira-like bug tracker.
+
+    **Authentication.** The API uses a session cookie and CSRF protection:
+    1. Call `GET /api/csrf` to get a CSRF token (this also sets the `JSESSIONID` cookie).
+    2. Sign in with `POST /api/auth/login` (form fields `username` and `password`, where `username` is the email),
+       sending the token in the `X-CSRF-TOKEN` header.
+    3. Send the session cookie with every request, and the `X-CSRF-TOKEN` header with every `POST`, `PATCH` and `DELETE`.
+       The token changes when you sign in, so call `GET /api/csrf` again after login and use the new token.
+
+    Only `GET /api/csrf` and `POST /api/accounts` (registration) are public. Missing sign-in answers 401,
+    a missing role, ownership rule or CSRF token answers 403. Errors have the body `{"message": "..."}`.
+  title: Bug Report System API
+  version: 0.1.0-SNAPSHOT
+servers:
+- description: Generated server url
+  url: http://localhost:8089
+tags:
+- description: "Current session, CSRF token, login and logout."
+  name: Authentication
+- description: "Create, read, update and resolve bug reports."
+  name: Bug reports
+- description: Discussion on bug reports.
+  name: Comments
+- description: Software projects that bug reports belong to.
+  name: Projects
+- description: "Parts of a project, each with a responsible developer."
+  name: Components
+- description: User accounts and their roles.
+  name: Accounts
+paths:
+  /api/accounts:
+    get:
+      description: "Access: ADMIN role. `username` is the account's display name."
+      operationId: getAll_3
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserAccountResponse"
+          description: All accounts.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "The role or ownership check failed, or the CSRF token is missing."
+      summary: List all accounts
+      tags:
+      - Accounts
+    post:
+      description: "Registers a new account with the REPORTER role. Access: public,\
+        \ no sign-in needed. Returns 409 if the (trimmed, lower-cased) email is already\
+        \ registered."
+      operationId: create_4
+      parameters:
+      - description: "CSRF token from `GET /api/csrf`. The token changes when you\
+          \ sign in, so fetch a new one after login."
+        in: header
+        name: X-CSRF-TOKEN
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserAccountRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateUserAccountResponse"
+          description: Account created.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Validation failed, the JSON is malformed, or a path or query\
+            \ value (for example an id) is malformed."
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "The role or ownership check failed, or the CSRF token is missing."
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: The request conflicts with a business rule or with existing
+            data.
+      summary: Register an account
+      tags:
+      - Accounts
+  /api/accounts/developers:
+    get:
+      description: "Lists the users with the DEVELOPER role, for example to choose\
+        \ an assignee. Access: any signed-in user."
+      operationId: getDevelopers
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DeveloperResponse"
+          description: Users with the DEVELOPER role.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+      summary: List developers
+      tags:
+      - Accounts
+  /api/accounts/users:
+    get:
+      description: "Finds users whose name contains the text, ignoring case. The list\
+        \ is empty if `search` is missing or blank. Access: ADMIN or DEVELOPER role."
+      operationId: searchUsers
+      parameters:
+      - description: "Text to look for in the user's name, ignoring case."
+        example: ali
+        in: query
+        name: search
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UserAccountBriefResponse"
+          description: Users whose name matches.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "The role or ownership check failed, or the CSRF token is missing."
+      summary: Search users by name
+      tags:
+      - Accounts
+  /api/accounts/{userId}/role:
+    patch:
+      description: "Access: ADMIN role, and not for the caller's own account. Returns\
+        \ 409 if this would remove the last admin or demote a developer who still\
+        \ has unclosed assigned reports."
+      operationId: updateRole
+      parameters:
+      - description: Id of the user account.
+        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - description: "CSRF token from `GET /api/csrf`. The token changes when you\
+          \ sign in, so fetch a new one after login."
+        in: header
+        name: X-CSRF-TOKEN
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRoleRequest"
+        required: true
+      responses:
+        "204":
+          description: Role changed.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Validation failed, the JSON is malformed, or a path or query\
+            \ value (for example an id) is malformed."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "The role or ownership check failed, or the CSRF token is missing."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: A referenced resource does not exist.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: The request conflicts with a business rule or with existing
+            data.
+      summary: Change a user's role
+      tags:
+      - Accounts
+  /api/auth/login:
+    post:
+      description: "Signs in with form fields and starts a session (`JSESSIONID` cookie).\
+        \ Handled by Spring Security, not by a controller. Access: public."
+      operationId: login
+      parameters:
+      - description: "CSRF token from `GET /api/csrf`. The token changes when you\
+          \ sign in, so fetch a new one after login."
+        in: header
+        name: X-CSRF-TOKEN
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+                  description: Plain-text password.
+                  example: Admin123!
+                username:
+                  type: string
+                  description: Email address of the account.
+                  example: admin@bugreport.local
+              required:
+              - password
+              - username
+        required: true
+      responses:
+        "200":
+          description: Signed in; the session cookie is set. The body is empty.
+        "401":
+          description: Wrong email or password. The body is empty.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: The CSRF token is missing or invalid.
+      summary: Sign in
+      tags:
+      - Authentication
+  /api/auth/logout:
+    post:
+      description: "Ends the session. Handled by Spring Security, not by a controller."
+      operationId: logout
+      parameters:
+      - description: "CSRF token from `GET /api/csrf`. The token changes when you\
+          \ sign in, so fetch a new one after login."
+        in: header
+        name: X-CSRF-TOKEN
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: Signed out. The body is empty.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: The CSRF token is missing or invalid.
+      summary: Sign out
+      tags:
+      - Authentication
+  /api/auth/me:
+    get:
+      description: "Returns the account of the current session. Access: any signed-in\
+        \ user. Login (`POST /api/auth/login`) and logout (`POST /api/auth/logout`)\
+        \ are handled by Spring Security, not by this controller."
+      operationId: me
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserAccountResponse"
+          description: The signed-in user.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+      summary: Get the signed-in user
+      tags:
+      - Authentication
+  /api/comments/{commentId}:
+    delete:
+      description: "Access: signed-in user; the service further requires the ADMIN\
+        \ role or being the comment's author. Returns 409 if the report is closed."
+      operationId: delete
+      parameters:
+      - description: Id of the comment.
+        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        in: path
+        name: commentId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - description: "CSRF token from `GET /api/csrf`. The token changes when you\
+          \ sign in, so fetch a new one after login."
+        in: header
+        name: X-CSRF-TOKEN
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: Comment deleted.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Validation failed, the JSON is malformed, or a path or query\
+            \ value (for example an id) is malformed."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "The role or ownership check failed, or the CSRF token is missing."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: A referenced resource does not exist.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: The request conflicts with a business rule or with existing
+            data.
+      summary: Delete a comment
+      tags:
+      - Comments
+  /api/components:
+    get:
+      description: "Access: any signed-in user."
+      operationId: getAll_2
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ComponentResponse"
+          description: All components.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+      summary: List all components
+      tags:
+      - Components
+    post:
+      description: "Access: ADMIN or DEVELOPER role. `responsibleUserId` is not validated\
+        \ as required, but the database requires it; a missing or unknown user is\
+        \ expected to fail with 409 (TODO(verify): not validated by the service)."
+      operationId: create_3
+      parameters:
+      - description: "CSRF token from `GET /api/csrf`. The token changes when you\
+          \ sign in, so fetch a new one after login."
+        in: header
+        name: X-CSRF-TOKEN
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateComponentRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateComponentResponse"
+          description: Component created.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Validation failed, the JSON is malformed, or a path or query\
+            \ value (for example an id) is malformed."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "The role or ownership check failed, or the CSRF token is missing."
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: The request conflicts with a business rule or with existing
+            data.
+      summary: Create a component
+      tags:
+      - Components
+  /api/components/{componentId}/description:
+    patch:
+      description: "Access: ADMIN or DEVELOPER role."
+      operationId: updateDescription_2
+      parameters:
+      - description: Id of the component.
+        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        in: path
+        name: componentId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - description: "CSRF token from `GET /api/csrf`. The token changes when you\
+          \ sign in, so fetch a new one after login."
+        in: header
+        name: X-CSRF-TOKEN
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateComponentDescriptionRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdateComponentResponse"
+          description: Description replaced.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Validation failed, the JSON is malformed, or a path or query\
+            \ value (for example an id) is malformed."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "The role or ownership check failed, or the CSRF token is missing."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: A referenced resource does not exist.
+      summary: Replace a component's description
+      tags:
+      - Components
+  /api/components/{componentId}/name:
+    patch:
+      description: "Access: ADMIN or DEVELOPER role."
+      operationId: updateName_1
+      parameters:
+      - description: Id of the component.
+        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        in: path
+        name: componentId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - description: "CSRF token from `GET /api/csrf`. The token changes when you\
+          \ sign in, so fetch a new one after login."
+        in: header
+        name: X-CSRF-TOKEN
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateComponentNameRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdateComponentResponse"
+          description: Component renamed.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Validation failed, the JSON is malformed, or a path or query\
+            \ value (for example an id) is malformed."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "The role or ownership check failed, or the CSRF token is missing."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: A referenced resource does not exist.
+      summary: Rename a component
+      tags:
+      - Components
+  /api/components/{componentId}/responsibleUserId:
+    patch:
+      description: "Access: ADMIN or DEVELOPER role. Note the camelCase path segment.\
+        \ A non-existing user fails with 409 from the database foreign key."
+      operationId: updateResponsibleUserId
+      parameters:
+      - description: Id of the component.
+        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        in: path
+        name: componentId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - description: "CSRF token from `GET /api/csrf`. The token changes when you\
+          \ sign in, so fetch a new one after login."
+        in: header
+        name: X-CSRF-TOKEN
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateComponentResponsibleUserRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdateComponentResponse"
+          description: Responsible user changed.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Validation failed, the JSON is malformed, or a path or query\
+            \ value (for example an id) is malformed."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "The role or ownership check failed, or the CSRF token is missing."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: A referenced resource does not exist.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: The request conflicts with a business rule or with existing
+            data.
+      summary: Change the responsible user
+      tags:
+      - Components
+  /api/csrf:
+    get:
+      description: "Returns the CSRF token for the current session and sets the session\
+        \ cookie. Send the token in the `X-CSRF-TOKEN` header with every POST, PATCH\
+        \ and DELETE request. Access: public."
+      operationId: csrf
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CsrfToken"
+          description: OK
+      summary: Get a CSRF token
+      tags:
+      - Authentication
+  /api/projects:
+    get:
+      description: "Access: any signed-in user."
+      operationId: getAll_1
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SoftwareProjectResponse"
+          description: All projects.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+      summary: List all projects
+      tags:
+      - Projects
+    post:
+      description: "Access: ADMIN role."
+      operationId: create_2
+      parameters:
+      - description: "CSRF token from `GET /api/csrf`. The token changes when you\
+          \ sign in, so fetch a new one after login."
+        in: header
+        name: X-CSRF-TOKEN
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSoftwareProjectRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateSoftwareProjectResponse"
+          description: Project created.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Validation failed, the JSON is malformed, or a path or query\
+            \ value (for example an id) is malformed."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "The role or ownership check failed, or the CSRF token is missing."
+      summary: Create a project
+      tags:
+      - Projects
+  /api/projects/{projectId}/description:
+    patch:
+      description: "Access: ADMIN or DEVELOPER role."
+      operationId: updateDescription_1
+      parameters:
+      - description: Id of the project.
+        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        in: path
+        name: projectId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - description: "CSRF token from `GET /api/csrf`. The token changes when you\
+          \ sign in, so fetch a new one after login."
+        in: header
+        name: X-CSRF-TOKEN
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSoftwareProjectDescriptionRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdateSoftwareProjectResponse"
+          description: Description replaced.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Validation failed, the JSON is malformed, or a path or query\
+            \ value (for example an id) is malformed."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "The role or ownership check failed, or the CSRF token is missing."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: A referenced resource does not exist.
+      summary: Replace a project's description
+      tags:
+      - Projects
+  /api/projects/{projectId}/name:
+    patch:
+      description: "Access: ADMIN or DEVELOPER role."
+      operationId: updateName
+      parameters:
+      - description: Id of the project.
+        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        in: path
+        name: projectId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - description: "CSRF token from `GET /api/csrf`. The token changes when you\
+          \ sign in, so fetch a new one after login."
+        in: header
+        name: X-CSRF-TOKEN
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSoftwareProjectNameRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdateSoftwareProjectResponse"
+          description: Project renamed.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Validation failed, the JSON is malformed, or a path or query\
+            \ value (for example an id) is malformed."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "The role or ownership check failed, or the CSRF token is missing."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: A referenced resource does not exist.
+      summary: Rename a project
+      tags:
+      - Projects
+  /api/reports:
+    get:
+      description: "Lists all reports in brief form. Access: any signed-in user. There\
+        \ is no filtering by owner."
+      operationId: getAll
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BugReportBriefResponse"
+          description: List of reports in brief form.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+      summary: List all bug reports
+      tags:
+      - Bug reports
+    post:
+      description: "Files a new report as the signed-in user. The report starts with\
+        \ status `OPEN`. Returns 404 if the project or component does not exist and\
+        \ 409 if `assigneeId` is not a developer. Access: any signed-in user."
+      operationId: create
+      parameters:
+      - description: "CSRF token from `GET /api/csrf`. The token changes when you\
+          \ sign in, so fetch a new one after login."
+        in: header
+        name: X-CSRF-TOKEN
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBugReportRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateBugReportResponse"
+          description: Report created.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Validation failed, the JSON is malformed, or a path or query\
+            \ value (for example an id) is malformed."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "The role or ownership check failed, or the CSRF token is missing."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: A referenced resource does not exist.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: The request conflicts with a business rule or with existing
+            data.
+      summary: Create a bug report
+      tags:
+      - Bug reports
+  /api/reports/assigned:
+    get:
+      description: "Includes closed reports. Access: any signed-in user. The list\
+        \ is empty if there are none."
+      operationId: getAssigned
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BugReportBriefResponse"
+          description: Reports assigned to the signed-in user.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+      summary: List reports assigned to the signed-in user
+      tags:
+      - Bug reports
+  /api/reports/reported:
+    get:
+      description: "Access: any signed-in user. The list is empty if there are none."
+      operationId: getReported
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BugReportBriefResponse"
+          description: Reports filed by the signed-in user.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+      summary: List reports filed by the signed-in user
+      tags:
+      - Bug reports
+  /api/reports/{reportId}:
+    get:
+      description: "Returns the full detail of one report. `resolution` is null until\
+        \ the report is closed. Access: any signed-in user."
+      operationId: getReport
+      parameters:
+      - description: Id of the bug report.
+        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        in: path
+        name: reportId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BugReportResponse"
+          description: "The report with its resolution, if any."
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Validation failed, the JSON is malformed, or a path or query\
+            \ value (for example an id) is malformed."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: A referenced resource does not exist.
+      summary: Get a bug report
+      tags:
+      - Bug reports
+  /api/reports/{reportId}/actual-behavior:
+    patch:
+      description: "Returns 409 if the report is closed. Access: signed-in user; the\
+        \ service further requires the ADMIN role, or being the report's reporter\
+        \ or assignee."
+      operationId: updateActualBehavior
+      parameters:
+      - description: Id of the bug report.
+        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        in: path
+        name: reportId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - description: "CSRF token from `GET /api/csrf`. The token changes when you\
+          \ sign in, so fetch a new one after login."
+        in: header
+        name: X-CSRF-TOKEN
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateActualBehaviorRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdateBugReportResponse"
+          description: Actual behavior replaced.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Validation failed, the JSON is malformed, or a path or query\
+            \ value (for example an id) is malformed."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "The role or ownership check failed, or the CSRF token is missing."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: A referenced resource does not exist.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: The request conflicts with a business rule or with existing
+            data.
+      summary: Replace the actual behavior
+      tags:
+      - Bug reports
+  /api/reports/{reportId}/assignee:
+    patch:
+      description: "Assigns the report to a developer; the developer is notified by\
+        \ email. Returns 409 if the report is closed or the user is not a developer.\
+        \ Access: signed-in user; the service further requires the ADMIN role, or\
+        \ being the report's reporter or assignee."
+      operationId: updateAssignee
+      parameters:
+      - description: Id of the bug report.
+        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        in: path
+        name: reportId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - description: "CSRF token from `GET /api/csrf`. The token changes when you\
+          \ sign in, so fetch a new one after login."
+        in: header
+        name: X-CSRF-TOKEN
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAssigneeRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdateBugReportResponse"
+          description: Assignee changed.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Validation failed, the JSON is malformed, or a path or query\
+            \ value (for example an id) is malformed."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "The role or ownership check failed, or the CSRF token is missing."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: A referenced resource does not exist.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: The request conflicts with a business rule or with existing
+            data.
+      summary: Change the assignee
+      tags:
+      - Bug reports
+  /api/reports/{reportId}/comments:
+    get:
+      description: "Newest first; empty if there are none. Access: any signed-in user."
+      operationId: getComments
+      parameters:
+      - description: Id of the bug report.
+        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        in: path
+        name: reportId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CommentResponse"
+          description: "Comments of the report, newest first."
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Validation failed, the JSON is malformed, or a path or query\
+            \ value (for example an id) is malformed."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: A referenced resource does not exist.
+      summary: List the comments of a report
+      tags:
+      - Comments
+    post:
+      description: "Adds a comment as the signed-in user. Returns 409 if the report\
+        \ is closed. Access: any signed-in user."
+      operationId: create_1
+      parameters:
+      - description: Id of the bug report.
+        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        in: path
+        name: reportId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - description: "CSRF token from `GET /api/csrf`. The token changes when you\
+          \ sign in, so fetch a new one after login."
+        in: header
+        name: X-CSRF-TOKEN
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCommentRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateCommentResponse"
+          description: Comment created.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Validation failed, the JSON is malformed, or a path or query\
+            \ value (for example an id) is malformed."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "The role or ownership check failed, or the CSRF token is missing."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: A referenced resource does not exist.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: The request conflicts with a business rule or with existing
+            data.
+      summary: Add a comment
+      tags:
+      - Comments
+  /api/reports/{reportId}/component:
+    patch:
+      description: "The component is not checked against the report's project. Returns\
+        \ 409 if the report is closed. Access: signed-in user; the service further\
+        \ requires the ADMIN role, or being the report's reporter or assignee."
+      operationId: updateComponent
+      parameters:
+      - description: Id of the bug report.
+        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        in: path
+        name: reportId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - description: "CSRF token from `GET /api/csrf`. The token changes when you\
+          \ sign in, so fetch a new one after login."
+        in: header
+        name: X-CSRF-TOKEN
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateComponentRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdateBugReportResponse"
+          description: Component changed.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Validation failed, the JSON is malformed, or a path or query\
+            \ value (for example an id) is malformed."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "The role or ownership check failed, or the CSRF token is missing."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: A referenced resource does not exist.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: The request conflicts with a business rule or with existing
+            data.
+      summary: Move the report to another component
+      tags:
+      - Bug reports
+  /api/reports/{reportId}/description:
+    patch:
+      description: "Returns 409 if the report is closed. Access: signed-in user; the\
+        \ service further requires the ADMIN role, or being the report's reporter\
+        \ or assignee."
+      operationId: updateDescription
+      parameters:
+      - description: Id of the bug report.
+        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        in: path
+        name: reportId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - description: "CSRF token from `GET /api/csrf`. The token changes when you\
+          \ sign in, so fetch a new one after login."
+        in: header
+        name: X-CSRF-TOKEN
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDescriptionRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdateBugReportResponse"
+          description: Description replaced.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Validation failed, the JSON is malformed, or a path or query\
+            \ value (for example an id) is malformed."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "The role or ownership check failed, or the CSRF token is missing."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: A referenced resource does not exist.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: The request conflicts with a business rule or with existing
+            data.
+      summary: Replace the description
+      tags:
+      - Bug reports
+  /api/reports/{reportId}/expected-behavior:
+    patch:
+      description: "Returns 409 if the report is closed. Access: signed-in user; the\
+        \ service further requires the ADMIN role, or being the report's reporter\
+        \ or assignee."
+      operationId: updateExpectedBehavior
+      parameters:
+      - description: Id of the bug report.
+        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        in: path
+        name: reportId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - description: "CSRF token from `GET /api/csrf`. The token changes when you\
+          \ sign in, so fetch a new one after login."
+        in: header
+        name: X-CSRF-TOKEN
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateExpectedBehaviorRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdateBugReportResponse"
+          description: Expected behavior replaced.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Validation failed, the JSON is malformed, or a path or query\
+            \ value (for example an id) is malformed."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "The role or ownership check failed, or the CSRF token is missing."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: A referenced resource does not exist.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: The request conflicts with a business rule or with existing
+            data.
+      summary: Replace the expected behavior
+      tags:
+      - Bug reports
+  /api/reports/{reportId}/project:
+    patch:
+      description: "Returns 409 if the report is closed. Access: signed-in user; the\
+        \ service further requires the ADMIN role, or being the report's reporter\
+        \ or assignee."
+      operationId: updateProject
+      parameters:
+      - description: Id of the bug report.
+        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        in: path
+        name: reportId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - description: "CSRF token from `GET /api/csrf`. The token changes when you\
+          \ sign in, so fetch a new one after login."
+        in: header
+        name: X-CSRF-TOKEN
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProjectRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdateBugReportResponse"
+          description: Project changed.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Validation failed, the JSON is malformed, or a path or query\
+            \ value (for example an id) is malformed."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "The role or ownership check failed, or the CSRF token is missing."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: A referenced resource does not exist.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: The request conflicts with a business rule or with existing
+            data.
+      summary: Move the report to another project
+      tags:
+      - Bug reports
+  /api/reports/{reportId}/resolution:
+    post:
+      description: "Creates the resolution and sets the status to `CLOSED`; the reporter\
+        \ and assignee are notified by email. Returns 409 if the report is already\
+        \ closed. Access: signed-in user; the service further requires the ADMIN role,\
+        \ or being the report's reporter or assignee. Note: `reportId` in the response\
+        \ contains the id of the new resolution, not of the report."
+      operationId: close
+      parameters:
+      - description: Id of the bug report.
+        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        in: path
+        name: reportId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - description: "CSRF token from `GET /api/csrf`. The token changes when you\
+          \ sign in, so fetch a new one after login."
+        in: header
+        name: X-CSRF-TOKEN
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CloseBugReportRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CloseBugReportResponse"
+          description: Resolution created and report closed.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Validation failed, the JSON is malformed, or a path or query\
+            \ value (for example an id) is malformed."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "The role or ownership check failed, or the CSRF token is missing."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: A referenced resource does not exist.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: The request conflicts with a business rule or with existing
+            data.
+      summary: Close a bug report with a resolution
+      tags:
+      - Bug reports
+  /api/reports/{reportId}/severity:
+    patch:
+      description: "Returns 409 if the report is closed. Access: signed-in user; the\
+        \ service further requires the ADMIN role, or being the report's reporter\
+        \ or assignee."
+      operationId: updateSeverity
+      parameters:
+      - description: Id of the bug report.
+        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        in: path
+        name: reportId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - description: "CSRF token from `GET /api/csrf`. The token changes when you\
+          \ sign in, so fetch a new one after login."
+        in: header
+        name: X-CSRF-TOKEN
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSeverityRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdateBugReportResponse"
+          description: Severity changed.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Validation failed, the JSON is malformed, or a path or query\
+            \ value (for example an id) is malformed."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "The role or ownership check failed, or the CSRF token is missing."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: A referenced resource does not exist.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: The request conflicts with a business rule or with existing
+            data.
+      summary: Change the severity
+      tags:
+      - Bug reports
+  /api/reports/{reportId}/status:
+    patch:
+      description: "The reporter and assignee are notified by email. Use the resolution\
+        \ endpoint to close a report. Returns 409 if the report is closed or the requested\
+        \ status is `CLOSED`. Access: signed-in user; the service further requires\
+        \ the ADMIN role, or being the report's reporter or assignee."
+      operationId: updateStatus
+      parameters:
+      - description: Id of the bug report.
+        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        in: path
+        name: reportId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - description: "CSRF token from `GET /api/csrf`. The token changes when you\
+          \ sign in, so fetch a new one after login."
+        in: header
+        name: X-CSRF-TOKEN
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateStatusRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdateBugReportResponse"
+          description: Status changed.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Validation failed, the JSON is malformed, or a path or query\
+            \ value (for example an id) is malformed."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "The role or ownership check failed, or the CSRF token is missing."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: A referenced resource does not exist.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: The request conflicts with a business rule or with existing
+            data.
+      summary: Change the status
+      tags:
+      - Bug reports
+  /api/reports/{reportId}/steps-to-reproduce:
+    patch:
+      description: "Returns 409 if the report is closed. Access: signed-in user; the\
+        \ service further requires the ADMIN role, or being the report's reporter\
+        \ or assignee."
+      operationId: updateStepsToReproduce
+      parameters:
+      - description: Id of the bug report.
+        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        in: path
+        name: reportId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - description: "CSRF token from `GET /api/csrf`. The token changes when you\
+          \ sign in, so fetch a new one after login."
+        in: header
+        name: X-CSRF-TOKEN
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateStepsToReproduceRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdateBugReportResponse"
+          description: Steps to reproduce replaced.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Validation failed, the JSON is malformed, or a path or query\
+            \ value (for example an id) is malformed."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "The role or ownership check failed, or the CSRF token is missing."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: A referenced resource does not exist.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: The request conflicts with a business rule or with existing
+            data.
+      summary: Replace the steps to reproduce
+      tags:
+      - Bug reports
+components:
+  schemas:
+    ApiErrorResponse:
+      type: object
+      description: JSON body of every error response.
+      properties:
+        message:
+          type: string
+          description: Human-readable description of the error.
+          example: Request contains invalid values.
+      required:
+      - message
+    BugReportBriefResponse:
+      type: object
+      description: "A report in the list endpoints (`GET /api/reports`, `/reported`,\
+        \ `/assigned`)."
+      properties:
+        assignee:
+          type: string
+          description: Display name of the assignee. Null if unassigned.
+          example: Daniel Developer
+        author:
+          type: string
+          description: Display name of the reporter.
+          example: Rachel Reporter
+        createdAt:
+          type: string
+          description: "Creation time formatted as `dd-MM-yyyy HH:mm` (a string, unlike\
+            \ other timestamps)."
+          example: 14-05-2026 09:30
+        reportId:
+          type: string
+          format: uuid
+          description: Report id.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        severity:
+          type: string
+          description: Severity.
+          enum:
+          - LOW
+          - MEDIUM
+          - HIGH
+          - CRITICAL
+          example: CRITICAL
+        status:
+          type: string
+          description: Workflow status.
+          enum:
+          - OPEN
+          - ASSIGNED
+          - IN_PROGRESS
+          - NEEDS_INFORMATION
+          - REVIEWING
+          - REJECTED
+          - CLOSED
+          example: IN_PROGRESS
+        title:
+          type: string
+          description: Short summary.
+          example: Valid users cannot sign in
+      required:
+      - author
+      - createdAt
+      - reportId
+      - severity
+      - status
+      - title
+    BugReportResponse:
+      type: object
+      description: "Full detail of one report, returned by `GET /api/reports/{reportId}`."
+      properties:
+        actualBehavior:
+          type: string
+          description: Actual behavior. May be null.
+          example: The server returns HTTP 500 and the user remains signed out.
+        assigneeName:
+          type: string
+          description: Display name of the assignee. Null if unassigned.
+          example: Daniel Developer
+        componentName:
+          type: string
+          description: Name of the component.
+          example: Backend API
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation time (ISO-8601).
+          example: 2026-05-14T09:30:00
+        description:
+          type: string
+          description: Description. May be null.
+          example: The sign-in endpoint returns HTTP 500 for valid credentials.
+        expectedBehavior:
+          type: string
+          description: Expected behavior. May be null.
+          example: The user is authenticated and redirected to the dashboard.
+        id:
+          type: string
+          format: uuid
+          description: Report id.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        projectName:
+          type: string
+          description: Name of the project.
+          example: Bug Report System
+        reporterName:
+          type: string
+          description: Display name of the reporter.
+          example: Rachel Reporter
+        resolution:
+          $ref: "#/components/schemas/Resolution"
+          description: "The domain Resolution, serialized directly. Null until the\
+            \ report is closed."
+        severity:
+          type: string
+          description: Severity.
+          enum:
+          - LOW
+          - MEDIUM
+          - HIGH
+          - CRITICAL
+          example: CRITICAL
+        status:
+          type: string
+          description: Workflow status.
+          enum:
+          - OPEN
+          - ASSIGNED
+          - IN_PROGRESS
+          - NEEDS_INFORMATION
+          - REVIEWING
+          - REJECTED
+          - CLOSED
+          example: IN_PROGRESS
+        stepsToReproduce:
+          type: string
+          description: Steps to reproduce. May be null.
+          example: "Open sign in, enter valid credentials, and submit the form."
+        title:
+          type: string
+          description: Short summary.
+          example: Valid users cannot sign in
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last modification time (ISO-8601).
+          example: 2026-05-14T09:30:00
+      required:
+      - componentName
+      - createdAt
+      - id
+      - projectName
+      - reporterName
+      - severity
+      - status
+      - title
+      - updatedAt
+    CloseBugReportRequest:
+      type: object
+      description: "Request body of `POST /api/reports/{reportId}/resolution`."
+      properties:
+        commitUrl:
+          type: string
+          description: URL of the fixing commit.
+          example: https://example.invalid/commits/7a21c9d
+        description:
+          type: string
+          description: What was done to fix the bug.
+          example: Handle an absent optional avatar before constructing the user response.
+          minLength: 1
+        fixedVersion:
+          type: string
+          description: Version containing the fix.
+          example: 0.1.1
+      required:
+      - description
+    CloseBugReportResponse:
+      type: object
+      description: "Response of `POST /api/reports/{reportId}/resolution`."
+      properties:
+        message:
+          type: string
+          description: Confirmation text.
+          example: Task has been closed successfully!
+        reportId:
+          type: string
+          format: uuid
+          description: "Despite its name, the id of the newly created resolution,\
+            \ not of the report."
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+      required:
+      - message
+      - reportId
+    CommentResponse:
+      type: object
+      description: "A comment in `GET /api/reports/{reportId}/comments`."
+      properties:
+        authorId:
+          type: string
+          format: uuid
+          description: Id of the author.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        authorName:
+          type: string
+          description: Display name of the author.
+          example: Rachel Reporter
+        bugReportId:
+          type: string
+          format: uuid
+          description: Id of the commented report.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        content:
+          type: string
+          description: Comment text.
+          example: This also happens in a private browser window.
+        createdAt:
+          type: string
+          format: date-time
+          description: When the comment was written (ISO-8601).
+          example: 2026-05-14T09:30:00
+        id:
+          type: string
+          format: uuid
+          description: Comment id.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+      required:
+      - authorId
+      - authorName
+      - bugReportId
+      - content
+      - createdAt
+      - id
+    ComponentResponse:
+      type: object
+      description: A component in `GET /api/components`.
+      properties:
+        description:
+          type: string
+          description: Description. May be null.
+          example: REST API and persistence layer.
+        id:
+          type: string
+          format: uuid
+          description: Component id.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        name:
+          type: string
+          description: Display name.
+          example: Backend API
+        responsibleUserName:
+          type: string
+          description: Display name of the responsible user. Null if that user cannot
+            be found.
+          example: Daniel Developer
+      required:
+      - id
+      - name
+    CreateBugReportRequest:
+      type: object
+      description: Request body of `POST /api/reports`.
+      properties:
+        actualBehavior:
+          type: string
+          description: Optional actual behavior.
+          example: The server returns HTTP 500 and the user remains signed out.
+        assigneeId:
+          type: string
+          format: uuid
+          description: Id of a developer to assign.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        componentId:
+          type: string
+          format: uuid
+          description: Id of the component.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        description:
+          type: string
+          description: Optional description.
+          example: The sign-in endpoint returns HTTP 500 for valid credentials.
+        expectedBehavior:
+          type: string
+          description: Optional expected behavior.
+          example: The user is authenticated and redirected to the dashboard.
+        projectId:
+          type: string
+          format: uuid
+          description: Id of the project.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        severity:
+          type: string
+          description: Severity.
+          enum:
+          - LOW
+          - MEDIUM
+          - HIGH
+          - CRITICAL
+          example: CRITICAL
+        stepsToReproduce:
+          type: string
+          description: Optional steps to reproduce.
+          example: "Open sign in, enter valid credentials, and submit the form."
+        title:
+          type: string
+          description: Short summary.
+          example: Valid users cannot sign in
+          minLength: 1
+      required:
+      - componentId
+      - projectId
+      - severity
+      - title
+    CreateBugReportResponse:
+      type: object
+      description: Response of `POST /api/reports`.
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Id of the new report.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        message:
+          type: string
+          description: Confirmation text.
+          example: Successfully created!
+      required:
+      - id
+      - message
+    CreateCommentRequest:
+      type: object
+      description: "Request body of `POST /api/reports/{reportId}/comments`."
+      properties:
+        content:
+          type: string
+          description: Comment text.
+          example: This also happens in a private browser window.
+          minLength: 1
+      required:
+      - content
+    CreateCommentResponse:
+      type: object
+      description: "Response of `POST /api/reports/{reportId}/comments`: the saved\
+        \ comment."
+      properties:
+        authorId:
+          type: string
+          format: uuid
+          description: Id of the author.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        authorName:
+          type: string
+          description: Display name of the author.
+          example: Rachel Reporter
+        content:
+          type: string
+          description: Comment text.
+          example: This also happens in a private browser window.
+        createdAt:
+          type: string
+          format: date-time
+          description: When the comment was written (ISO-8601).
+          example: 2026-05-14T09:30:00
+        id:
+          type: string
+          format: uuid
+          description: Id of the new comment.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+      required:
+      - authorId
+      - authorName
+      - content
+      - createdAt
+      - id
+    CreateComponentRequest:
+      type: object
+      description: Request body of `POST /api/components`.
+      properties:
+        description:
+          type: string
+          description: Optional description.
+          example: REST API and persistence layer.
+        name:
+          type: string
+          description: Display name.
+          example: Backend API
+          minLength: 1
+        responsibleUserId:
+          type: string
+          format: uuid
+          description: Id of the responsible user.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+      required:
+      - name
+    CreateComponentResponse:
+      type: object
+      description: Response of `POST /api/components`.
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Id of the new component.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        message:
+          type: string
+          description: Confirmation text.
+          example: Successfully created!
+      required:
+      - id
+      - message
+    CreateSoftwareProjectRequest:
+      type: object
+      description: Request body of `POST /api/projects`.
+      properties:
+        description:
+          type: string
+          description: Optional description.
+          example: Application for reporting and resolving software defects.
+        name:
+          type: string
+          description: Display name.
+          example: Bug Report System
+          minLength: 1
+      required:
+      - name
+    CreateSoftwareProjectResponse:
+      type: object
+      description: Response of `POST /api/projects`.
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Id of the new project.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        message:
+          type: string
+          description: Confirmation text.
+          example: Successfully created!
+      required:
+      - id
+      - message
+    CreateUserAccountRequest:
+      type: object
+      description: Request body of `POST /api/accounts` (registration).
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email address.
+          example: alice@example.com
+          minLength: 1
+        password:
+          type: string
+          description: Plain-text password.
+          example: S3cret-pass!
+          minLength: 1
+        username:
+          type: string
+          description: Display name.
+          example: Alice Admin
+          minLength: 1
+      required:
+      - email
+      - password
+      - username
+    CreateUserAccountResponse:
+      type: object
+      description: Response of `POST /api/accounts`.
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Id of the new account.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        message:
+          type: string
+          description: Confirmation text.
+          example: Successfully created!
+      required:
+      - id
+      - message
+    CsrfToken:
+      type: object
+      properties:
+        headerName:
+          type: string
+        parameterName:
+          type: string
+        token:
+          type: string
+    DeveloperResponse:
+      type: object
+      description: A developer in `GET /api/accounts/developers`.
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Account id.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        name:
+          type: string
+          description: Display name.
+          example: Daniel Developer
+      required:
+      - id
+      - name
+    Resolution:
+      type: object
+      properties:
+        commitUrl:
+          type: string
+        description:
+          type: string
+        fixedVersion:
+          type: string
+        id:
+          type: string
+          format: uuid
+        resolvedAt:
+          type: string
+          format: date-time
+    SoftwareProjectResponse:
+      type: object
+      description: A project in `GET /api/projects`.
+      properties:
+        description:
+          type: string
+          description: Description. May be null.
+          example: Application for reporting and resolving software defects.
+        id:
+          type: string
+          format: uuid
+          description: Project id.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        name:
+          type: string
+          description: Display name.
+          example: Bug Report System
+      required:
+      - id
+      - name
+    UpdateActualBehaviorRequest:
+      type: object
+      description: "Request body of `PATCH /api/reports/{reportId}/actual-behavior`."
+      properties:
+        actualBehavior:
+          type: string
+          description: The new actual behavior.
+          example: The server returns HTTP 500 and the user remains signed out.
+      required:
+      - actualBehavior
+    UpdateAssigneeRequest:
+      type: object
+      description: "Request body of `PATCH /api/reports/{reportId}/assignee`."
+      properties:
+        assigneeId:
+          type: string
+          format: uuid
+          description: "Id of the new assignee, who must be a developer."
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+      required:
+      - assigneeId
+    UpdateBugReportResponse:
+      type: object
+      description: "Response of the `PATCH /api/reports/{reportId}/...` endpoints."
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Id of the report.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        message:
+          type: string
+          description: Confirmation text.
+          example: Bug report updated successfully!
+      required:
+      - id
+      - message
+    UpdateComponentDescriptionRequest:
+      type: object
+      description: "Request body of `PATCH /api/components/{componentId}/description`."
+      properties:
+        description:
+          type: string
+          description: The new description.
+          example: REST API and persistence layer.
+      required:
+      - description
+    UpdateComponentNameRequest:
+      type: object
+      description: "Request body of `PATCH /api/components/{componentId}/name`."
+      properties:
+        name:
+          type: string
+          description: The new name.
+          example: Backend API
+          minLength: 1
+      required:
+      - name
+    UpdateComponentRequest:
+      type: object
+      description: "Request body of `PATCH /api/reports/{reportId}/component`."
+      properties:
+        componentId:
+          type: string
+          format: uuid
+          description: Id of the new component.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+      required:
+      - componentId
+    UpdateComponentResponse:
+      type: object
+      description: "Response of the `PATCH /api/components/{componentId}/...` endpoints."
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Id of the component.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        message:
+          type: string
+          description: Confirmation text.
+          example: Component updated successfully!
+      required:
+      - id
+      - message
+    UpdateComponentResponsibleUserRequest:
+      type: object
+      description: "Request body of `PATCH /api/components/{componentId}/responsibleUserId`."
+      properties:
+        responsibleUserId:
+          type: string
+          format: uuid
+          description: Id of the new responsible user.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+      required:
+      - responsibleUserId
+    UpdateDescriptionRequest:
+      type: object
+      description: "Request body of `PATCH /api/reports/{reportId}/description`."
+      properties:
+        description:
+          type: string
+          description: The new description.
+          example: The sign-in endpoint returns HTTP 500 for valid credentials.
+      required:
+      - description
+    UpdateExpectedBehaviorRequest:
+      type: object
+      description: "Request body of `PATCH /api/reports/{reportId}/expected-behavior`."
+      properties:
+        expectedBehavior:
+          type: string
+          description: The new expected behavior.
+          example: The user is authenticated and redirected to the dashboard.
+      required:
+      - expectedBehavior
+    UpdateProjectRequest:
+      type: object
+      description: "Request body of `PATCH /api/reports/{reportId}/project`."
+      properties:
+        projectId:
+          type: string
+          format: uuid
+          description: Id of the new project.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+      required:
+      - projectId
+    UpdateRoleRequest:
+      type: object
+      description: "Request body of `PATCH /api/accounts/{userId}/role`."
+      properties:
+        role:
+          type: string
+          description: The new role.
+          enum:
+          - REPORTER
+          - DEVELOPER
+          - ADMIN
+          example: DEVELOPER
+      required:
+      - role
+    UpdateSeverityRequest:
+      type: object
+      description: "Request body of `PATCH /api/reports/{reportId}/severity`."
+      properties:
+        severity:
+          type: string
+          description: The new severity.
+          enum:
+          - LOW
+          - MEDIUM
+          - HIGH
+          - CRITICAL
+          example: CRITICAL
+      required:
+      - severity
+    UpdateSoftwareProjectDescriptionRequest:
+      type: object
+      description: "Request body of `PATCH /api/projects/{projectId}/description`."
+      properties:
+        description:
+          type: string
+          description: The new description.
+          example: Application for reporting and resolving software defects.
+      required:
+      - description
+    UpdateSoftwareProjectNameRequest:
+      type: object
+      description: "Request body of `PATCH /api/projects/{projectId}/name`."
+      properties:
+        name:
+          type: string
+          description: The new name.
+          example: Bug Report System
+          minLength: 1
+      required:
+      - name
+    UpdateSoftwareProjectResponse:
+      type: object
+      description: "Response of the `PATCH /api/projects/{projectId}/...` endpoints."
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Id of the project.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        message:
+          type: string
+          description: Confirmation text.
+          example: Project updated successfully!
+      required:
+      - id
+      - message
+    UpdateStatusRequest:
+      type: object
+      description: "Request body of `PATCH /api/reports/{reportId}/status`."
+      properties:
+        status:
+          type: string
+          description: The new status.
+          enum:
+          - OPEN
+          - ASSIGNED
+          - IN_PROGRESS
+          - NEEDS_INFORMATION
+          - REVIEWING
+          - REJECTED
+          - CLOSED
+          example: IN_PROGRESS
+      required:
+      - status
+    UpdateStepsToReproduceRequest:
+      type: object
+      description: "Request body of `PATCH /api/reports/{reportId}/steps-to-reproduce`."
+      properties:
+        stepsToReproduce:
+          type: string
+          description: The new steps to reproduce.
+          example: "Open sign in, enter valid credentials, and submit the form."
+      required:
+      - stepsToReproduce
+    UserAccountBriefResponse:
+      type: object
+      description: A search hit in `GET /api/accounts/users`.
+      properties:
+        name:
+          type: string
+          description: Display name.
+          example: Daniel Developer
+        userId:
+          type: string
+          format: uuid
+          description: Account id.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+      required:
+      - name
+      - userId
+    UserAccountResponse:
+      type: object
+      description: A user account as returned by `GET /api/accounts` and `GET /api/auth/me`.
+        Never contains the password hash.
+      properties:
+        email:
+          type: string
+          description: "Email address, which is also the login name."
+          example: alice@example.com
+        id:
+          type: string
+          format: uuid
+          description: Account id.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        role:
+          type: string
+          description: The user's role.
+          enum:
+          - REPORTER
+          - DEVELOPER
+          - ADMIN
+          example: DEVELOPER
+        username:
+          type: string
+          description: "The account's display name (despite the field name, not a\
+            \ login name)."
+          example: Alice Admin
+      required:
+      - email
+      - id
+      - role
+      - username
