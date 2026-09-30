@@ -9,7 +9,6 @@ marked in the code comments and were not confirmed by running the application.
 | # | Where | Question |
 |---|---|---|
 | 2 | `BugReportAuthorizer`, `CommentAuthorizer` | They throw `ResourceNotFoundException` while a `@PreAuthorize` expression is evaluated. Does that reach the client as 404, or is it wrapped into another error (e.g. 500)? |
-| 3 | `POST /api/components` / `CreateComponentForm` | `responsibleUserId` is not validated, but the column is `NOT NULL`. A missing or unknown user is expected to end as 409 (database error) or an error toast in the UI. Not tested. |
 | 4 | `run-backend.sh` | `application.yml` uses the hosts `database`, `artemis` and `mailpit` (compose service names). How do they resolve when the backend runs directly on the host? |
 
 ## Backend
@@ -18,7 +17,6 @@ marked in the code comments and were not confirmed by running the application.
 - `BugReportService.create` with an assignee leaves the status `OPEN` and publishes no event. `updateAssignee` also leaves the status unchanged (never sets `ASSIGNED`), but it does publish an event.
 - `updateStatus` publishes a notification even when the status did not change. Besides rejecting `CLOSED`, no transition rules are checked.
 - `updateComponent` does not check that the component belongs to the report's project.
-- `ComponentService.create` and `updateResponsibleUserId` do not check that the user exists; only the database foreign key catches it.
 - `getDevelopers` loads all accounts and filters them in memory.
 - The `archived_at` column exists on `user_account`, `software_project` and `component`, but no entity, mapper or query uses it. Archiving does not exist in the code.
 - `BugReport`'s builder always starts a report as `OPEN` and cannot set id, status or resolution; `BugReportMapper.toDomain` sets them afterwards.

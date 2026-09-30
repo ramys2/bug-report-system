@@ -12,7 +12,7 @@ const initialFormValues = { name: "", description: "" };
  * Form (meant to sit inside a `Modal`) for creating a component with `POST /api/components`.
  *
  * The responsible user is picked by searching users by name (`GET /api/accounts/users?search=...`); results of outdated searches are ignored.
- * Only the name is required by the form, but the backend needs a responsible user, so submitting without one is expected to fail and show the error toast (TODO(verify): not tested).
+ * Only the name is required; the responsible user is optional. If the backend answers 404 (the user no longer exists), its message is shown in the error toast.
  * On success the form is cleared and `onCreated` is called.
  *
  * @param {object} props
@@ -101,7 +101,12 @@ export default function CreateComponentForm({ onCreated }) {
                 setResponsibleUser(null);
                 onCreated();
             })
-            .fail(() => showToast("danger", "Failed to create the component. Please try again.", "Component not created"))
+            .fail((jqXHR) => {
+                const message = jqXHR.status === 404 && jqXHR.responseJSON?.message
+                    ? jqXHR.responseJSON.message
+                    : "Failed to create the component. Please try again.";
+                showToast("danger", message, "Component not created");
+            })
             .always(() => setIsSubmitting(false));
     }
 

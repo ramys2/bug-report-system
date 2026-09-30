@@ -16,8 +16,8 @@ export function getAllComponents() {
 /**
  * `POST /api/components` (ADMIN or DEVELOPER).
  *
- * @param {{name: string, description?: string, responsibleUserId: string}} component `name` must not be blank; the backend needs a responsible user
- * @returns {JQuery.jqXHR} resolves (201) with `{ id, message }`
+ * @param {{name: string, description?: string, responsibleUserId?: string}} component `name` must not be blank; `responsibleUserId` is optional, but must belong to an existing user
+ * @returns {JQuery.jqXHR} resolves (201) with `{ id, message }`; fails with 404 and `{ message }` if the user does not exist
  */
 export function createComponent(component) {
     return postComponent(component);
