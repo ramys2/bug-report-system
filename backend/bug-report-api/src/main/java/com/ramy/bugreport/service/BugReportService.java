@@ -301,7 +301,7 @@ public class BugReportService {
      * @param reportId id of the report to change
      * @param request the new value
      * @return confirmation containing the report id
-     * @throws ResourceNotFoundException if the report, the new assignee or the reporter does not exist
+     * @throws ResourceNotFoundException if the report or the new assignee does not exist
      * @throws BusinessRuleConflictException if the report is closed or the new assignee is not a developer
      */
     @Transactional
@@ -312,14 +312,11 @@ public class BugReportService {
         var report = reportById(reportId);
         var assigneeId = request.assigneeId();
         var assignee = requireDeveloper(assigneeId);
-        var reporter = userAccountRepository.findById(report.getReporterId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "User with id=%s does not exist!".formatted(report.getReporterId())));
 
         report.setAssigneeId(assigneeId);
         bugReportRepository.save(report);
         eventPublisher.publishEvent(new AssigneeChangedEvent(
-                assignee.getName(), assignee.getEmailAddress(), reporter.getName(), report.getTitle()));
+                assignee.getName(), assignee.getEmailAddress(), report.getTitle()));
         return updateResponse(report);
     }
 

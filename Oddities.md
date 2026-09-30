@@ -43,7 +43,6 @@ marked in the code comments and were not confirmed by running the application.
 - The component update path segment is camelCase (`/responsibleUserId`), unlike the kebab-case report segments (`/steps-to-reproduce`).
 
 ### Messaging
-- `AssigneeChangedEvent.reporterName` is never used in the email text.
 - The sender address `no-reply@bugreport.local` is hard-coded in `BugReportEventConsumer`.
 - `BugReportEventPublisher` does not catch send failures; the database change is already committed when sending fails.
 
