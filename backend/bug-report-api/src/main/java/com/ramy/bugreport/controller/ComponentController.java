@@ -89,18 +89,16 @@ public class ComponentController {
      *
      * <p>Access: ADMIN or DEVELOPER role.
      *
-     * @param request body {@code {name}} is required and not blank; {@code description} and {@code responsibleUserId} are optional in validation,
-     *        but {@code component.responsible_user_id} is NOT NULL in the database
+     * @param request body {@code {name}} is required and not blank; {@code description} and {@code responsibleUserId} are optional
      * @return 201 with {@code {id, message}}
-     * @throws org.springframework.dao.DataIntegrityViolationException 409 if the responsible user is missing or does not exist.
-     *         TODO(verify): the missing-user case is expected to end up as this 409 but is not validated by the service
+     * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if {@code responsibleUserId} is given but no such user exists
      */
-    @Operation(summary = "Create a component", description = "Access: ADMIN or DEVELOPER role. `responsibleUserId` is not validated as required, but the database requires it; a missing or unknown user is expected to fail with 409 (TODO(verify): not validated by the service).")
+    @Operation(summary = "Create a component", description = "Access: ADMIN or DEVELOPER role. `responsibleUserId` is optional; if given, it must belong to an existing user, otherwise the request fails with 404.")
     @ApiResponse(responseCode = "201", description = "Component created.")
     @BadRequestResponse
     @UnauthorizedResponse
     @ForbiddenResponse
-    @ConflictResponse
+    @NotFoundResponse
     @PostMapping
     public ResponseEntity<CreateComponentResponse> create(
             @Valid @RequestBody CreateComponentRequest request
@@ -173,11 +171,11 @@ public class ComponentController {
      * <p>Access: ADMIN or DEVELOPER role.
      *
      * @param componentId id of the component
-     * @param request body {@code responsibleUserId}; required; a non-existing user fails with 409 from the database foreign key
+     * @param request body {@code responsibleUserId}; required
      * @return 200 with {@code {id, message}}
-     * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the component does not exist
+     * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the component or the user does not exist
      */
-    @Operation(summary = "Change the responsible user", description = "Access: ADMIN or DEVELOPER role. Note the camelCase path segment. A non-existing user fails with 409 from the database foreign key.")
+    @Operation(summary = "Change the responsible user", description = "Access: ADMIN or DEVELOPER role. Note the camelCase path segment. Fails with 404 if the component or the user does not exist.")
     @ApiResponse(responseCode = "200", description = "Responsible user changed.")
     @BadRequestResponse
     @UnauthorizedResponse

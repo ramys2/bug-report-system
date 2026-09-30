@@ -35,9 +35,9 @@ public class ComponentEntity {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    /** Id of the responsible user ({@code user_account}). Not null. */
+    /** Id of the responsible user ({@code user_account}). May be null. */
     @JdbcTypeCode(SqlTypes.CHAR)
-    @Column(name = "responsible_user_id", nullable = false, length = 36)
+    @Column(name = "responsible_user_id", length = 36)
     private UUID responsibleUserId;
 
     public UUID getId() {

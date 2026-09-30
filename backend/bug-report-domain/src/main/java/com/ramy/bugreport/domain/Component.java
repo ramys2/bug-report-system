@@ -4,7 +4,7 @@ import java.util.UUID;
 
 /**
  * A part of a {@link SoftwareProject}'s codebase or product to which bug reports are assigned,
- * e.g. "Login" or "API". Each component has one responsible user.
+ * e.g. "Login" or "API". A component may have one responsible user.
  */
 public class Component {
 
@@ -24,7 +24,7 @@ public class Component {
     private String description;
 
     /**
-     * Id of the {@link UserAccount} responsible for this component.
+     * Id of the {@link UserAccount} responsible for this component. May be {@code null}.
      */
     private UUID responsibleUserId;
 

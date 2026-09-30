@@ -73,13 +73,16 @@ public class ComponentService {
     /**
      * Creates a component.
      *
-     * <p>The responsible user id is not checked against existing users here; a missing user is only
-     * caught by the database foreign key.
+     * <p>The responsible user is optional; if an id is given, the user must exist.
      *
      * @return the id of the new component
+     * @throws ResourceNotFoundException if a responsible user id is given and no such user exists
      */
     @Transactional
     public CreateComponentResponse create(CreateComponentRequest request) {
+        if (request.responsibleUserId() != null) {
+            requireUserExists(request.responsibleUserId());
+        }
         Component component = new Component(
                 request.name(),
                 request.description(),
@@ -127,9 +130,9 @@ public class ComponentService {
     }
 
     /**
-     * Changes the user responsible for a component. The user id is not validated by the service (see {@link #create}).
+     * Changes the user responsible for a component.
      *
-     * @throws ResourceNotFoundException if the component does not exist
+     * @throws ResourceNotFoundException if the component or the user does not exist
      */
     @Transactional
     public UpdateComponentResponse updateResponsibleUserId(
@@ -137,6 +140,7 @@ public class ComponentService {
             UpdateComponentResponsibleUserRequest request
     ) {
         var component = componentById(componentId);
+        requireUserExists(request.responsibleUserId());
         component.setResponsibleUserId(request.responsibleUserId());
         componentRepository.save(component);
         return updateResponse(component);
@@ -146,6 +150,12 @@ public class ComponentService {
         return componentRepository.findById(componentId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Component with id=%s does not exist!".formatted(componentId)));
+    }
+
+    private void requireUserExists(UUID userId) {
+        if (!userAccountRepository.existsById(userId)) {
+            throw new ResourceNotFoundException("User with id=%s does not exist!".formatted(userId));
+        }
     }
 
     private UpdateComponentResponse updateResponse(Component component) {

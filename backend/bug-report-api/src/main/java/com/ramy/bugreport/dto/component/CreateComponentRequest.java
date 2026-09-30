@@ -11,7 +11,7 @@ import com.ramy.bugreport.openapi.ApiExamples;
  *
  * @param name display name; required, not blank
  * @param description optional description
- * @param responsibleUserId id of the responsible user; not validated as required, but the database requires one
+ * @param responsibleUserId id of the responsible user; optional; if given, the user must exist
  */
 @Schema(description = "Request body of `POST /api/components`.")
 public record CreateComponentRequest(
@@ -19,7 +19,7 @@ public record CreateComponentRequest(
         @NotBlank String name,
         @Schema(description = "Optional description.", example = "REST API and persistence layer.")
         String description,
-        @Schema(description = "Id of the responsible user.", example = ApiExamples.UUID)
+        @Schema(description = "Optional id of the responsible user. Must belong to an existing user.", example = ApiExamples.UUID)
         UUID responsibleUserId
 ) {
 }

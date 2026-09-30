@@ -71,6 +71,7 @@ class ComponentServiceTest {
         var request = new CreateComponentRequest(
                 "API", "Handles public endpoints", responsibleUserId);
         var componentId = UUID.randomUUID();
+        when(userAccountRepository.existsById(responsibleUserId)).thenReturn(true);
         var savedComponent = org.mockito.Mockito.mock(Component.class);
         when(componentRepository.save(any(Component.class))).thenReturn(savedComponent);
         when(savedComponent.getId()).thenReturn(componentId);
@@ -140,12 +141,41 @@ class ComponentServiceTest {
         var component = org.mockito.Mockito.mock(Component.class);
         var request = new UpdateComponentResponsibleUserRequest(responsibleUserId);
         when(componentRepository.findById(componentId)).thenReturn(Optional.of(component));
+        when(userAccountRepository.existsById(responsibleUserId)).thenReturn(true);
         when(component.getId()).thenReturn(componentId);
 
         var response = service.updateResponsibleUserId(componentId, request);
 
         verify(component).setResponsibleUserId(responsibleUserId);
         assertThat(response.id()).isEqualTo(componentId);
+    }
+
+    @Test
+    void createThrowsWhenResponsibleUserDoesNotExist() {
+        var responsibleUserId = UUID.randomUUID();
+        when(userAccountRepository.existsById(responsibleUserId)).thenReturn(false);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                () -> service.create(new CreateComponentRequest("API", null, responsibleUserId)))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("User with id=%s does not exist!".formatted(responsibleUserId));
+        org.mockito.Mockito.verify(componentRepository, org.mockito.Mockito.never()).save(any(Component.class));
+    }
+
+    @Test
+    void updateResponsibleUserIdThrowsWhenUserDoesNotExist() {
+        var componentId = UUID.randomUUID();
+        var responsibleUserId = UUID.randomUUID();
+        var component = org.mockito.Mockito.mock(Component.class);
+        when(componentRepository.findById(componentId)).thenReturn(Optional.of(component));
+        when(userAccountRepository.existsById(responsibleUserId)).thenReturn(false);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                () -> service.updateResponsibleUserId(
+                        componentId, new UpdateComponentResponsibleUserRequest(responsibleUserId)))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("User with id=%s does not exist!".formatted(responsibleUserId));
+        org.mockito.Mockito.verify(componentRepository, org.mockito.Mockito.never()).save(any(Component.class));
     }
 
     @Test
