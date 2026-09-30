@@ -72,8 +72,8 @@ Open <http://localhost:8080/swagger-ui.html> in a browser.
 
 Expected:
 - The page title is "Bug Report System API", version `0.1.0-SNAPSHOT`, and the description explains the session cookie and CSRF flow.
-- Six groups are listed: **Authentication** (4 operations), **Bug reports** (14), **Comments** (3), **Projects** (4),
-  **Components** (5) and **Accounts** (6). That is 36 in total.
+- Six groups are listed: **Authentication** (4 operations), **Bug reports** (15), **Comments** (3), **Projects** (4),
+  **Components** (5) and **Accounts** (5). That is 36 in total.
 - Under **Schemas** at the bottom, for example `CreateBugReportRequest` shows field descriptions, example values,
   and `title`, `projectId`, `componentId` and `severity` marked as required. `BugReportBriefResponse` shows an example
   `createdAt` of `14-05-2026 09:30`.
@@ -210,7 +210,7 @@ grep -cE '^    (get|post|put|patch|delete):' docs/openapi/openapi.yaml; grep -cE
 
 Expected: two lines, `36` (operations) and `31` (paths).
 
-Compare with the endpoints found in the code: 14 bug report, 3 comment, 4 project, 5 component and 6 account
+Compare with the endpoints found in the code: 15 bug report, 3 comment, 4 project, 5 component and 5 account
 endpoints, plus `GET /api/csrf` and `GET /api/auth/me`, is **34 controller endpoints**. The spec has 2 more
 (`POST /api/auth/login` and `POST /api/auth/logout`), which are handled by Spring Security and added by
 `OpenApiConfig`. 34 + 2 = 36.

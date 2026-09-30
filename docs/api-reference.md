@@ -7,7 +7,7 @@ names. The examples on this page were produced by calling the running backend (b
 with Docker Compose) with `curl`, using the [demo accounts](../README.md#demo-credentials); ids
 and timestamps differ on every run. Where an example could not be verified, it says so.
 
-There is no OpenAPI specification yet.
+A generated OpenAPI specification is available too, see [API documentation](../README.md#api-documentation).
 
 Contents: [Conventions](#conventions) · [Authentication and CSRF](#authentication-and-csrf) ·
 [Bug reports](#bug-reports) · [Comments](#comments) · [Projects](#projects) ·

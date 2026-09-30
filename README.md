@@ -15,13 +15,14 @@ to a message broker and sent to the people involved as emails.
 5. [Domain model](#domain-model)
 6. [Backend](#backend)
 7. [REST API](#rest-api)
-8. [Frontend](#frontend)
-9. [Getting started](#getting-started)
-10. [Demo credentials](#demo-credentials)
-11. [Testing](#testing)
-12. [Configuration reference](#configuration-reference)
-13. [Known limitations](#known-limitations)
-14. [Task board](#task-board)
+8. [API documentation](#api-documentation)
+9. [Frontend](#frontend)
+10. [Getting started](#getting-started)
+11. [Demo credentials](#demo-credentials)
+12. [Testing](#testing)
+13. [Configuration reference](#configuration-reference)
+14. [Known limitations](#known-limitations)
+15. [Task board](#task-board)
 
 ## Features
 
@@ -125,7 +126,10 @@ bug-report-system/
 │       ├── components/           Reusable UI components and route guards
 │       └── pages/                Application pages built from the components
 ├── database/init/                SQL that MariaDB runs on first start (creates the test database)
-├── docs/                         Design images and Excalidraw sketches of the UI
+├── docs/                         Design images, Excalidraw sketches of the UI, and the OpenAPI spec
+│   └── openapi/                  Generated openapi.yaml plus guides to generate and validate it
+├── .github/workflows/            CI check that the committed OpenAPI spec is up to date
+├── redocly.yaml                  Lint rules for the OpenAPI spec
 ├── docker-compose.yml            Development environment: backend, frontend, MariaDB, Artemis, Mailpit
 ├── build-backend.sh              Builds the backend with Maven
 ├── run-backend.sh                Starts the backend with Maven
@@ -319,8 +323,28 @@ or 409. URLs that are not explicitly allowed answer 403.
 > (verified against the running backend). See [Known limitations](#known-limitations).
 
 Request and response examples, validation rules, error cases and sequence diagrams for the sign-in
-and create-report flows are in the [API reference](docs/api-reference.md). An OpenAPI
-specification does not exist yet.
+and create-report flows are in the [API reference](docs/api-reference.md). The machine-readable
+specification is described in [API documentation](#api-documentation).
+
+## API documentation
+
+The API is documented with an OpenAPI 3.1 specification, generated from annotations in the backend code.
+
+- **Swagger UI:** <http://localhost:8080/swagger-ui.html> while the backend runs (no sign-in is needed to view it).
+  "Try it out" on changing requests needs a session and a CSRF token, see the steps in the
+  [validation guide](docs/openapi/VALIDATION.md#3-open-swagger-ui).
+- **Committed spec:** [docs/openapi/openapi.yaml](docs/openapi/openapi.yaml). The running backend also serves it at
+  <http://localhost:8080/v3/api-docs.yaml>.
+- **The annotations are the source of truth.** The spec is generated from the controller and DTO annotations
+  (`@Operation`, `@ApiResponse`, `@Schema`, ...), so never edit the YAML by hand: the next generation overwrites it.
+  A CI check fails if the committed spec no longer matches the code.
+
+The endpoint table above and the spec list the same 36 operations. The spec adds request and response
+schemas, status codes and examples. It documents the intended behavior, so the known issue with
+`POST /api/reports` (see [Known limitations](#known-limitations)) also applies to what Swagger UI shows.
+
+How to regenerate the spec: [docs/openapi/GENERATE.md](docs/openapi/GENERATE.md).
+How to check that it is correct: [docs/openapi/VALIDATION.md](docs/openapi/VALIDATION.md).
 
 ## Frontend
 
@@ -598,7 +622,6 @@ findings are in [Oddities.md](Oddities.md).
   broker and mail credentials are plain defaults in `application.yml`.
 - **Docker images are not pinned** for MariaDB, Artemis and Mailpit.
 - **The frontend runs as a Vite development server**, not as a production build.
-- **No OpenAPI specification exists yet.**
 - **No license file** is part of the repository.
 
 ## Task board
