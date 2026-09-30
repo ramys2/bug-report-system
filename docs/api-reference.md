@@ -265,7 +265,7 @@ and the assignee by email.
 { "description": "Fixed the overflow.", "fixedVersion": "0.1.2", "commitUrl": "https://example.invalid/commit/abc" }
 ```
 
-Answers 201. **Note:** despite its name, `reportId` holds the id of the new **resolution**.
+Answers 201 with the id of the closed report.
 
 ```json
 { "reportId": "b77f24c8-e300-4baa-8fda-471702256066", "message": "Task has been closed successfully!" }

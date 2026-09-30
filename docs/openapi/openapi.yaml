@@ -1568,8 +1568,7 @@ paths:
       description: "Creates the resolution and sets the status to `CLOSED`; the reporter\
         \ and assignee are notified by email. Returns 409 if the report is already\
         \ closed. Access: signed-in user; the service further requires the ADMIN role,\
-        \ or being the report's reporter or assignee. Note: `reportId` in the response\
-        \ contains the id of the new resolution, not of the report."
+        \ or being the report's reporter or assignee."
       operationId: close
       parameters:
       - description: Id of the bug report.
@@ -2033,8 +2032,7 @@ components:
         reportId:
           type: string
           format: uuid
-          description: "Despite its name, the id of the newly created resolution,\
-            \ not of the report."
+          description: Id of the closed report.
           example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
       required:
       - message

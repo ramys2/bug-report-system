@@ -243,7 +243,7 @@ public class BugReportService {
      *
      * @param reportId id of the report to close
      * @param request resolution description, fixed version and commit URL
-     * @return the id of the new resolution
+     * @return confirmation containing the report id
      * @throws ResourceNotFoundException if the report, its reporter or its assignee does not exist
      * @throws BusinessRuleConflictException if the report is already closed
      */
@@ -280,7 +280,7 @@ public class BugReportService {
                         .getEmailAddress();
         eventPublisher.publishEvent(new BugReportClosedEvent(report.getTitle(), assigneeEmail, reporter.getEmailAddress()));
 
-        return new CloseBugReportResponse(report.getResolution().getId(), "Task has been closed successfully!");
+        return new CloseBugReportResponse(report.getId(), "Task has been closed successfully!");
     }
     
     /*

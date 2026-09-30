@@ -293,7 +293,7 @@ class BugReportServiceTest {
         assertThat(report.getResolution().getCommitUrl()).isEqualTo(request.commitUrl());
         assertThat(report.getResolution().getResolvedAt()).isBetween(before, LocalDateTime.now());
         assertThat(report.getStatus()).isEqualTo(EBugStatus.CLOSED);
-        assertThat(result.reportId()).isEqualTo(resolutionId);
+        assertThat(result.reportId()).isEqualTo(report.getId());
         assertThat(result.message()).isEqualTo("Task has been closed successfully!");
         verify(bugReportRepository).findById(report.getId());
         verify(bugReportRepository).save(report);

@@ -165,12 +165,11 @@ class BugReportControllerTest {
     @Test
     void closeUsesResolutionSubresourceRouteAndReturnsCreated() throws Exception {
         var reportId = UUID.randomUUID();
-        var resolutionId = UUID.randomUUID();
         var request = new CloseBugReportRequest(
                 "Fixed", "1.1.0", "https://example.com/commit/1");
         when(reportService.close(reportId, request))
                 .thenReturn(new CloseBugReportResponse(
-                        resolutionId, "Task has been closed successfully!"));
+                        reportId, "Task has been closed successfully!"));
 
         mockMvc.perform(post("/api/reports/{reportId}/resolution", reportId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -182,7 +181,7 @@ class BugReportControllerTest {
                                 }
                                 """))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.reportId").value(resolutionId.toString()))
+                .andExpect(jsonPath("$.reportId").value(reportId.toString()))
                 .andExpect(jsonPath("$.message").value("Task has been closed successfully!"));
 
         verify(reportService).close(reportId, request);

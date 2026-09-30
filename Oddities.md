@@ -34,7 +34,6 @@ marked in the code comments and were not confirmed by running the application.
 - `ApiExceptionHandler` handles only a fixed list of exceptions. Unexpected errors, 405 and unsupported media type errors fall back to Spring's default handling (not checked).
 
 ### API design
-- `POST /api/reports/{id}/resolution` returns `{ reportId, message }`, but `reportId` holds the id of the new **resolution**.
 - `BugReportResponse` serializes the domain `Resolution` object directly, tying the API shape to the domain class.
 - `UserAccountResponse.username` holds the display name; the login name is `email`.
 - `BugReportBriefResponse.createdAt` is a pre-formatted string (`dd-MM-yyyy HH:mm`), while every other timestamp is ISO-8601.

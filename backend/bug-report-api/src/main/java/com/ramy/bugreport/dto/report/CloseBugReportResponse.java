@@ -7,12 +7,12 @@ import com.ramy.bugreport.openapi.ApiExamples;
 /**
  * Response of {@code POST /api/reports/{reportId}/resolution}.
  *
- * @param reportId despite its name, the id of the newly created resolution, not of the report
+ * @param reportId id of the closed report
  * @param message confirmation text
  */
 @Schema(description = "Response of `POST /api/reports/{reportId}/resolution`.")
 public record CloseBugReportResponse(
-        @Schema(description = "Despite its name, the id of the newly created resolution, not of the report.", example = ApiExamples.UUID, requiredMode = Schema.RequiredMode.REQUIRED)
+        @Schema(description = "Id of the closed report.", example = ApiExamples.UUID, requiredMode = Schema.RequiredMode.REQUIRED)
         UUID reportId,
         @Schema(description = "Confirmation text.", example = "Task has been closed successfully!", requiredMode = Schema.RequiredMode.REQUIRED)
         String message

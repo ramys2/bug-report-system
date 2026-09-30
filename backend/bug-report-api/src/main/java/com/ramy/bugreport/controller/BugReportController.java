@@ -197,11 +197,11 @@ public class BugReportController {
      *
      * @param reportId id of the report
      * @param request body {@code {description}} is required and not blank; {@code fixedVersion, commitUrl} are optional
-     * @return 201 with {@code {reportId, message}}; note that {@code reportId} actually contains the id of the new resolution
+     * @return 201 with {@code {reportId, message}}
      * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the report does not exist
      * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if the report is already closed
      */
-    @Operation(summary = "Close a bug report with a resolution", description = "Creates the resolution and sets the status to `CLOSED`; the reporter and assignee are notified by email. Returns 409 if the report is already closed. Access: signed-in user; the service further requires the ADMIN role, or being the report's reporter or assignee. Note: `reportId` in the response contains the id of the new resolution, not of the report.")
+    @Operation(summary = "Close a bug report with a resolution", description = "Creates the resolution and sets the status to `CLOSED`; the reporter and assignee are notified by email. Returns 409 if the report is already closed. Access: signed-in user; the service further requires the ADMIN role, or being the report's reporter or assignee.")
     @ApiResponse(responseCode = "201", description = "Resolution created and report closed.")
     @BadRequestResponse
     @UnauthorizedResponse

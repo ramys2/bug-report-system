@@ -113,7 +113,7 @@ export function createReport(report) {
  *
  * @param {string} reportId id of the report
  * @param {{description: string, fixedVersion?: string, commitUrl?: string}} resolution how the bug was resolved; `description` is required
- * @returns {JQuery.jqXHR} resolves (201) with `{ reportId, message }` (`reportId` holds the new resolution's id); rejects with 409 if already closed
+ * @returns {JQuery.jqXHR} resolves (201) with `{ reportId, message }`; rejects with 409 if already closed
  */
 export function closeReport(reportId, resolution) {
     const csrfToken = getCsrfToken();

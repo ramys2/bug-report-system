@@ -178,14 +178,14 @@ class PersistenceIntegrationTest {
 
         var closed = reports.findById(saved.getId()).orElseThrow();
         assertThat(closed.getStatus()).isEqualTo(EBugStatus.CLOSED);
-        assertThat(response.reportId()).isNotNull().isEqualTo(closed.getResolution().getId());
+        assertThat(response.reportId()).isEqualTo(saved.getId());
         assertThat(closed.getResolution().getDescription()).isEqualTo("Fixed");
         assertThat(closed.getResolution().getFixedVersion()).isEqualTo("1.2.3");
         assertThat(closed.getResolution().getCommitUrl()).isEqualTo(request.commitUrl());
         assertThat(closed.getResolution().getResolvedAt()).isNotNull();
         assertThat(reports.findByAssigneeId(developer.getId()).getFirst().getResolution().getDescription()).isEqualTo("Fixed");
         assertThat(reports.existsByAssigneeIdAndStatusNot(developer.getId(), EBugStatus.CLOSED)).isFalse();
-        assertThat(resolutions.findById(response.reportId()).orElseThrow())
+        assertThat(resolutions.findById(closed.getResolution().getId()).orElseThrow())
                 .usingRecursiveComparison().isEqualTo(closed.getResolution());
         assertThatThrownBy(() -> reportService.close(saved.getId(), request))
                 .isInstanceOf(BusinessRuleConflictException.class);
