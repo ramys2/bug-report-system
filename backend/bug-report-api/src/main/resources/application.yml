@@ -24,6 +24,8 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
     operations-sorter: method
+  default-produces-media-type: application/json
+  default-consumes-media-type: application/json
 
 messaging:
   destinations:

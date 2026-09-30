@@ -22,6 +22,17 @@ import com.ramy.bugreport.service.CommentService;
 
 import jakarta.validation.Valid;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import com.ramy.bugreport.openapi.ApiExamples;
+import com.ramy.bugreport.openapi.BadRequestResponse;
+import com.ramy.bugreport.openapi.UnauthorizedResponse;
+import com.ramy.bugreport.openapi.ForbiddenResponse;
+import com.ramy.bugreport.openapi.NotFoundResponse;
+import com.ramy.bugreport.openapi.ConflictResponse;
+
 /**
  * REST endpoints for comments on bug reports: {@code /api/reports/{reportId}/comments} and {@code /api/comments/{commentId}}.
  *
@@ -30,6 +41,7 @@ import jakarta.validation.Valid;
  * 404 when a referenced resource does not exist, 409 for business rule conflicts. Requests that
  * change data ({@code POST}, {@code PATCH}, {@code DELETE}) also need a CSRF token, see {@code GET /api/csrf}.
  */
+@Tag(name = "Comments")
 @RestController
 @RequestMapping("/api")
 public class CommentController {
@@ -48,9 +60,14 @@ public class CommentController {
      * @return 200 with a list of {@code {id, bugReportId, authorId, authorName, content, createdAt}}; empty if there are none
      * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the report does not exist
      */
+    @Operation(summary = "List the comments of a report", description = "Newest first; empty if there are none. Access: any signed-in user.")
+    @ApiResponse(responseCode = "200", description = "Comments of the report, newest first.")
+    @BadRequestResponse
+    @UnauthorizedResponse
+    @NotFoundResponse
     @GetMapping("/reports/{reportId}/comments")
     public List<CommentResponse> getComments(
-            @PathVariable UUID reportId
+            @Parameter(description = "Id of the bug report.", example = ApiExamples.UUID) @PathVariable UUID reportId
     ) {
         return commentService.getComments(reportId);
     }
@@ -66,9 +83,16 @@ public class CommentController {
      * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the report does not exist
      * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if the report is closed
      */
+    @Operation(summary = "Add a comment", description = "Adds a comment as the signed-in user. Returns 409 if the report is closed. Access: any signed-in user.")
+    @ApiResponse(responseCode = "201", description = "Comment created.")
+    @BadRequestResponse
+    @UnauthorizedResponse
+    @ForbiddenResponse
+    @NotFoundResponse
+    @ConflictResponse
     @PostMapping("/reports/{reportId}/comments")
     public ResponseEntity<CreateCommentResponse> create(
-            @PathVariable UUID reportId,
+            @Parameter(description = "Id of the bug report.", example = ApiExamples.UUID) @PathVariable UUID reportId,
             @AuthenticationPrincipal UserAccountDetails account,
             @Valid @RequestBody CreateCommentRequest request
     ) {
@@ -89,9 +113,16 @@ public class CommentController {
      * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the comment or its report does not exist
      * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if the report is closed
      */
+    @Operation(summary = "Delete a comment", description = "Access: signed-in user; the service further requires the ADMIN role or being the comment's author. Returns 409 if the report is closed.")
+    @ApiResponse(responseCode = "204", description = "Comment deleted.")
+    @BadRequestResponse
+    @UnauthorizedResponse
+    @ForbiddenResponse
+    @NotFoundResponse
+    @ConflictResponse
     @DeleteMapping("/comments/{commentId}")
     public ResponseEntity<Void> delete(
-            @PathVariable UUID commentId
+            @Parameter(description = "Id of the comment.", example = ApiExamples.UUID) @PathVariable UUID commentId
     ) {
         commentService.delete(commentId);
         return ResponseEntity.noContent().build();

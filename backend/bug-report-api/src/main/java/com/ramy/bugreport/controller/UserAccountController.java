@@ -25,6 +25,17 @@ import com.ramy.bugreport.service.UserAccountService;
 
 import jakarta.validation.Valid;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import com.ramy.bugreport.openapi.ApiExamples;
+import com.ramy.bugreport.openapi.BadRequestResponse;
+import com.ramy.bugreport.openapi.UnauthorizedResponse;
+import com.ramy.bugreport.openapi.ForbiddenResponse;
+import com.ramy.bugreport.openapi.NotFoundResponse;
+import com.ramy.bugreport.openapi.ConflictResponse;
+
 /**
  * REST endpoints for user accounts, under {@code /api/accounts}.
  *
@@ -33,6 +44,7 @@ import jakarta.validation.Valid;
  * 404 when a referenced resource does not exist, 409 for business rule conflicts. Requests that
  * change data ({@code POST}, {@code PATCH}, {@code DELETE}) also need a CSRF token, see {@code GET /api/csrf}.
  */
+@Tag(name = "Accounts")
 @RestController
 @RequestMapping("/api/accounts")
 public class UserAccountController {
@@ -57,6 +69,10 @@ public class UserAccountController {
      *
      * @return 200 with a list of {@code {id, username, email, role}}, where {@code username} is the account's display name
      */
+    @Operation(summary = "List all accounts", description = "Access: ADMIN role. `username` is the account's display name.")
+    @ApiResponse(responseCode = "200", description = "All accounts.")
+    @UnauthorizedResponse
+    @ForbiddenResponse
     @GetMapping
     public List<UserAccountResponse> getAll() {
         return userAccountService.getAll();
@@ -69,6 +85,9 @@ public class UserAccountController {
      *
      * @return 200 with a list of {@code {id, name}}
      */
+    @Operation(summary = "List developers", description = "Lists the users with the DEVELOPER role, for example to choose an assignee. Access: any signed-in user.")
+    @ApiResponse(responseCode = "200", description = "Users with the DEVELOPER role.")
+    @UnauthorizedResponse
     @GetMapping("/developers")
     public List<DeveloperResponse> getDevelopers() {
         return userAccountService.getDevelopers();
@@ -82,8 +101,13 @@ public class UserAccountController {
      * @param search optional text to look for
      * @return 200 with a list of {@code {userId, name}}; empty if {@code search} is missing or blank
      */
+    @Operation(summary = "Search users by name", description = "Finds users whose name contains the text, ignoring case. The list is empty if `search` is missing or blank. Access: ADMIN or DEVELOPER role.")
+    @ApiResponse(responseCode = "200", description = "Users whose name matches.")
+    @UnauthorizedResponse
+    @ForbiddenResponse
     @GetMapping("/users")
-    public List<UserAccountBriefResponse> searchUsers(@RequestParam(required = false) String search) {
+    public List<UserAccountBriefResponse> searchUsers(@Parameter(description = "Text to look for in the user's name, ignoring case.", example = "ali")
+            @RequestParam(required = false) String search) {
         return userAccountService.searchUsers(search);
     }
 
@@ -104,6 +128,11 @@ public class UserAccountController {
      * @return 201 with {@code {id, message}}
      * @throws com.ramy.bugreport.exception.DuplicateEmailException 409 if the (trimmed, lower-cased) email is already registered
      */
+    @Operation(summary = "Register an account", description = "Registers a new account with the REPORTER role. Access: public, no sign-in needed. Returns 409 if the (trimmed, lower-cased) email is already registered.")
+    @ApiResponse(responseCode = "201", description = "Account created.")
+    @BadRequestResponse
+    @ForbiddenResponse
+    @ConflictResponse
     @PostMapping
     public ResponseEntity<CreateUserAccountResponse> create(
             @Valid @RequestBody CreateUserAccountRequest request
@@ -132,10 +161,17 @@ public class UserAccountController {
      * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the account does not exist
      * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if this would remove the last admin or would demote a developer who still has unclosed assigned reports
      */
+    @Operation(summary = "Change a user's role", description = "Access: ADMIN role, and not for the caller's own account. Returns 409 if this would remove the last admin or demote a developer who still has unclosed assigned reports.")
+    @ApiResponse(responseCode = "204", description = "Role changed.")
+    @BadRequestResponse
+    @UnauthorizedResponse
+    @ForbiddenResponse
+    @NotFoundResponse
+    @ConflictResponse
     @PatchMapping("/{userId}/role")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void updateRole(
-            @PathVariable UUID userId,
+            @Parameter(description = "Id of the user account.", example = ApiExamples.UUID) @PathVariable UUID userId,
             @Valid @RequestBody UpdateRoleRequest request
     ) {
         userAccountService.updateRole(userId, request);

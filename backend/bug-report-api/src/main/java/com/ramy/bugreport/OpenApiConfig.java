@@ -5,8 +5,19 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.Operation;
+import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.media.Content;
+import io.swagger.v3.oas.models.media.MediaType;
+import io.swagger.v3.oas.models.media.ObjectSchema;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.media.StringSchema;
+import io.swagger.v3.oas.models.parameters.RequestBody;
+import io.swagger.v3.oas.models.responses.ApiResponse;
+import io.swagger.v3.oas.models.responses.ApiResponses;
 import io.swagger.v3.oas.models.tags.Tag;
+import org.springdoc.core.customizers.OpenApiCustomizer;
 
 /**
  * Base OpenAPI metadata (title, description, version and tag list) shown in Swagger UI and in the generated spec.
@@ -44,5 +55,57 @@ public class OpenApiConfig {
                 .addTagsItem(new Tag().name("Projects").description("Software projects that bug reports belong to."))
                 .addTagsItem(new Tag().name("Components").description("Parts of a project, each with a responsible developer."))
                 .addTagsItem(new Tag().name("Accounts").description("User accounts and their roles."));
+    }
+
+    /**
+     * Adds {@code POST /api/auth/login} and {@code POST /api/auth/logout} to the spec.
+     *
+     * <p>Spring Security handles both in {@code SecurityConfig} (there is no controller), so springdoc cannot find them on its own.
+     */
+    @Bean
+    public OpenApiCustomizer authenticationEndpointsCustomizer() {
+        return openApi -> {
+            openApi.path("/api/auth/login", new PathItem().post(loginOperation()));
+            openApi.path("/api/auth/logout", new PathItem().post(logoutOperation()));
+        };
+    }
+
+    private Operation loginOperation() {
+        Schema<?> form = new ObjectSchema()
+                .addProperty("username", new StringSchema().description("Email address of the account.").example("admin@bugreport.local"))
+                .addProperty("password", new StringSchema().description("Plain-text password.").example("Admin123!"))
+                .addRequiredItem("username")
+                .addRequiredItem("password");
+
+        return new Operation()
+                .addTagsItem("Authentication")
+                .operationId("login")
+                .summary("Sign in")
+                .description("Signs in with form fields and starts a session (`JSESSIONID` cookie). Handled by Spring Security, not by a controller. "
+                        + "Send the CSRF token from `GET /api/csrf` in the `X-CSRF-TOKEN` header. Access: public.")
+                .requestBody(new RequestBody().required(true).content(new Content()
+                        .addMediaType("application/x-www-form-urlencoded", new MediaType().schema(form))))
+                .responses(new ApiResponses()
+                        .addApiResponse("200", new ApiResponse().description("Signed in; the session cookie is set. The body is empty."))
+                        .addApiResponse("401", new ApiResponse().description("Wrong email or password. The body is empty."))
+                        .addApiResponse("403", errorResponse("The CSRF token is missing or invalid.")));
+    }
+
+    private Operation logoutOperation() {
+        return new Operation()
+                .addTagsItem("Authentication")
+                .operationId("logout")
+                .summary("Sign out")
+                .description("Ends the session. Handled by Spring Security, not by a controller. "
+                        + "Send the CSRF token from `GET /api/csrf` in the `X-CSRF-TOKEN` header.")
+                .responses(new ApiResponses()
+                        .addApiResponse("200", new ApiResponse().description("Signed out. The body is empty."))
+                        .addApiResponse("403", errorResponse("The CSRF token is missing or invalid.")));
+    }
+
+    private ApiResponse errorResponse(String description) {
+        Schema<?> error = new Schema<>().$ref("#/components/schemas/ApiErrorResponse");
+        return new ApiResponse().description(description)
+                .content(new Content().addMediaType("application/json", new MediaType().schema(error)));
     }
 }

@@ -24,6 +24,17 @@ import com.ramy.bugreport.service.ComponentService;
 
 import jakarta.validation.Valid;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import com.ramy.bugreport.openapi.ApiExamples;
+import com.ramy.bugreport.openapi.BadRequestResponse;
+import com.ramy.bugreport.openapi.UnauthorizedResponse;
+import com.ramy.bugreport.openapi.ForbiddenResponse;
+import com.ramy.bugreport.openapi.NotFoundResponse;
+import com.ramy.bugreport.openapi.ConflictResponse;
+
 /**
  * REST endpoints for components, under {@code /api/components}.
  *
@@ -32,6 +43,7 @@ import jakarta.validation.Valid;
  * 404 when a referenced resource does not exist, 409 for business rule conflicts. Requests that
  * change data ({@code POST}, {@code PATCH}, {@code DELETE}) also need a CSRF token, see {@code GET /api/csrf}.
  */
+@Tag(name = "Components")
 @RestController
 @RequestMapping("/api/components")
 public class ComponentController {
@@ -56,6 +68,9 @@ public class ComponentController {
      *
      * @return 200 with a list of {@code {id, name, description, responsibleUserName}}
      */
+    @Operation(summary = "List all components", description = "Access: any signed-in user.")
+    @ApiResponse(responseCode = "200", description = "All components.")
+    @UnauthorizedResponse
     @GetMapping
     public List<ComponentResponse> getAll() {
         return componentService.getAll();
@@ -80,6 +95,12 @@ public class ComponentController {
      * @throws org.springframework.dao.DataIntegrityViolationException 409 if the responsible user is missing or does not exist.
      *         TODO(verify): the missing-user case is expected to end up as this 409 but is not validated by the service
      */
+    @Operation(summary = "Create a component", description = "Access: ADMIN or DEVELOPER role. `responsibleUserId` is not validated as required, but the database requires it; a missing or unknown user is expected to fail with 409 (TODO(verify): not validated by the service).")
+    @ApiResponse(responseCode = "201", description = "Component created.")
+    @BadRequestResponse
+    @UnauthorizedResponse
+    @ForbiddenResponse
+    @ConflictResponse
     @PostMapping
     public ResponseEntity<CreateComponentResponse> create(
             @Valid @RequestBody CreateComponentRequest request
@@ -108,9 +129,15 @@ public class ComponentController {
      * @return 200 with {@code {id, message}}
      * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the component does not exist
      */
+    @Operation(summary = "Rename a component", description = "Access: ADMIN or DEVELOPER role.")
+    @ApiResponse(responseCode = "200", description = "Component renamed.")
+    @BadRequestResponse
+    @UnauthorizedResponse
+    @ForbiddenResponse
+    @NotFoundResponse
     @PatchMapping("/{componentId}/name")
     public ResponseEntity<UpdateComponentResponse> updateName(
-            @PathVariable UUID componentId,
+            @Parameter(description = "Id of the component.", example = ApiExamples.UUID) @PathVariable UUID componentId,
             @Valid @RequestBody UpdateComponentNameRequest request
     ) {
         return updateResponse(componentService.updateName(componentId, request));
@@ -126,9 +153,15 @@ public class ComponentController {
      * @return 200 with {@code {id, message}}
      * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the component does not exist
      */
+    @Operation(summary = "Replace a component's description", description = "Access: ADMIN or DEVELOPER role.")
+    @ApiResponse(responseCode = "200", description = "Description replaced.")
+    @BadRequestResponse
+    @UnauthorizedResponse
+    @ForbiddenResponse
+    @NotFoundResponse
     @PatchMapping("/{componentId}/description")
     public ResponseEntity<UpdateComponentResponse> updateDescription(
-            @PathVariable UUID componentId,
+            @Parameter(description = "Id of the component.", example = ApiExamples.UUID) @PathVariable UUID componentId,
             @Valid @RequestBody UpdateComponentDescriptionRequest request
     ) {
         return updateResponse(componentService.updateDescription(componentId, request));
@@ -144,9 +177,16 @@ public class ComponentController {
      * @return 200 with {@code {id, message}}
      * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the component does not exist
      */
+    @Operation(summary = "Change the responsible user", description = "Access: ADMIN or DEVELOPER role. Note the camelCase path segment. A non-existing user fails with 409 from the database foreign key.")
+    @ApiResponse(responseCode = "200", description = "Responsible user changed.")
+    @BadRequestResponse
+    @UnauthorizedResponse
+    @ForbiddenResponse
+    @NotFoundResponse
+    @ConflictResponse
     @PatchMapping("/{componentId}/responsibleUserId")
     public ResponseEntity<UpdateComponentResponse> updateResponsibleUserId(
-            @PathVariable UUID componentId,
+            @Parameter(description = "Id of the component.", example = ApiExamples.UUID) @PathVariable UUID componentId,
             @Valid @RequestBody UpdateComponentResponsibleUserRequest request
     ) {
         return updateResponse(componentService.updateResponsibleUserId(componentId, request));

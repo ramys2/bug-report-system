@@ -36,6 +36,17 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import com.ramy.bugreport.openapi.ApiExamples;
+import com.ramy.bugreport.openapi.BadRequestResponse;
+import com.ramy.bugreport.openapi.UnauthorizedResponse;
+import com.ramy.bugreport.openapi.ForbiddenResponse;
+import com.ramy.bugreport.openapi.NotFoundResponse;
+import com.ramy.bugreport.openapi.ConflictResponse;
+
 
 
 /**
@@ -49,6 +60,7 @@ import org.springframework.web.bind.annotation.RequestBody;
  * <p>Bodies and responses use camelCase JSON. Update endpoints ({@code PATCH /{reportId}/...})
  * change one field each. Report fields are documented on {@link com.ramy.bugreport.domain.BugReport}.
  */
+@Tag(name = "Bug reports")
 @RestController
 @RequestMapping("/api/reports")
 public class BugReportController {
@@ -74,6 +86,9 @@ public class BugReportController {
      * @return 200 with a list of {@code {reportId, title, author, assignee, status, severity, createdAt}};
      *         {@code assignee} is {@code null} if unassigned and {@code createdAt} is formatted {@code dd-MM-yyyy HH:mm}
      */
+    @Operation(summary = "List all bug reports", description = "Lists all reports in brief form. Access: any signed-in user. There is no filtering by owner.")
+    @ApiResponse(responseCode = "200", description = "List of reports in brief form.")
+    @UnauthorizedResponse
     @GetMapping
     public List<BugReportBriefResponse> getAll() {
         return reportService.getAll();
@@ -91,9 +106,14 @@ public class BugReportController {
      *         {@code {id, description, resolvedAt, fixedVersion, commitUrl}}
      * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the report or a user, project or component it refers to does not exist
      */
+    @Operation(summary = "Get a bug report", description = "Returns the full detail of one report. `resolution` is null until the report is closed. Access: any signed-in user.")
+    @ApiResponse(responseCode = "200", description = "The report with its resolution, if any.")
+    @BadRequestResponse
+    @UnauthorizedResponse
+    @NotFoundResponse
     @GetMapping("/{reportId}")
     public BugReportResponse getReport(
-            @PathVariable UUID reportId
+            @Parameter(description = "Id of the bug report.", example = ApiExamples.UUID) @PathVariable UUID reportId
     ) {
         return reportService.getReport(reportId);
     }
@@ -105,6 +125,9 @@ public class BugReportController {
      *
      * @return 200 with a list in the same brief form as {@link #getAll()}; empty if there are none
      */
+    @Operation(summary = "List reports filed by the signed-in user", description = "Access: any signed-in user. The list is empty if there are none.")
+    @ApiResponse(responseCode = "200", description = "Reports filed by the signed-in user.")
+    @UnauthorizedResponse
     @GetMapping("/reported")
     public List<BugReportBriefResponse> getReported(
     		@AuthenticationPrincipal UserAccountDetails account
@@ -119,6 +142,9 @@ public class BugReportController {
      *
      * @return 200 with a list in the same brief form as {@link #getAll()}; empty if there are none
      */
+    @Operation(summary = "List reports assigned to the signed-in user", description = "Includes closed reports. Access: any signed-in user. The list is empty if there are none.")
+    @ApiResponse(responseCode = "200", description = "Reports assigned to the signed-in user.")
+    @UnauthorizedResponse
     @GetMapping("/assigned")
     public List<BugReportBriefResponse> getAssigned(
     		@AuthenticationPrincipal UserAccountDetails account
@@ -145,6 +171,13 @@ public class BugReportController {
      * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the project or component does not exist
      * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if {@code assigneeId} is not a developer
      */
+    @Operation(summary = "Create a bug report", description = "Files a new report as the signed-in user. The report starts with status `OPEN`. Returns 404 if the project or component does not exist and 409 if `assigneeId` is not a developer. Access: any signed-in user.")
+    @ApiResponse(responseCode = "201", description = "Report created.")
+    @BadRequestResponse
+    @UnauthorizedResponse
+    @ForbiddenResponse
+    @NotFoundResponse
+    @ConflictResponse
     @PostMapping
     public ResponseEntity<CreateBugReportResponse> create(
             @Valid @RequestBody CreateBugReportRequest request,
@@ -168,9 +201,16 @@ public class BugReportController {
      * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the report does not exist
      * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if the report is already closed
      */
+    @Operation(summary = "Close a bug report with a resolution", description = "Creates the resolution and sets the status to `CLOSED`; the reporter and assignee are notified by email. Returns 409 if the report is already closed. Access: signed-in user; the service further requires the ADMIN role, or being the report's reporter or assignee. Note: `reportId` in the response contains the id of the new resolution, not of the report.")
+    @ApiResponse(responseCode = "201", description = "Resolution created and report closed.")
+    @BadRequestResponse
+    @UnauthorizedResponse
+    @ForbiddenResponse
+    @NotFoundResponse
+    @ConflictResponse
     @PostMapping("/{reportId}/resolution")
     public ResponseEntity<CloseBugReportResponse> close(
-            @PathVariable UUID reportId,
+            @Parameter(description = "Id of the bug report.", example = ApiExamples.UUID) @PathVariable UUID reportId,
             @Valid @RequestBody CloseBugReportRequest request
     ) {
         var response = reportService.close(reportId, request);
@@ -199,9 +239,16 @@ public class BugReportController {
      * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the report, the assignee or the reporter does not exist
      * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if the report is closed or the assignee is not a developer
      */
+    @Operation(summary = "Change the assignee", description = "Assigns the report to a developer; the developer is notified by email. Returns 409 if the report is closed or the user is not a developer. Access: signed-in user; the service further requires the ADMIN role, or being the report's reporter or assignee.")
+    @ApiResponse(responseCode = "200", description = "Assignee changed.")
+    @BadRequestResponse
+    @UnauthorizedResponse
+    @ForbiddenResponse
+    @NotFoundResponse
+    @ConflictResponse
     @PatchMapping("/{reportId}/assignee")
     public ResponseEntity<UpdateBugReportResponse> updateAssignee(
-            @PathVariable UUID reportId,
+            @Parameter(description = "Id of the bug report.", example = ApiExamples.UUID) @PathVariable UUID reportId,
             @Valid @RequestBody UpdateAssigneeRequest request
     ) {
         return updateResponse(reportService.updateAssignee(reportId, request));
@@ -218,9 +265,16 @@ public class BugReportController {
      * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the report does not exist
      * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if the report is closed
      */
+    @Operation(summary = "Change the severity", description = "Returns 409 if the report is closed. Access: signed-in user; the service further requires the ADMIN role, or being the report's reporter or assignee.")
+    @ApiResponse(responseCode = "200", description = "Severity changed.")
+    @BadRequestResponse
+    @UnauthorizedResponse
+    @ForbiddenResponse
+    @NotFoundResponse
+    @ConflictResponse
     @PatchMapping("/{reportId}/severity")
     public ResponseEntity<UpdateBugReportResponse> updateSeverity(
-            @PathVariable UUID reportId,
+            @Parameter(description = "Id of the bug report.", example = ApiExamples.UUID) @PathVariable UUID reportId,
             @Valid @RequestBody UpdateSeverityRequest request
     ) {
         return updateResponse(reportService.updateSeverity(reportId, request));
@@ -237,9 +291,16 @@ public class BugReportController {
      * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the report does not exist
      * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if the report is closed, or the requested status is {@code CLOSED}
      */
+    @Operation(summary = "Change the status", description = "The reporter and assignee are notified by email. Use the resolution endpoint to close a report. Returns 409 if the report is closed or the requested status is `CLOSED`. Access: signed-in user; the service further requires the ADMIN role, or being the report's reporter or assignee.")
+    @ApiResponse(responseCode = "200", description = "Status changed.")
+    @BadRequestResponse
+    @UnauthorizedResponse
+    @ForbiddenResponse
+    @NotFoundResponse
+    @ConflictResponse
     @PatchMapping("/{reportId}/status")
     public ResponseEntity<UpdateBugReportResponse> updateStatus(
-            @PathVariable UUID reportId,
+            @Parameter(description = "Id of the bug report.", example = ApiExamples.UUID) @PathVariable UUID reportId,
             @Valid @RequestBody UpdateStatusRequest request
     ) {
         return updateResponse(reportService.updateStatus(reportId, request));
@@ -256,9 +317,16 @@ public class BugReportController {
      * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the report, or the project, does not exist
      * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if the report is closed
      */
+    @Operation(summary = "Move the report to another project", description = "Returns 409 if the report is closed. Access: signed-in user; the service further requires the ADMIN role, or being the report's reporter or assignee.")
+    @ApiResponse(responseCode = "200", description = "Project changed.")
+    @BadRequestResponse
+    @UnauthorizedResponse
+    @ForbiddenResponse
+    @NotFoundResponse
+    @ConflictResponse
     @PatchMapping("/{reportId}/project")
     public ResponseEntity<UpdateBugReportResponse> updateProject(
-            @PathVariable UUID reportId,
+            @Parameter(description = "Id of the bug report.", example = ApiExamples.UUID) @PathVariable UUID reportId,
             @Valid @RequestBody UpdateProjectRequest request
     ) {
         return updateResponse(reportService.updateProject(reportId, request));
@@ -275,9 +343,16 @@ public class BugReportController {
      * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the report, or the component, does not exist
      * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if the report is closed
      */
+    @Operation(summary = "Move the report to another component", description = "The component is not checked against the report's project. Returns 409 if the report is closed. Access: signed-in user; the service further requires the ADMIN role, or being the report's reporter or assignee.")
+    @ApiResponse(responseCode = "200", description = "Component changed.")
+    @BadRequestResponse
+    @UnauthorizedResponse
+    @ForbiddenResponse
+    @NotFoundResponse
+    @ConflictResponse
     @PatchMapping("/{reportId}/component")
     public ResponseEntity<UpdateBugReportResponse> updateComponent(
-            @PathVariable UUID reportId,
+            @Parameter(description = "Id of the bug report.", example = ApiExamples.UUID) @PathVariable UUID reportId,
             @Valid @RequestBody UpdateComponentRequest request
     ) {
         return updateResponse(reportService.updateComponent(reportId, request));
@@ -294,9 +369,16 @@ public class BugReportController {
      * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the report does not exist
      * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if the report is closed
      */
+    @Operation(summary = "Replace the description", description = "Returns 409 if the report is closed. Access: signed-in user; the service further requires the ADMIN role, or being the report's reporter or assignee.")
+    @ApiResponse(responseCode = "200", description = "Description replaced.")
+    @BadRequestResponse
+    @UnauthorizedResponse
+    @ForbiddenResponse
+    @NotFoundResponse
+    @ConflictResponse
     @PatchMapping("/{reportId}/description")
     public ResponseEntity<UpdateBugReportResponse> updateDescription(
-            @PathVariable UUID reportId,
+            @Parameter(description = "Id of the bug report.", example = ApiExamples.UUID) @PathVariable UUID reportId,
             @Valid @RequestBody UpdateDescriptionRequest request
     ) {
         return updateResponse(reportService.updateDescription(reportId, request));
@@ -313,9 +395,16 @@ public class BugReportController {
      * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the report does not exist
      * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if the report is closed
      */
+    @Operation(summary = "Replace the steps to reproduce", description = "Returns 409 if the report is closed. Access: signed-in user; the service further requires the ADMIN role, or being the report's reporter or assignee.")
+    @ApiResponse(responseCode = "200", description = "Steps to reproduce replaced.")
+    @BadRequestResponse
+    @UnauthorizedResponse
+    @ForbiddenResponse
+    @NotFoundResponse
+    @ConflictResponse
     @PatchMapping("/{reportId}/steps-to-reproduce")
     public ResponseEntity<UpdateBugReportResponse> updateStepsToReproduce(
-            @PathVariable UUID reportId,
+            @Parameter(description = "Id of the bug report.", example = ApiExamples.UUID) @PathVariable UUID reportId,
             @Valid @RequestBody UpdateStepsToReproduceRequest request
     ) {
         return updateResponse(reportService.updateStepsToReproduce(reportId, request));
@@ -332,9 +421,16 @@ public class BugReportController {
      * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the report does not exist
      * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if the report is closed
      */
+    @Operation(summary = "Replace the expected behavior", description = "Returns 409 if the report is closed. Access: signed-in user; the service further requires the ADMIN role, or being the report's reporter or assignee.")
+    @ApiResponse(responseCode = "200", description = "Expected behavior replaced.")
+    @BadRequestResponse
+    @UnauthorizedResponse
+    @ForbiddenResponse
+    @NotFoundResponse
+    @ConflictResponse
     @PatchMapping("/{reportId}/expected-behavior")
     public ResponseEntity<UpdateBugReportResponse> updateExpectedBehavior(
-            @PathVariable UUID reportId,
+            @Parameter(description = "Id of the bug report.", example = ApiExamples.UUID) @PathVariable UUID reportId,
             @Valid @RequestBody UpdateExpectedBehaviorRequest request
     ) {
         return updateResponse(reportService.updateExpectedBehavior(reportId, request));
@@ -351,9 +447,16 @@ public class BugReportController {
      * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the report does not exist
      * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if the report is closed
      */
+    @Operation(summary = "Replace the actual behavior", description = "Returns 409 if the report is closed. Access: signed-in user; the service further requires the ADMIN role, or being the report's reporter or assignee.")
+    @ApiResponse(responseCode = "200", description = "Actual behavior replaced.")
+    @BadRequestResponse
+    @UnauthorizedResponse
+    @ForbiddenResponse
+    @NotFoundResponse
+    @ConflictResponse
     @PatchMapping("/{reportId}/actual-behavior")
     public ResponseEntity<UpdateBugReportResponse> updateActualBehavior(
-            @PathVariable UUID reportId,
+            @Parameter(description = "Id of the bug report.", example = ApiExamples.UUID) @PathVariable UUID reportId,
             @Valid @RequestBody UpdateActualBehaviorRequest request
     ) {
         return updateResponse(reportService.updateActualBehavior(reportId, request));
