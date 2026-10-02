@@ -12,13 +12,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ramy.bugreport.dto.account.CreateUserAccountRequest;
 import com.ramy.bugreport.dto.account.CreateUserAccountResponse;
 import com.ramy.bugreport.dto.account.DeveloperResponse;
 import com.ramy.bugreport.dto.account.UpdateRoleRequest;
+import com.ramy.bugreport.dto.account.UpdateUserAccountResponse;
 import com.ramy.bugreport.dto.account.UserAccountResponse;
 import com.ramy.bugreport.dto.account.UserAccountBriefResponse;
 import com.ramy.bugreport.service.UserAccountService;
@@ -152,28 +152,28 @@ public class UserAccountController {
      */
     
     /**
-     * {@code PATCH /api/accounts/{userId}/role}: changes a user's role. Responds 204 with no body on success.
+     * {@code PATCH /api/accounts/{userId}/role}: changes a user's role.
      *
      * <p>Access: ADMIN role, and not for the caller's own account.
      *
      * @param userId id of the account
      * @param request body {@code {role}}, required, one of REPORTER, DEVELOPER, ADMIN
+     * @return 200 with {@code {id, message}}
      * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the account does not exist
      * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if this would remove the last admin or would demote a developer who still has unclosed assigned reports
      */
     @Operation(summary = "Change a user's role", description = "Access: ADMIN role, and not for the caller's own account. Returns 409 if this would remove the last admin or demote a developer who still has unclosed assigned reports.")
-    @ApiResponse(responseCode = "204", description = "Role changed.")
+    @ApiResponse(responseCode = "200", description = "Role changed.")
     @BadRequestResponse
     @UnauthorizedResponse
     @ForbiddenResponse
     @NotFoundResponse
     @ConflictResponse
     @PatchMapping("/{userId}/role")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void updateRole(
+    public UpdateUserAccountResponse updateRole(
             @Parameter(description = "Id of the user account.", example = ApiExamples.UUID) @PathVariable UUID userId,
             @Valid @RequestBody UpdateRoleRequest request
     ) {
-        userAccountService.updateRole(userId, request);
+        return userAccountService.updateRole(userId, request);
     }
 }

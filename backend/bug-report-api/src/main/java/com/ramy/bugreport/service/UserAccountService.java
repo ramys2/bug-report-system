@@ -14,6 +14,7 @@ import com.ramy.bugreport.dto.account.CreateUserAccountRequest;
 import com.ramy.bugreport.dto.account.CreateUserAccountResponse;
 import com.ramy.bugreport.dto.account.DeveloperResponse;
 import com.ramy.bugreport.dto.account.UpdateRoleRequest;
+import com.ramy.bugreport.dto.account.UpdateUserAccountResponse;
 import com.ramy.bugreport.dto.account.UserAccountResponse;
 import com.ramy.bugreport.dto.account.UserAccountBriefResponse;
 import com.ramy.bugreport.domain.EBugStatus;
@@ -138,7 +139,7 @@ public class UserAccountService {
      */
     @Transactional
     @PreAuthorize("hasRole('ADMIN') and @userAccountAuthorizer.canUpdateRole(#userId, authentication)")
-    public void updateRole(UUID userId, UpdateRoleRequest request) {
+    public UpdateUserAccountResponse updateRole(UUID userId, UpdateRoleRequest request) {
         UserAccount account = userAccountRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User with id=%s does not exist!".formatted(userId)));
 
@@ -157,6 +158,7 @@ public class UserAccountService {
 
         account.setRole(request.role());
         userAccountRepository.save(account);
+        return new UpdateUserAccountResponse(userId, "User role updated successfully!");
     }
 
     /** Trims the email and lower-cases it, so that lookups are not case-sensitive. */

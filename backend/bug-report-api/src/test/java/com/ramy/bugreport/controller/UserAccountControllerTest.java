@@ -25,6 +25,7 @@ import com.ramy.bugreport.dto.account.CreateUserAccountRequest;
 import com.ramy.bugreport.dto.account.CreateUserAccountResponse;
 import com.ramy.bugreport.dto.account.DeveloperResponse;
 import com.ramy.bugreport.dto.account.UpdateRoleRequest;
+import com.ramy.bugreport.dto.account.UpdateUserAccountResponse;
 import com.ramy.bugreport.dto.account.UserAccountResponse;
 import com.ramy.bugreport.dto.account.UserAccountBriefResponse;
 import com.ramy.bugreport.exception.ApiExceptionHandler;
@@ -106,13 +107,17 @@ class UserAccountControllerTest {
     }
 
     @Test
-    void updateRoleReturnsNoContent() throws Exception {
+    void updateRoleReturnsIdAndMessage() throws Exception {
         var accountId = UUID.randomUUID();
+        when(userAccountService.updateRole(accountId, new UpdateRoleRequest(EUserRole.DEVELOPER)))
+                .thenReturn(new UpdateUserAccountResponse(accountId, "User role updated successfully!"));
 
         mockMvc.perform(patch("/api/accounts/{userId}/role", accountId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"role\":\"DEVELOPER\"}"))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(accountId.toString()))
+                .andExpect(jsonPath("$.message").value("User role updated successfully!"));
 
         verify(userAccountService).updateRole(accountId, new UpdateRoleRequest(EUserRole.DEVELOPER));
     }

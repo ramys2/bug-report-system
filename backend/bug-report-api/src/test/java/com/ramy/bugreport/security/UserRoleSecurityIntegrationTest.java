@@ -94,7 +94,7 @@ class UserRoleSecurityIntegrationTest {
     @Test
     void adminCanUpdateAnotherUsersRole() throws Exception {
         mockMvc.perform(roleUpdate(reporter.getId()).with(authentication(authenticationFor(admin))).with(csrf()))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk());
 
         assertThat(userAccountRepository.findById(reporter.getId()).orElseThrow().getRole())
                 .isEqualTo(EUserRole.DEVELOPER);
@@ -109,7 +109,7 @@ class UserRoleSecurityIntegrationTest {
                         .with(authentication(authenticationFor(admin)))
                         .with(csrf())
                         .content("{\"role\":\"REPORTER\"}"))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk());
 
         mockMvc.perform(roleUpdate(reporter.getId()).with(authentication(staleAdminSession)).with(csrf()))
                 .andExpect(status().isForbidden());

@@ -32,7 +32,7 @@ export function searchUsers(search) {
  *
  * @param {string} userId id of the account
  * @param {"REPORTER"|"DEVELOPER"|"ADMIN"} role the new role
- * @returns {JQuery.jqXHR} resolves with no content (204); rejects with 409 if this would remove the last admin or affect a developer with open assignments
+ * @returns {JQuery.jqXHR} resolves with `{id, message}`; rejects with 409 if this would remove the last admin or affect a developer with open assignments
  */
 export function updateAccountRole(userId, role) {
     const csrfToken = getCsrfToken();
