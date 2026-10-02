@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from "react";
-import { useParams } from "react-router";
+import { Link, useParams } from "react-router";
 import { Modal as BootstrapModal } from "bootstrap";
 import {
     closeReport,
@@ -312,6 +312,7 @@ export default function BugReportPage() {
     const { id } = useParams();
     const { currentUser } = useContext(AuthContext);
     const [bugReport, setBugReport] = useState(null);
+    const [loadError, setLoadError] = useState(false);
     const [comments, setComments] = useState([]);
     const [commentDraft, setCommentDraft] = useState("");
     const [isCommentEditing, setIsCommentEditing] = useState(false);
@@ -327,8 +328,14 @@ export default function BugReportPage() {
 
     useEffect(() => {
         getReport(id)
-            .done((data) => setBugReport(data))
-            .fail(() => showToast("danger", "Unable to fetch bug report!", "Unable to load report"));
+            .done((data) => {
+                setBugReport(data);
+                setLoadError(false);
+            })
+            .fail(() => {
+                setLoadError(true);
+                showToast("danger", "Unable to fetch bug report!", "Unable to load report");
+            });
 
         getComments(id)
             .done((data) => setComments(data))
@@ -420,7 +427,14 @@ export default function BugReportPage() {
     return (
         <div className="bug-report-page d-flex flex-column">
             <main className="container flex-grow-1 py-4 text-start">
-                {bugReport === null ? (
+                {loadError ? (
+                    <div className="text-center py-5">
+                        <p className="text-secondary">Unable to load this bug report.</p>
+                        <Link to="/" className="btn btn-primary">
+                            Back to home
+                        </Link>
+                    </div>
+                ) : bugReport === null ? (
                     <p className="text-secondary mb-0">Loading bug report...</p>
                 ) : (
                     <>
