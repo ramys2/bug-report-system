@@ -17,8 +17,11 @@ import com.ramy.bugreport.openapi.ApiExamples;
  *
  * @param id report id
  * @param reporterName display name of the reporter
+ * @param assigneeId id of the assignee; null if unassigned
  * @param assigneeName display name of the assignee; null if unassigned
+ * @param projectId id of the project
  * @param projectName name of the project
+ * @param componentId id of the component
  * @param componentName name of the component
  * @param title short summary
  * @param description description; may be null
@@ -37,10 +40,16 @@ public record BugReportResponse(
         UUID id,
         @Schema(description = "Display name of the reporter.", example = "Rachel Reporter", requiredMode = Schema.RequiredMode.REQUIRED)
         String reporterName,
+        @Schema(description = "Id of the assignee. Null if unassigned.", example = ApiExamples.UUID)
+        UUID assigneeId,
         @Schema(description = "Display name of the assignee. Null if unassigned.", example = "Daniel Developer")
         String assigneeName,
+        @Schema(description = "Id of the project.", example = ApiExamples.UUID, requiredMode = Schema.RequiredMode.REQUIRED)
+        UUID projectId,
         @Schema(description = "Name of the project.", example = "Bug Report System", requiredMode = Schema.RequiredMode.REQUIRED)
         String projectName,
+        @Schema(description = "Id of the component.", example = ApiExamples.UUID, requiredMode = Schema.RequiredMode.REQUIRED)
+        UUID componentId,
         @Schema(description = "Name of the component.", example = "Backend API", requiredMode = Schema.RequiredMode.REQUIRED)
         String componentName,
         @Schema(description = "Short summary.", example = "Valid users cannot sign in", requiredMode = Schema.RequiredMode.REQUIRED)
@@ -75,8 +84,11 @@ public record BugReportResponse(
         return new BugReportResponse(
             report.getId(),
             reporter.getName(),
+            assignee == null ? null : assignee.getId(),
             assignee == null ? null : assignee.getName(),
+            project.getId(),
             project.getName(),
+            component.getId(),
             component.getName(),
             report.getTitle(),
             report.getDescription(),

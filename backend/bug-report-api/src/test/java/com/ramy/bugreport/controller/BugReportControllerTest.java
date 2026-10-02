@@ -48,6 +48,10 @@ import com.ramy.bugreport.service.BugReportService;
 @ExtendWith(MockitoExtension.class)
 class BugReportControllerTest {
 
+    private static final UUID ASSIGNEE_ID = UUID.randomUUID();
+    private static final UUID PROJECT_ID = UUID.randomUUID();
+    private static final UUID COMPONENT_ID = UUID.randomUUID();
+
     @Mock
     private BugReportService reportService;
 
@@ -87,13 +91,13 @@ class BugReportControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(reportId.toString()))
                 .andExpect(jsonPath("$.reporterName").value("Joe Reporter"))
+                .andExpect(jsonPath("$.assigneeId").value(nullValue()))
                 .andExpect(jsonPath("$.assigneeName").value(nullValue()))
+                .andExpect(jsonPath("$.projectId").value(PROJECT_ID.toString()))
                 .andExpect(jsonPath("$.projectName").value("Bug Report"))
+                .andExpect(jsonPath("$.componentId").value(COMPONENT_ID.toString()))
                 .andExpect(jsonPath("$.componentName").value("Backend API"))
-                .andExpect(jsonPath("$.reporterId").doesNotExist())
-                .andExpect(jsonPath("$.assigneeId").doesNotExist())
-                .andExpect(jsonPath("$.projectId").doesNotExist())
-                .andExpect(jsonPath("$.componentId").doesNotExist());
+                .andExpect(jsonPath("$.reporterId").doesNotExist());
 
         verify(reportService).getReport(reportId);
     }
@@ -105,6 +109,7 @@ class BugReportControllerTest {
 
         mockMvc.perform(get("/api/reports/{reportId}", reportId))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.assigneeId").value(ASSIGNEE_ID.toString()))
                 .andExpect(jsonPath("$.assigneeName").value("Joe Developer"));
 
         verify(reportService).getReport(reportId);
@@ -330,8 +335,11 @@ class BugReportControllerTest {
         return new BugReportResponse(
                 reportId,
                 "Joe Reporter",
+                assigneeName == null ? null : ASSIGNEE_ID,
                 assigneeName,
+                PROJECT_ID,
                 "Bug Report",
+                COMPONENT_ID,
                 "Backend API",
                 "Application crashes",
                 null,

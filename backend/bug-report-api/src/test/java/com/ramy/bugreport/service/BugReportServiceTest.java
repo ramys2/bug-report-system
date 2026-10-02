@@ -102,6 +102,12 @@ class BugReportServiceTest {
         var assignee = namedUser("Joe Developer");
         var project = project("Bug Report");
         var component = component("Backend API");
+        var assigneeId = UUID.randomUUID();
+        var projectId = UUID.randomUUID();
+        var componentId = UUID.randomUUID();
+        when(assignee.getId()).thenReturn(assigneeId);
+        when(project.getId()).thenReturn(projectId);
+        when(component.getId()).thenReturn(componentId);
         when(bugReportRepository.findById(report.getId())).thenReturn(Optional.of(report));
         when(userAccountRepository.findById(report.getReporterId())).thenReturn(Optional.of(reporter));
         when(userAccountRepository.findById(report.getAssigneeId())).thenReturn(Optional.of(assignee));
@@ -113,8 +119,11 @@ class BugReportServiceTest {
         assertThat(result.id()).isEqualTo(report.getId());
         assertThat(result.title()).isEqualTo(report.getTitle());
         assertThat(result.reporterName()).isEqualTo("Joe Reporter");
+        assertThat(result.assigneeId()).isEqualTo(assigneeId);
         assertThat(result.assigneeName()).isEqualTo("Joe Developer");
+        assertThat(result.projectId()).isEqualTo(projectId);
         assertThat(result.projectName()).isEqualTo("Bug Report");
+        assertThat(result.componentId()).isEqualTo(componentId);
         assertThat(result.componentName()).isEqualTo("Backend API");
         verify(bugReportRepository).findById(report.getId());
         verify(userAccountRepository).findById(report.getReporterId());
@@ -137,6 +146,7 @@ class BugReportServiceTest {
 
         var result = service.getReport(report.getId());
 
+        assertThat(result.assigneeId()).isNull();
         assertThat(result.assigneeName()).isNull();
         verify(userAccountRepository).findById(report.getReporterId());
         verifyNoMoreInteractions(userAccountRepository);
