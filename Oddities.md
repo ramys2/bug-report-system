@@ -60,7 +60,6 @@ marked in the code comments and were not confirmed by running the application.
 - `ProtectedRoute` renders nothing while the session check is running.
 - `Modal` relies on Bootstrap's own JavaScript instead of React state.
 - `Toast` uses a hard-coded 5-second timeout.
-- `App.jsx` has no route for unknown paths, and `/login` stays reachable for signed-in users (`LoginPage` does not redirect them).
 - `BugReportPage`: if `GET /api/reports/{id}` fails, the page keeps showing "Loading bug report..." forever (only a toast is shown).
 - `BugReportPage`: the current option of a select field is found by comparing the displayed **name** with option labels (the report response has names, not ids), so duplicate names could select the wrong option.
 - `BugReportPage`: after closing a report, the local state stores the form draft as the resolution (no `id`, no `resolvedAt`) and does not refresh `updatedAt`, until the page is reloaded.

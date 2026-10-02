@@ -1,7 +1,7 @@
 import LoginForm from "../components/LoginForm";
 
 /**
- * Public page at `/login` that centers the `LoginForm`. It does not redirect users who are already signed in.
+ * Page at `/login` that centers the `LoginForm`. It is wrapped in `GuestRoute` in `App.jsx`, which redirects users who are already signed in.
  */
 function LoginPage() {
     return (

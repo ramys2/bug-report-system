@@ -3,8 +3,10 @@ import { BrowserRouter, Routes, Route } from "react-router";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminRoute from "./components/AdminRoute";
 import DeveloperRoute from "./components/DeveloperRoute";
+import GuestRoute from "./components/GuestRoute";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
+import NotFoundPage from "./pages/NotFoundPage";
 import BugReportPage from "./pages/BugReportPage";
 import UserAdminPage from "./pages/UserAdminPage";
 import ComponentAdminPage from "./pages/ComponentAdminPage";
@@ -17,12 +19,13 @@ import Toast from "./components/Toast";
  * Root component: sets up routing and the app-wide providers.
  *
  * `AuthProvider` wraps everything, `Navbar` and `Toast` are always visible. Routes:
- * - `/login`: public, `LoginPage`.
+ * - `/login`: only for users who are not signed in (`GuestRoute`), `LoginPage`.
  * - `/` and `/reports/:id`: any signed-in user (`ProtectedRoute`).
  * - `/admin/components` and `/admin/projects`: ADMIN or DEVELOPER (`DeveloperRoute`).
  * - `/admin/users`: ADMIN only (`AdminRoute`).
+ * - Any other path: `NotFoundPage`.
  *
- * The route guards only control what the UI shows; the backend enforces access itself. There is no route for unknown paths.
+ * The route guards only control what the UI shows; the backend enforces access itself.
  */
 export default function App() {
     return (
@@ -44,7 +47,11 @@ export default function App() {
                         </Route>
                     </Route>
 
-                    <Route path="/login" element={<LoginPage />} />
+                    <Route element={<GuestRoute />}>
+                        <Route path="/login" element={<LoginPage />} />
+                    </Route>
+
+                    <Route path="*" element={<NotFoundPage />} />
                 </Routes>
             </AuthProvider>
         </BrowserRouter>
