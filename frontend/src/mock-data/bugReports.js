@@ -6,7 +6,7 @@ const bugReports = [
         assignee: "Ava Patel",
         status: "open",
         severity: "medium",
-        createdAt: "15-08-2026 09:30",
+        createdAt: "2026-08-15T09:30:00",
     },
     {
         reportId: "75be1d49-5e74-440b-a24b-f293f5df9af8",
@@ -15,7 +15,7 @@ const bugReports = [
         assignee: "Ethan Moore",
         status: "assigned",
         severity: "high",
-        createdAt: "16-08-2026 14:10",
+        createdAt: "2026-08-16T14:10:00",
     },
     {
         reportId: "ed8dbb87-fd82-4de4-96d7-4b00a2538b31",
@@ -24,7 +24,7 @@ const bugReports = [
         assignee: null,
         status: "needs_information",
         severity: "low",
-        createdAt: "17-08-2026 11:45",
+        createdAt: "2026-08-17T11:45:00",
     },
     {
         reportId: "82f10d17-38d7-488a-b6fe-10c21a09995d",
@@ -33,7 +33,7 @@ const bugReports = [
         assignee: "Ava Patel",
         status: "reviewing",
         severity: "medium",
-        createdAt: "18-08-2026 16:20",
+        createdAt: "2026-08-18T16:20:00",
     },
     {
         reportId: "3fe1ee93-d192-4774-a190-190f5f8aa4ae",
@@ -42,7 +42,7 @@ const bugReports = [
         assignee: "Ethan Moore",
         status: "in_progress",
         severity: "critical",
-        createdAt: "19-08-2026 08:05",
+        createdAt: "2026-08-19T08:05:00",
     },
     {
         reportId: "bb59ac6c-7415-49f7-b732-66288615408c",
@@ -51,7 +51,7 @@ const bugReports = [
         assignee: null,
         status: "rejected",
         severity: "low",
-        createdAt: "20-08-2026 13:55",
+        createdAt: "2026-08-20T13:55:00",
     },
 ];
 

@@ -84,7 +84,7 @@ public class BugReportController {
      * <p>Access: any signed-in user. There is no filtering by owner.
      *
      * @return 200 with a list of {@code {reportId, title, author, assignee, status, severity, createdAt}};
-     *         {@code assignee} is {@code null} if unassigned and {@code createdAt} is formatted {@code dd-MM-yyyy HH:mm}
+     *         {@code assignee} is {@code null} if unassigned and {@code createdAt} is ISO-8601
      */
     @Operation(summary = "List all bug reports", description = "Lists all reports in brief form. Access: any signed-in user. There is no filtering by owner.")
     @ApiResponse(responseCode = "200", description = "List of reports in brief form.")

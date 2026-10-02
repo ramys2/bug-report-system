@@ -91,7 +91,7 @@ class BugReportServiceTest {
                 .extracting("title", "author", "assignee", "status", "severity", "createdAt")
                 .containsExactly(
                         "Application crashes", "Reporter", "Assignee", EBugStatus.OPEN, EBugSeverity.HIGH,
-                        "13-07-2026 12:05");
+                        LocalDateTime.of(2026, 7, 13, 12, 5));
         verify(bugReportRepository).findAll();
     }
 

@@ -76,7 +76,7 @@ Expected:
   **Components** (5) and **Accounts** (5). That is 36 in total.
 - Under **Schemas** at the bottom, for example `CreateBugReportRequest` shows field descriptions, example values,
   and `title`, `projectId`, `componentId` and `severity` marked as required. `BugReportBriefResponse` shows an example
-  `createdAt` of `14-05-2026 09:30`.
+  `createdAt` of `2026-05-14T09:30:00`.
 - Every write operation (POST, PATCH, DELETE) has a required `X-CSRF-TOKEN` header field.
 
 Then try it out, in this order (**Try it out**, then **Execute**):
@@ -123,7 +123,7 @@ curl -s -b $COOKIES -w "\n%{http_code}\n" http://localhost:8080/api/reports
 ```
 
 Expected: status `200` and a JSON array of three objects (more if you created reports), each like
-`{"reportId":"...","title":"Severity selector overflows on mobile","author":"Alice Admin","assignee":null,"status":"OPEN","severity":"LOW","createdAt":"30-09-2026 13:42"}`.
+`{"reportId":"...","title":"Severity selector overflows on mobile","author":"Alice Admin","assignee":null,"status":"OPEN","severity":"LOW","createdAt":"2026-09-30T13:42:11.123456"}`.
 The other two are "Valid users cannot sign in" (`IN_PROGRESS`, `CRITICAL`) and "Profile page is blank without an avatar" (`CLOSED`, `MEDIUM`).
 This matches `GET /api/reports`, response `200`, schema `BugReportBriefResponse`.
 If it fails: `401` means the session cookie was not sent (repeat the sign-in block).

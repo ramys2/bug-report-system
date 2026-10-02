@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -77,7 +78,7 @@ class BugReportControllerTest {
                 .andExpect(jsonPath("$[0].author").value("Leo Tester"))
                 .andExpect(jsonPath("$[0].assignee").value(nullValue()))
                 .andExpect(jsonPath("$[0].status").value("OPEN"))
-                .andExpect(jsonPath("$[0].createdAt").value("13-07-2026 12:05"));
+                .andExpect(jsonPath("$[0].createdAt").value("2026-07-13T12:05:00"));
 
         verify(reportService).getAll();
     }
@@ -361,7 +362,7 @@ class BugReportControllerTest {
                 null,
                 EBugStatus.OPEN,
                 EBugSeverity.HIGH,
-                "13-07-2026 12:05");
+                LocalDateTime.of(2026, 7, 13, 12, 5));
     }
 
     private static void authenticate(UUID accountId) {

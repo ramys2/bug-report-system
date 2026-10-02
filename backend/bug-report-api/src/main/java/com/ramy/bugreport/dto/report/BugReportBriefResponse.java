@@ -1,6 +1,6 @@
 package com.ramy.bugreport.dto.report;
 
-import java.time.format.DateTimeFormatter;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import com.ramy.bugreport.domain.BugReport;
@@ -18,7 +18,7 @@ import com.ramy.bugreport.openapi.ApiExamples;
  * @param assignee display name of the assignee; null if unassigned
  * @param status workflow status
  * @param severity severity
- * @param createdAt creation time formatted as {@code dd-MM-yyyy HH:mm} (a string, unlike other timestamps)
+ * @param createdAt creation time (ISO-8601)
  */
 @Schema(description = "A report in the list endpoints (`GET /api/reports`, `/reported`, `/assigned`).")
 public record BugReportBriefResponse(
@@ -34,12 +34,9 @@ public record BugReportBriefResponse(
         EBugStatus status,
         @Schema(description = "Severity.", example = "CRITICAL", requiredMode = Schema.RequiredMode.REQUIRED)
         EBugSeverity severity,
-        @Schema(description = "Creation time formatted as `dd-MM-yyyy HH:mm` (a string, unlike other timestamps).", example = "14-05-2026 09:30", requiredMode = Schema.RequiredMode.REQUIRED)
-        String createdAt
+        @Schema(description = "Creation time (ISO-8601).", example = "2026-05-14T09:30:00", requiredMode = Schema.RequiredMode.REQUIRED)
+        LocalDateTime createdAt
 ) {
-    private static final DateTimeFormatter CREATED_AT_FORMATTER =
-            DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm");
-
     public static BugReportBriefResponse from(
             BugReport report,
             UserAccount reporter,
@@ -52,6 +49,6 @@ public record BugReportBriefResponse(
                 assignee == null ? null : assignee.getName(),
                 report.getStatus(),
                 report.getSeverity(),
-                report.getCreatedAt().format(CREATED_AT_FORMATTER));
+                report.getCreatedAt());
     }
 }

@@ -139,8 +139,7 @@ closed report.`).
 
 ### `GET /api/reports`, `/reported`, `/assigned`
 
-Return a list of brief reports. `assignee` is `null` when unassigned. `createdAt` is a string in
-the format `dd-MM-yyyy HH:mm` (all other timestamps are ISO-8601).
+Return a list of brief reports. `assignee` is `null` when unassigned. `createdAt` is an ISO-8601 timestamp.
 
 ```json
 [
@@ -151,7 +150,7 @@ the format `dd-MM-yyyy HH:mm` (all other timestamps are ISO-8601).
     "assignee": null,
     "status": "OPEN",
     "severity": "LOW",
-    "createdAt": "29-09-2026 11:46"
+    "createdAt": "2026-09-29T11:46:00.123456"
   }
 ]
 ```

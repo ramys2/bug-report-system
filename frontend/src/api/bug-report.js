@@ -15,7 +15,7 @@ import { getCsrfToken } from "./csrf";
  * @property {string|null} assignee display name of the assignee, `null` if unassigned
  * @property {Status} status
  * @property {Severity} severity
- * @property {string} createdAt already formatted as `dd-MM-yyyy HH:mm`
+ * @property {string} createdAt ISO-8601 timestamp
  */
 
 /**
