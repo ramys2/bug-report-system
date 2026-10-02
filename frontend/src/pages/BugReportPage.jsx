@@ -179,24 +179,26 @@ const SEVERITY_OPTIONS = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
 /**
  * Detail-list entry (`<dt>`/`<dd>`) whose value can be changed in place with a select box (assignee, severity, status, project, component).
  * Save calls `updateValue(reportId, selectedValue)` (one of the `PATCH /api/reports/{id}/...` functions). The current option is found by comparing
- * the displayed `value` with each option's label, since the report only carries names, not ids.
+ * `currentValue` with each option's value (not the displayed label, because labels such as names can be duplicated).
  *
  * @param {object} props
  * @param {string} props.label
  * @param {string} props.reportId id of the report being edited
  * @param {string|null} props.value currently displayed label
+ * @param {string|null} props.currentValue option value (e.g. an id) of the current choice; null if nothing is chosen
  * @param {Array} props.options choices to offer
  * @param {(option: any) => string} props.getOptionValue value sent to the backend for an option (e.g. an id)
  * @param {(option: any) => string} props.getOptionLabel text shown for an option
  * @param {string} [props.placeholder] if given, an empty first option is shown and nothing is preselected
  * @param {boolean} [props.isEditable=true] `false` disables editing (used for closed reports)
  * @param {(reportId: string, value: string) => JQuery.jqXHR} props.updateValue api function that saves the choice
- * @param {(label: string) => void} props.onValueSaved called with the label of the saved option
+ * @param {(option: any) => void} props.onValueSaved called with the saved option
  */
 function EditableSelectField({
     label,
     reportId,
     value,
+    currentValue,
     options,
     placeholder,
     getOptionValue,
@@ -211,7 +213,7 @@ function EditableSelectField({
     const isCurrentlyEditing = isEditing && isEditable;
 
     function startEditing() {
-        const selectedOption = options.find((option) => getOptionLabel(option) === value)
+        const selectedOption = options.find((option) => getOptionValue(option) === currentValue)
             ?? (placeholder ? null : options[0]);
         setSelectedOptionValue(selectedOption ? getOptionValue(selectedOption) : "");
         setIsEditing(true);
@@ -234,7 +236,7 @@ function EditableSelectField({
 
         updateValue(reportId, selectedOptionValue)
             .done(() => {
-                onValueSaved(getOptionLabel(selectedOption));
+                onValueSaved(selectedOption);
                 setIsEditing(false);
             })
             .fail(() => showToast("danger", `Unable to update ${label.toLowerCase()}!`, "Update failed"))
@@ -448,14 +450,16 @@ export default function BugReportPage() {
                                             getOptionValue={(developer) => developer.id}
                                             isEditable={!isClosed}
                                             label="Assignee"
-                                            onValueSaved={(assigneeName) => setBugReport((report) => ({
+                                            onValueSaved={(developer) => setBugReport((report) => ({
                                                 ...report,
-                                                assigneeName,
+                                                assigneeId: developer.id,
+                                                assigneeName: developer.name,
                                             }))}
                                             options={developers}
                                             placeholder="Select an assignee"
                                             reportId={bugReport.id}
                                             updateValue={updateAssignee}
+                                            currentValue={bugReport.assigneeId}
                                             value={bugReport.assigneeName}
                                         />
                                         <EditableSelectField
@@ -467,6 +471,7 @@ export default function BugReportPage() {
                                             options={SEVERITY_OPTIONS}
                                             reportId={bugReport.id}
                                             updateValue={updateSeverity}
+                                            currentValue={bugReport.severity}
                                             value={bugReport.severity}
                                         />
                                         <EditableSelectField
@@ -478,6 +483,7 @@ export default function BugReportPage() {
                                             options={STATUS_OPTIONS}
                                             reportId={bugReport.id}
                                             updateValue={updateStatus}
+                                            currentValue={bugReport.status}
                                             value={bugReport.status}
                                         />
                                         <EditableSelectField
@@ -485,13 +491,15 @@ export default function BugReportPage() {
                                             getOptionValue={(project) => project.id}
                                             isEditable={!isClosed}
                                             label="Project"
-                                            onValueSaved={(projectName) => setBugReport((report) => ({
+                                            onValueSaved={(project) => setBugReport((report) => ({
                                                 ...report,
-                                                projectName,
+                                                projectId: project.id,
+                                                projectName: project.name,
                                             }))}
                                             options={projects}
                                             reportId={bugReport.id}
                                             updateValue={updateProject}
+                                            currentValue={bugReport.projectId}
                                             value={bugReport.projectName}
                                         />
                                         <EditableSelectField
@@ -499,13 +507,15 @@ export default function BugReportPage() {
                                             getOptionValue={(component) => component.id}
                                             isEditable={!isClosed}
                                             label="Component"
-                                            onValueSaved={(componentName) => setBugReport((report) => ({
+                                            onValueSaved={(component) => setBugReport((report) => ({
                                                 ...report,
-                                                componentName,
+                                                componentId: component.id,
+                                                componentName: component.name,
                                             }))}
                                             options={components}
                                             reportId={bugReport.id}
                                             updateValue={updateComponent}
+                                            currentValue={bugReport.componentId}
                                             value={bugReport.componentName}
                                         />
                                         <ReportDetail label="Created at" value={formatDateTime(bugReport.createdAt)} />
