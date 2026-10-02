@@ -59,7 +59,6 @@ marked in the code comments and were not confirmed by running the application.
 - `Modal` relies on Bootstrap's own JavaScript instead of React state.
 - `Toast` uses a hard-coded 5-second timeout.
 - `BugReportPage`: the current option of a select field is found by comparing the displayed **name** with option labels (the report response has names, not ids), so duplicate names could select the wrong option.
-- `BugReportPage`: after closing a report, the local state stores the form draft as the resolution (no `id`, no `resolvedAt`) and does not refresh `updatedAt`, until the page is reloaded.
 - `BugReportPage`: adding a comment does not check for blank text in the UI; the backend rejects it and only a generic error toast appears.
 - `BugReportPage`: changing the assignee in the UI does not change the status (same as the backend).
 - The admin pages `ProjectAdminPage` and `ComponentAdminPage` duplicate the inline `EditableName` component and the description-modal logic.

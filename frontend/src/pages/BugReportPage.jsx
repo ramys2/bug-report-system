@@ -412,13 +412,11 @@ export default function BugReportPage() {
 
         closeReport(bugReport.id, resolutionDraft)
             .done(() => {
-                setBugReport((report) => ({
-                    ...report,
-                    resolution: resolutionDraft,
-                    status: "CLOSED",
-                }));
                 setResolutionDraft(EMPTY_RESOLUTION);
                 closeResolutionModal();
+                getReport(bugReport.id)
+                    .done(setBugReport)
+                    .fail(() => showToast("danger", "Issue closed, but the page could not be refreshed. Reload the page.", "Unable to refresh report"));
             })
             .fail(() => showToast("danger", "Unable to close issue!", "Issue not closed"))
             .always(() => setIsClosing(false));
