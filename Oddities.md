@@ -56,7 +56,6 @@ marked in the code comments and were not confirmed by running the application.
 - `api/create-bug-report-options.js` duplicates `getAllProjects` and `getAllComponents`.
 - A failed login is only written to the browser console; the user sees nothing.
 - The "Register" button on the login form does nothing.
-- `BugReportRow` links to a report with a plain `<a href>`, which reloads the whole page instead of using the router.
 - `ProtectedRoute` renders nothing while the session check is running.
 - `Modal` relies on Bootstrap's own JavaScript instead of React state.
 - `Toast` uses a hard-coded 5-second timeout.
