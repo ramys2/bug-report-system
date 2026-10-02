@@ -50,7 +50,6 @@ marked in the code comments and were not confirmed by running the application.
 
 ## Frontend
 
-- `getCsrfToken()` returns `null` fields until the token is loaded, so a write request sent too early would use a header literally named `null`. The token is only loaded after `getCurrentUser` succeeds (or after login).
 - jQuery (`$.ajax`) is used for all requests although `fetch` is available.
 - The api files differ in style (quoted `"url"` keys, missing semicolons in some).
 - `api/create-bug-report-options.js` duplicates `getAllProjects` and `getAllComponents`.
