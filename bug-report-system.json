@@ -55,24 +55,6 @@
           "color": "#d18b35"
         },
         {
-          "id": "task-5e678a68-9f67-41dc-92eb-940ec9114e29",
-          "title": "[Design] Decide how ASSIGNED status and assignment events should work",
-          "description": "Oddities.md > Backend > Behavior.\n- create with an assignee leaves the status OPEN and publishes no event\n- updateAssignee never sets ASSIGNED but publishes an event\n- the UI does not change the status when the assignee changes either\nDecide whether assigning should set ASSIGNED and whether create should notify the assignee.",
-          "color": "#4f78c4"
-        },
-        {
-          "id": "task-fddd36f4-8782-4d1e-9036-afcd82c62665",
-          "title": "[Design] Define status transition rules and skip no-op notifications",
-          "description": "Oddities.md > Backend > Behavior.\nupdateStatus only rejects CLOSED; any other status can be set at any time, and a notification is published even if the status did not change. Decide on allowed transitions (see the lifecycle diagram in the README) and do not email when nothing changed.",
-          "color": "#4f78c4"
-        },
-        {
-          "id": "task-f1dc2d9c-b187-4f64-9d5b-f9ea7908783f",
-          "title": "[Design] Check that a report's component belongs to its project",
-          "description": "Oddities.md > Backend > Behavior.\nupdateComponent does not verify the component belongs to the report's project. The schema has no component -> project link at all, so first decide whether components belong to a project.",
-          "color": "#4f78c4"
-        },
-        {
           "id": "task-f419fe3e-063d-4517-a37a-22f8de3bdbff",
           "title": "[Design] Decide on archiving: implement it or drop archived_at",
           "description": "Oddities.md > Backend > Behavior.\nThe archived_at column exists on user_account, software_project and component, but no entity, mapper or query uses it.",
@@ -91,36 +73,6 @@
           "color": "#d18b35"
         },
         {
-          "id": "task-4469fe38-d23e-4964-af6b-203b635a8770",
-          "title": "[Design] Unify DTO field names",
-          "description": "Oddities.md > Backend > API design.\nUserAccountResponse.username holds the display name (login name is email); ids are named id / userId / reportId; names are username / name / author. Agree on one naming scheme (this changes the API and the frontend).",
-          "color": "#4f78c4"
-        },
-        {
-          "id": "task-67ac976f-147e-4496-bc8b-6375f7cc3584",
-          "title": "[Design] Use one timestamp format in all responses",
-          "description": "Oddities.md > Backend > API design.\nBugReportBriefResponse.createdAt is a formatted string (dd-MM-yyyy HH:mm); every other timestamp is ISO-8601.",
-          "color": "#4f78c4"
-        },
-        {
-          "id": "task-6da89510-51eb-4806-a573-2ba795b28901",
-          "title": "[Design] Make PATCH /api/accounts/{id}/role consistent with other updates",
-          "description": "Oddities.md > Backend > API design.\nIt returns 204 without a body, while the other update endpoints return 200 with {id, message}.",
-          "color": "#4f78c4"
-        },
-        {
-          "id": "task-dc9e8a35-8e0d-4518-979f-3c6cc4506dc4",
-          "title": "[Design] Use one path style for update endpoints",
-          "description": "Oddities.md > Backend > API design.\nComponent uses the camelCase segment /responsibleUserId; report endpoints use kebab-case (/steps-to-reproduce).",
-          "color": "#4f78c4"
-        },
-        {
-          "id": "task-e2af467b-1a20-4338-99ca-16da4dc5b46f",
-          "title": "[Design] Handle failures when publishing events",
-          "description": "Oddities.md > Backend > Messaging.\nBugReportEventPublisher does not catch send failures; the database change is already committed when sending fails. Decide on logging, retry or an outbox.",
-          "color": "#4f78c4"
-        },
-        {
           "id": "task-6cd4000c-f35a-42ca-921d-57f52cc9bbf7",
           "title": "[Design] Decide the future of Attachment",
           "description": "Oddities.md > Backend > Small things.\nAttachment exists only in the domain module (no entity, repository or endpoint); the demo seeding code is commented out. Implement attachments or remove the class.",
@@ -131,54 +83,6 @@
           "title": "[Design] Decide whether to map JPA associations",
           "description": "Oddities.md > Backend > Small things.\nOnly BugReportEntity.resolution is a JPA association; other relations are plain UUID columns with foreign keys only in V1__Base.sql, so services load related rows by hand.",
           "color": "#4f78c4"
-        },
-        {
-          "id": "task-61537eca-f4ef-4b0d-9589-71e3394d3ffc",
-          "title": "[UX] Show a message when login fails",
-          "description": "Oddities.md > Frontend.\nA failed login is only written to the browser console; the user sees nothing. (The Register button is covered by the existing task \"Implement register functionality\".)",
-          "color": "#3a9ab5"
-        },
-        {
-          "id": "task-d1fc99ce-f0be-4ec2-80e1-c6b6dbb14999",
-          "title": "[UX] Show a loading indicator in ProtectedRoute",
-          "description": "Oddities.md > Frontend.\nProtectedRoute renders nothing while the session check is running.",
-          "color": "#3a9ab5"
-        },
-        {
-          "id": "task-4cf5f225-4f7f-44c5-8a6a-07c672292699",
-          "title": "[UX] Check for blank comment text in the UI",
-          "description": "Oddities.md > Frontend > BugReportPage.\nThe backend rejects a blank comment (400) and only a generic error toast appears.",
-          "color": "#3a9ab5"
-        },
-        {
-          "id": "task-280e6da5-309f-411e-b6cf-3ddb81e9ad6f",
-          "title": "[UX] Stop admins from editing their own role in UserAdminPage",
-          "description": "Oddities.md > Frontend.\nAn admin can start editing their own role although the backend refuses it (only a generic toast is shown).",
-          "color": "#3a9ab5"
-        },
-        {
-          "id": "task-846252b7-e180-43ff-863b-ab1163340afc",
-          "title": "[UX] Add a close (X) button to the description modals of the admin pages",
-          "description": "Oddities.md > Frontend.",
-          "color": "#3a9ab5"
-        },
-        {
-          "id": "task-b71d4c09-7f3a-40a7-aac0-dc42f94320bf",
-          "title": "[Infra] Pin Docker image versions",
-          "description": "Oddities.md > Scripts and infrastructure.\ndocker-compose.yml uses the latest tag for mariadb and apache/activemq-artemis (and axllent/mailpit has no tag either), so versions are not pinned.",
-          "color": "#5f6b7a"
-        },
-        {
-          "id": "task-0000f374-181a-443f-be21-dd7dc5cfd5c8",
-          "title": "[Infra] Remove the hard-coded jar name from backend/Dockerfile",
-          "description": "Oddities.md > Scripts and infrastructure.\nThe Dockerfile copies bug-report-api-0.1.0-SNAPSHOT.jar, so changing the version in the pom breaks the image build.",
-          "color": "#5f6b7a"
-        },
-        {
-          "id": "task-3add6583-e139-44c0-8462-c027e13b5d90",
-          "title": "[Infra] Create the bug_report_test database on existing volumes",
-          "description": "Oddities.md > Scripts and infrastructure.\ndatabase/init/01-create-test-database.sql only runs on an empty volume, so an existing volume never gets bug_report_test and the integration tests fail. (README documents a manual command, VERIFIED.)",
-          "color": "#5f6b7a"
         },
         {
           "id": "task-f6c68f8d-329b-429a-9287-49c6e7a95eb3",
@@ -317,12 +221,103 @@
     {
       "id": "column-da59c649-0c7a-4a74-81fa-4780384d990a",
       "name": "In progress",
-      "tasks": []
+      "tasks": [
+        {
+          "id": "task-4469fe38-d23e-4964-af6b-203b635a8770",
+          "title": "[Design] Unify DTO field names",
+          "description": "Oddities.md > Backend > API design.\nUserAccountResponse.username holds the display name (login name is email); ids are named id / userId / reportId; names are username / name / author. Agree on one naming scheme (this changes the API and the frontend).",
+          "color": "#4f78c4"
+        },
+        {
+          "id": "task-dc9e8a35-8e0d-4518-979f-3c6cc4506dc4",
+          "title": "[Design] Use one path style for update endpoints",
+          "description": "Oddities.md > Backend > API design.\nComponent uses the camelCase segment /responsibleUserId; report endpoints use kebab-case (/steps-to-reproduce).",
+          "color": "#4f78c4"
+        },
+        {
+          "id": "task-e2af467b-1a20-4338-99ca-16da4dc5b46f",
+          "title": "[Design] Handle failures when publishing events",
+          "description": "Oddities.md > Backend > Messaging.\nBugReportEventPublisher does not catch send failures; the database change is already committed when sending fails. Decide on logging, retry or an outbox.",
+          "color": "#4f78c4"
+        },
+        {
+          "id": "task-61537eca-f4ef-4b0d-9589-71e3394d3ffc",
+          "title": "[UX] Show a message when login fails",
+          "description": "Oddities.md > Frontend.\nA failed login is only written to the browser console; the user sees nothing. (The Register button is covered by the existing task \"Implement register functionality\".)",
+          "color": "#3a9ab5"
+        },
+        {
+          "id": "task-d1fc99ce-f0be-4ec2-80e1-c6b6dbb14999",
+          "title": "[UX] Show a loading indicator in ProtectedRoute",
+          "description": "Oddities.md > Frontend.\nProtectedRoute renders nothing while the session check is running.",
+          "color": "#3a9ab5"
+        },
+        {
+          "id": "task-280e6da5-309f-411e-b6cf-3ddb81e9ad6f",
+          "title": "[UX] Stop admins from editing their own role in UserAdminPage",
+          "description": "Oddities.md > Frontend.\nAn admin can start editing their own role although the backend refuses it (only a generic toast is shown).",
+          "color": "#3a9ab5"
+        },
+        {
+          "id": "task-4cf5f225-4f7f-44c5-8a6a-07c672292699",
+          "title": "[UX] Check for blank comment text in the UI",
+          "description": "Oddities.md > Frontend > BugReportPage.\nThe backend rejects a blank comment (400) and only a generic error toast appears.",
+          "color": "#3a9ab5"
+        },
+        {
+          "id": "task-846252b7-e180-43ff-863b-ab1163340afc",
+          "title": "[UX] Add a close (X) button to the description modals of the admin pages",
+          "description": "Oddities.md > Frontend.",
+          "color": "#3a9ab5"
+        }
+      ]
     },
     {
       "id": "column-14e7a403-192c-4f53-950b-80997c07901c",
       "name": "Done",
       "tasks": [
+        {
+          "id": "task-b71d4c09-7f3a-40a7-aac0-dc42f94320bf",
+          "title": "[Infra] Pin Docker image versions",
+          "description": "Oddities.md > Scripts and infrastructure.\ndocker-compose.yml uses the latest tag for mariadb and apache/activemq-artemis (and axllent/mailpit has no tag either), so versions are not pinned.",
+          "color": "#5f6b7a"
+        },
+        {
+          "id": "task-0000f374-181a-443f-be21-dd7dc5cfd5c8",
+          "title": "[Infra] Remove the hard-coded jar name from backend/Dockerfile",
+          "description": "Oddities.md > Scripts and infrastructure.\nThe Dockerfile copies bug-report-api-0.1.0-SNAPSHOT.jar, so changing the version in the pom breaks the image build.",
+          "color": "#5f6b7a"
+        },
+        {
+          "id": "task-3add6583-e139-44c0-8462-c027e13b5d90",
+          "title": "[Infra] Create the bug_report_test database on existing volumes",
+          "description": "Oddities.md > Scripts and infrastructure.\ndatabase/init/01-create-test-database.sql only runs on an empty volume, so an existing volume never gets bug_report_test and the integration tests fail. (README documents a manual command, VERIFIED.)",
+          "color": "#5f6b7a"
+        },
+        {
+          "id": "task-f1dc2d9c-b187-4f64-9d5b-f9ea7908783f",
+          "title": "[Design] Check that a report's component belongs to its project",
+          "description": "Oddities.md > Backend > Behavior.\nupdateComponent does not verify the component belongs to the report's project. The schema has no component -> project link at all, so first decide whether components belong to a project.",
+          "color": "#4f78c4"
+        },
+        {
+          "id": "task-5e678a68-9f67-41dc-92eb-940ec9114e29",
+          "title": "[Design] Decide how ASSIGNED status and assignment events should work",
+          "description": "Oddities.md > Backend > Behavior.\n- create with an assignee leaves the status OPEN and publishes no event\n- updateAssignee never sets ASSIGNED but publishes an event\n- the UI does not change the status when the assignee changes either\nDecide whether assigning should set ASSIGNED and whether create should notify the assignee.",
+          "color": "#4f78c4"
+        },
+        {
+          "id": "task-fddd36f4-8782-4d1e-9036-afcd82c62665",
+          "title": "[Design] Define status transition rules and skip no-op notifications",
+          "description": "Oddities.md > Backend > Behavior.\nupdateStatus only rejects CLOSED; any other status can be set at any time, and a notification is published even if the status did not change. Decide on allowed transitions (see the lifecycle diagram in the README) and do not email when nothing changed.",
+          "color": "#4f78c4"
+        },
+        {
+          "id": "task-6da89510-51eb-4806-a573-2ba795b28901",
+          "title": "[Design] Make PATCH /api/accounts/{id}/role consistent with other updates",
+          "description": "Oddities.md > Backend > API design.\nIt returns 204 without a body, while the other update endpoints return 200 with {id, message}.",
+          "color": "#4f78c4"
+        },
         {
           "id": "task-f33b05a6-f294-4247-abcc-333246e22e64",
           "title": "[Bug] Select the current option by id, not by name, in BugReportPage",
@@ -478,6 +473,12 @@
           "title": "[Bug] Fix creating a bug report: updated_at is never set",
           "description": "Oddities.md > Open questions #1.\nVERIFIED: POST /api/reports answers 409 for valid input; backend log shows \"Column 'updated_at' cannot be null\". BugReportService never sets updatedAt on create, but bug_report.updated_at is NOT NULL.\n- set updatedAt on create and on every update\n- add a test that saves through the real database (the mocked service tests do not catch this)",
           "color": "#c4524f"
+        },
+        {
+          "id": "task-67ac976f-147e-4496-bc8b-6375f7cc3584",
+          "title": "[Design] Use one timestamp format in all responses",
+          "description": "Oddities.md > Backend > API design.\nBugReportBriefResponse.createdAt is a formatted string (dd-MM-yyyy HH:mm); every other timestamp is ISO-8601.",
+          "color": "#4f78c4"
         }
       ]
     }
