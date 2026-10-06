@@ -95,6 +95,9 @@
 	</dependencies>
 
 	<build>
+		<!-- Fixed jar name (target/app.jar), so the Dockerfile does not depend on the project version. -->
+		<finalName>app</finalName>
+
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
