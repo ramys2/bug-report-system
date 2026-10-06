@@ -16,6 +16,8 @@ public interface IComponentRepository {
     Optional<Component> findById(UUID id);
     /** Returns all stored component objects, in no guaranteed order. */
     List<Component> findAll();
+    /** Returns the components that belong to the project, in no guaranteed order; empty if there are none. */
+    List<Component> findByProjectId(UUID projectId);
     /**
      * Inserts the object if its id is {@code null}, otherwise updates the stored object with that id.
      *

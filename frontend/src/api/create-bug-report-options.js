@@ -25,14 +25,16 @@ export function getProjects() {
 }
 
 /**
- * `GET /api/components`, reduced to the id and name needed for a select box.
+ * `GET /api/components?projectId=...`: the components of one project, reduced to the id and name needed for a select box.
  *
+ * @param {string} projectId
  * @returns {JQuery.Promise<Array<{id: string, name: string}>>}
  */
-export function getComponents() {
+export function getComponentsByProject(projectId) {
     return $.ajax({
         method: "GET",
-        url: "/api/components"
+        url: "/api/components",
+        data: { projectId }
     }).then(toOptions);
 }
 

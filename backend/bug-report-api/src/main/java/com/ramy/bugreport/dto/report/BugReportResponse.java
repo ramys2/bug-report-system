@@ -21,8 +21,8 @@ import com.ramy.bugreport.openapi.ApiExamples;
  * @param assigneeName display name of the assignee; null if unassigned
  * @param projectId id of the project
  * @param projectName name of the project
- * @param componentId id of the component
- * @param componentName name of the component
+ * @param componentId id of the component; null if the report has no component
+ * @param componentName name of the component; null if the report has no component
  * @param title short summary
  * @param description description; may be null
  * @param stepsToReproduce steps to reproduce; may be null
@@ -48,9 +48,9 @@ public record BugReportResponse(
         UUID projectId,
         @Schema(description = "Name of the project.", example = "Bug Report System", requiredMode = Schema.RequiredMode.REQUIRED)
         String projectName,
-        @Schema(description = "Id of the component.", example = ApiExamples.UUID, requiredMode = Schema.RequiredMode.REQUIRED)
+        @Schema(description = "Id of the component. Null if the report has no component.", example = ApiExamples.UUID)
         UUID componentId,
-        @Schema(description = "Name of the component.", example = "Backend API", requiredMode = Schema.RequiredMode.REQUIRED)
+        @Schema(description = "Name of the component. Null if the report has no component.", example = "Backend API")
         String componentName,
         @Schema(description = "Short summary.", example = "Valid users cannot sign in", requiredMode = Schema.RequiredMode.REQUIRED)
         String title,
@@ -88,8 +88,8 @@ public record BugReportResponse(
             assignee == null ? null : assignee.getName(),
             project.getId(),
             project.getName(),
-            component.getId(),
-            component.getName(),
+            component == null ? null : component.getId(),
+            component == null ? null : component.getName(),
             report.getTitle(),
             report.getDescription(),
             report.getStepsToReproduce(),

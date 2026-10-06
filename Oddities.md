@@ -14,7 +14,6 @@ marked in the code comments and were not confirmed by running the application.
 ## Backend
 
 ### Behavior and business rules
-- `updateComponent` does not check that the component belongs to the report's project.
 - `getDevelopers` loads all accounts and filters them in memory.
 - The `archived_at` column exists on `user_account`, `software_project` and `component`, but no entity, mapper or query uses it. Archiving does not exist in the code.
 - `BugReport`'s builder always starts a report as `OPEN` and cannot set id, status or resolution; `BugReportMapper.toDomain` sets them afterwards.
@@ -48,7 +47,7 @@ marked in the code comments and were not confirmed by running the application.
 
 - jQuery (`$.ajax`) is used for all requests although `fetch` is available.
 - The api files differ in style (quoted `"url"` keys, missing semicolons in some).
-- `api/create-bug-report-options.js` duplicates `getAllProjects` and `getAllComponents`.
+- `api/create-bug-report-options.js` duplicates `getAllProjects`.
 - A failed login is only written to the browser console; the user sees nothing.
 - The "Register" button on the login form does nothing.
 - `ProtectedRoute` renders nothing while the session check is running.
@@ -59,7 +58,7 @@ marked in the code comments and were not confirmed by running the application.
 - `ProjectAdminPage` reads `auth.currentUser.role` without a null check; this is only safe because `ProtectedRoute` guards the page.
 - `UserAdminPage` lets an admin start editing their own role, although the backend refuses it (only a generic toast is shown). It also loads all users and filters and pages them in the browser.
 - The description modals on the admin pages have no close (X) button in the header.
-- `HomePage` and `BugReportPage` load the developers/projects/components lists on mount even if the create form or the select fields are never used.
+- `HomePage` and `BugReportPage` load the developers and projects lists on mount even if the create form or the select fields are never used.
 - The pages use `document.getElementById` together with Bootstrap's `Modal` API to open and close modals, mixing DOM access with React state.
 
 ## Scripts and infrastructure

@@ -33,7 +33,8 @@ public class BugReport {
     private UUID projectId;
 
     /**
-     * Id of the {@link Component} the bug belongs to. Required.
+     * Id of the {@link Component} the bug belongs to. {@code null} means no component.
+     * A component must belong to the report's project; the service layer checks this.
      */
     private UUID componentId;
 
@@ -100,11 +101,11 @@ public class BugReport {
      *
      * @param reporterId id of the reporting user
      * @param projectId id of the project
-     * @param componentId id of the component
+     * @param componentId id of the component; {@code null} for no component
      * @param title short summary
      * @param severity severity of the bug
      * @return a builder for setting the optional fields
-     * @throws NullPointerException if any argument is {@code null}
+     * @throws NullPointerException if any argument except {@code componentId} is {@code null}
      */
     public static Builder builder(UUID reporterId, UUID projectId, UUID componentId, String title, EBugSeverity severity) {
         return new Builder(reporterId, projectId, componentId, title, severity);
@@ -252,7 +253,7 @@ public class BugReport {
         private Builder(UUID reporterId, UUID projectId, UUID componentId, String title, EBugSeverity severity) {
             this.reporterId = Objects.requireNonNull(reporterId, "reporterId is required");
             this.projectId = Objects.requireNonNull(projectId, "projectId is required");
-            this.componentId = Objects.requireNonNull(componentId, "componentId is required");
+            this.componentId = componentId;
             this.title = Objects.requireNonNull(title, "title is required");
             this.severity = Objects.requireNonNull(severity, "severity is required");
         }

@@ -40,6 +40,11 @@ public class ComponentEntity {
     @Column(name = "responsible_user_id", length = 36)
     private UUID responsibleUserId;
 
+    /** Id of the project ({@code software_project}) the component belongs to. Null only for components created before the link existed. */
+    @JdbcTypeCode(SqlTypes.CHAR)
+    @Column(name = "project_id", length = 36)
+    private UUID projectId;
+
     public UUID getId() {
         return id;
     }
@@ -70,5 +75,13 @@ public class ComponentEntity {
 
     public void setResponsibleUserId(UUID responsibleUserId) {
         this.responsibleUserId = responsibleUserId;
+    }
+
+    public UUID getProjectId() {
+        return projectId;
+    }
+
+    public void setProjectId(UUID projectId) {
+        this.projectId = projectId;
     }
 }

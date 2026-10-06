@@ -14,7 +14,7 @@ import com.ramy.bugreport.openapi.ApiExamples;
  *
  * @param assigneeId id of a developer to assign; optional
  * @param projectId id of the project; required
- * @param componentId id of the component; required
+ * @param componentId id of the component, which must belong to the project; optional
  * @param title short summary; required, not blank
  * @param description optional description
  * @param stepsToReproduce optional steps to reproduce
@@ -28,8 +28,8 @@ public record CreateBugReportRequest(
         UUID assigneeId,
         @Schema(description = "Id of the project.", example = ApiExamples.UUID)
         @NotNull UUID projectId,
-        @Schema(description = "Id of the component.", example = ApiExamples.UUID)
-        @NotNull UUID componentId,
+        @Schema(description = "Id of the component. Optional; must belong to the project.", example = ApiExamples.UUID)
+        UUID componentId,
         @Schema(description = "Short summary.", example = "Valid users cannot sign in")
         @NotBlank String title,
         @Schema(description = "Optional description.", example = "The sign-in endpoint returns HTTP 500 for valid credentials.")

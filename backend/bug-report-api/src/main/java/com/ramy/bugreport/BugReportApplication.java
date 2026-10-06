@@ -95,9 +95,9 @@ public class BugReportApplication {
                     "Bug Report System", "Application for reporting and resolving software defects."));
 
             Component api = componentRepository.save(new Component(
-                    "Backend API", "REST API and persistence layer.", backendDeveloper.getId()));
+                    "Backend API", "REST API and persistence layer.", backendDeveloper.getId(), bugTracker.getId()));
             Component web = componentRepository.save(new Component(
-                    "Web Client", "Browser user interface.", frontendDeveloper.getId()));
+                    "Web Client", "Browser user interface.", frontendDeveloper.getId(), bugTracker.getId()));
 
             BugReport loginBug = BugReport.builder(
                             reporter.getId(), bugTracker.getId(), api.getId(),

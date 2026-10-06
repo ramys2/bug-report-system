@@ -48,11 +48,12 @@ Only the role can be changed after construction.
 | `id` | UUID | yes | Primary key. |
 | `name` | string (255) | yes | Display name. |
 | `description` | text | no | Free text. |
-| `responsibleUserId` (`responsible_user_id`) | UUID | yes | Foreign key to `user_account`. |
+| `responsibleUserId` (`responsible_user_id`) | UUID | no | Foreign key to `user_account`. |
+| `projectId` (`project_id`) | UUID | yes (in the API) | Foreign key to `software_project`. The column is nullable only so that components created before it existed survive; the API requires it for new ones. |
 | (`archived_at`) | datetime | no | Unused column. |
 
-A component is not linked to a project in the database; a bug report refers to both a project and
-a component independently.
+A component belongs to one project. A bug report refers to a project and optionally to one of
+that project's components.
 
 ### BugReport (`bug_report`)
 
@@ -62,7 +63,7 @@ a component independently.
 | `reporterId` (`reporter_id`) | UUID | yes | Foreign key to `user_account`: who filed the report. |
 | `assigneeId` (`assignee_id`) | UUID | no | Foreign key to `user_account`: who works on it; `null` while unassigned. |
 | `projectId` (`project_id`) | UUID | yes | Foreign key to `software_project`. |
-| `componentId` (`component_id`) | UUID | yes | Foreign key to `component`. |
+| `componentId` (`component_id`) | UUID | no | Foreign key to `component`; `null` for a report without a component. The component must belong to the report's project; the service checks this. |
 | `title` | string (255) | yes | Short summary. |
 | `description` | text | no | Free text. |
 | `stepsToReproduce` (`steps_to_reproduce`) | text | no | How to reproduce the bug. |
@@ -130,8 +131,10 @@ Enums are stored by name (`VARCHAR(32)`), and each one is also guarded by a `CHE
 
 - A **user** can report many bug reports, be assigned many, and write many comments.
 - A **user** can be responsible for many components (each component has exactly one).
+- A **project** has many components (each component has one project, `null` only for old rows).
 - A **project** and a **component** can each have many bug reports. A report belongs to exactly
-  one of each. The code does not check that the component belongs to the project.
+  one project and has at most one component, which must belong to that project (checked by
+  `BugReportService`). Changing the report's project removes its component.
 - A **bug report** has many comments and at most one resolution (one-to-one, unique
   `resolution_id`).
 
@@ -191,6 +194,7 @@ classDiagram
         String name
         String description
         UUID responsibleUserId
+        UUID projectId
     }
     class BugReport {
         UUID id
@@ -224,6 +228,7 @@ classDiagram
     BugReport ..> SoftwareProject : projectId
     BugReport ..> Component : componentId
     Component ..> UserAccount : responsibleUserId
+    Component ..> SoftwareProject : projectId
     Comment ..> BugReport : bugReportId
     Comment ..> UserAccount : authorId
 ```

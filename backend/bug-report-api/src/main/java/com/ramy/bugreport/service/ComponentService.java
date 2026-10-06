@@ -18,6 +18,7 @@ import com.ramy.bugreport.dto.component.UpdateComponentResponsibleUserRequest;
 import com.ramy.bugreport.dto.component.UpdateComponentResponse;
 import com.ramy.bugreport.exception.ResourceNotFoundException;
 import com.ramy.bugreport.repository.IComponentRepository;
+import com.ramy.bugreport.repository.ISoftwareProjectRepository;
 import com.ramy.bugreport.repository.IUserAccountRepository;
 
 import jakarta.transaction.Transactional;
@@ -27,13 +28,16 @@ import jakarta.transaction.Transactional;
 public class ComponentService {
     private final IComponentRepository componentRepository;
     private final IUserAccountRepository userAccountRepository;
+    private final ISoftwareProjectRepository softwareProjectRepository;
 
     public ComponentService(
             IComponentRepository componentRepository,
-            IUserAccountRepository userAccountRepository
+            IUserAccountRepository userAccountRepository,
+            ISoftwareProjectRepository softwareProjectRepository
     ) {
         this.componentRepository = componentRepository;
         this.userAccountRepository = userAccountRepository;
+        this.softwareProjectRepository = softwareProjectRepository;
     }
 
     /*
@@ -44,9 +48,20 @@ public class ComponentService {
     * ============================================
     */
 
-    /** Returns all components together with their responsible user, which is loaded with one query for all components. */
-    public List<ComponentResponse> getAll() {
-        var components = componentRepository.findAll();
+    /**
+     * Returns the components together with their responsible user, which is loaded with one query for all components.
+     *
+     * @param projectId only components of this project are returned; {@code null} returns all components
+     * @throws ResourceNotFoundException if a project id is given and no such project exists
+     */
+    public List<ComponentResponse> getAll(UUID projectId) {
+        List<Component> components;
+        if (projectId == null) {
+            components = componentRepository.findAll();
+        } else {
+            requireProjectExists(projectId);
+            components = componentRepository.findByProjectId(projectId);
+        }
         var responsibleUserIds = components.stream()
                 .map(Component::getResponsibleUserId)
                 .filter(java.util.Objects::nonNull)
@@ -73,20 +88,22 @@ public class ComponentService {
     /**
      * Creates a component.
      *
-     * <p>The responsible user is optional; if an id is given, the user must exist.
+     * <p>The project must exist. The responsible user is optional; if an id is given, the user must exist.
      *
      * @return the id of the new component
-     * @throws ResourceNotFoundException if a responsible user id is given and no such user exists
+     * @throws ResourceNotFoundException if the project does not exist, or a responsible user id is given and no such user exists
      */
     @Transactional
     public CreateComponentResponse create(CreateComponentRequest request) {
+        requireProjectExists(request.projectId());
         if (request.responsibleUserId() != null) {
             requireUserExists(request.responsibleUserId());
         }
         Component component = new Component(
                 request.name(),
                 request.description(),
-                request.responsibleUserId());
+                request.responsibleUserId(),
+                request.projectId());
         component = componentRepository.save(component);
 
         return new CreateComponentResponse(component.getId(), "Successfully created!");
@@ -150,6 +167,12 @@ public class ComponentService {
         return componentRepository.findById(componentId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Component with id=%s does not exist!".formatted(componentId)));
+    }
+
+    private void requireProjectExists(UUID projectId) {
+        if (!softwareProjectRepository.existsById(projectId)) {
+            throw new ResourceNotFoundException("Project with id=%s does not exist!".formatted(projectId));
+        }
     }
 
     private void requireUserExists(UUID userId) {

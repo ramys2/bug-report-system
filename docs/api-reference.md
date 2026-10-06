@@ -159,7 +159,7 @@ Return a list of brief reports. `assignee` is `null` when unassigned. `createdAt
 ### `GET /api/reports/{reportId}`
 
 Returns the full report with names instead of ids. `resolution` is `null` until the report is
-closed. Answers 404 if the report does not exist and 400 if the id is not a UUID.
+closed. `componentId` and `componentName` are `null` if the report has no component. Answers 404 if the report does not exist and 400 if the id is not a UUID.
 
 ```json
 {
@@ -194,7 +194,7 @@ Files a report as the signed-in user; the status starts as `OPEN`, or `ASSIGNED`
 | Field | Required | Notes |
 | --- | --- | --- |
 | `projectId` | yes | UUID of an existing project (404 otherwise) |
-| `componentId` | yes | UUID of an existing component (404 otherwise) |
+| `componentId` | no | UUID of an existing component of the chosen project (404 if unknown, 409 if it belongs to another project) |
 | `title` | yes | Not blank |
 | `severity` | yes | `LOW`, `MEDIUM`, `HIGH` or `CRITICAL` |
 | `assigneeId` | no | Must be a user with the `DEVELOPER` role (409 otherwise) |
@@ -275,15 +275,15 @@ Errors: 404 (no such report), 409 (`Report is already closed and cannot be reope
 
 ### `PATCH /api/reports/{reportId}/...`
 
-Request bodies (all fields required; text fields may be empty but not `null`):
+Request bodies (all fields required, except `componentId`, which may be `null`; text fields may be empty but not `null`):
 
 | Path segment | Body |
 | --- | --- |
 | `assignee` | `{"assigneeId": "<developer id>"}`; 409 if the user is not a developer, 404 if unknown; an `OPEN` report becomes `ASSIGNED` |
 | `severity` | `{"severity": "LOW"}` |
 | `status` | `{"status": "IN_PROGRESS"}`; 409 for `CLOSED` (`Use the resolution endpoint to close a report.`), for `ASSIGNED` (`Use the assignee endpoint to assign a report.`) and for a change the lifecycle does not allow; see `GET /api/reports/status-transitions` |
-| `project` | `{"projectId": "<id>"}`; 404 if unknown |
-| `component` | `{"componentId": "<id>"}`; 404 if unknown (not checked against the report's project) |
+| `project` | `{"projectId": "<id>"}`; 404 if unknown. If the project changes, the report's component is removed |
+| `component` | `{"componentId": "<id>"}`; 404 if unknown, 409 if the component does not belong to the report's project. `{"componentId": null}` removes the component |
 | `description` | `{"description": "..."}` |
 | `steps-to-reproduce` | `{"stepsToReproduce": "..."}` |
 | `expected-behavior` | `{"expectedBehavior": "..."}` |
@@ -368,7 +368,7 @@ answer 200 with `{"id": "...", "message": "Project updated successfully!"}`.
 
 | Method | Path | Purpose | Access |
 | --- | --- | --- | --- |
-| GET | `/api/components` | All components | Signed in |
+| GET | `/api/components` | All components, or those of one project with `?projectId=` | Signed in |
 | POST | `/api/components` | Create a component | Admin or developer |
 | PATCH | `/api/components/{componentId}/name` | Rename | Admin or developer |
 | PATCH | `/api/components/{componentId}/description` | Replace the description | Admin or developer |
@@ -385,20 +385,25 @@ endpoints.
     "id": "f3065c82-1632-439f-b51c-a84c8fc0a2b8",
     "name": "Backend API",
     "description": "REST API and persistence layer.",
-    "responsibleUserName": "Daniel Developer"
+    "responsibleUserName": "Daniel Developer",
+    "projectId": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
   }
 ]
 ```
 
+`GET /api/components?projectId=<id>` lists only the components of that project and answers 404 if
+the project does not exist. `projectId` in the response is `null` for components created before
+components were linked to projects.
+
 `POST` body:
 
 ```json
-{ "name": "Push Notifications", "description": "Push service.", "responsibleUserId": "8afb36ab-36d0-46ea-b0bb-a673d8fbff46" }
+{ "name": "Push Notifications", "projectId": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "description": "Push service.", "responsibleUserId": "8afb36ab-36d0-46ea-b0bb-a673d8fbff46" }
 ```
 
-Answers 201 with `{"id": "...", "message": "Successfully created!"}`. Only `name` (not blank) is
-validated. `responsibleUserId` is checked only by the database: a missing or unknown user
-answers **409** `Request conflicts with existing data.` (verified). `PATCH` bodies are
+Answers 201 with `{"id": "...", "message": "Successfully created!"}`. `name` (not blank) and
+`projectId` are required; an unknown project answers 404. `responsibleUserId` is checked by the
+service: an unknown user answers 404. `PATCH` bodies are
 `{"name": "..."}`, `{"description": "..."}` and `{"responsibleUserId": "<id>"}`; they answer 200
 with `{"id": "...", "message": "Component updated successfully!"}`, or 404 for an unknown
 component.

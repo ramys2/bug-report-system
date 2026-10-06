@@ -85,7 +85,17 @@ class PersistenceIntegrationTest {
         reporter = users.save(new UserAccount("Reporter", "reporter@example.com", "hash", EUserRole.REPORTER));
         developer = users.save(new UserAccount("Developer", "developer@example.com", "hash", EUserRole.DEVELOPER));
         project = projects.save(new SoftwareProject("Project", "Project description"));
-        component = components.save(new Component("API", "Component description", developer.getId()));
+        component = components.save(new Component("API", "Component description", developer.getId(), project.getId()));
+    }
+
+    @Test
+    void componentsAreFoundByProject() {
+        var otherProject = projects.save(new SoftwareProject("Other", null));
+        components.save(new Component("Other", null, developer.getId(), otherProject.getId()));
+
+        assertThat(components.findByProjectId(project.getId()))
+                .usingRecursiveFieldByFieldElementComparator().containsExactly(component);
+        assertThat(components.findByProjectId(UUID.randomUUID())).isEmpty();
     }
 
     @Test
@@ -138,12 +148,13 @@ class PersistenceIntegrationTest {
         assertThat(reports.findById(report.getId()).orElseThrow())
                 .usingRecursiveComparison().isEqualTo(report);
         var otherProject = projects.save(new SoftwareProject("Other", null));
-        var otherComponent = components.save(new Component("Other", null, developer.getId()));
+        var otherComponent = components.save(new Component("Other", null, developer.getId(), otherProject.getId()));
 
         reportService.updateAssignee(report.getId(), new UpdateAssigneeRequest(developer.getId()));
         reportService.updateSeverity(report.getId(), new UpdateSeverityRequest(EBugSeverity.CRITICAL));
         reportService.updateStatus(report.getId(), new UpdateStatusRequest(EBugStatus.IN_PROGRESS));
         reportService.updateProject(report.getId(), new UpdateProjectRequest(otherProject.getId()));
+        assertThat(reports.findById(report.getId()).orElseThrow().getComponentId()).isNull();
         reportService.updateComponent(report.getId(), new UpdateComponentRequest(otherComponent.getId()));
         reportService.updateDescription(report.getId(), new UpdateDescriptionRequest("Updated description"));
         reportService.updateStepsToReproduce(report.getId(), new UpdateStepsToReproduceRequest("Updated steps"));

@@ -29,17 +29,24 @@ public class Component {
     private UUID responsibleUserId;
 
     /**
+     * Id of the {@link SoftwareProject} this component belongs to. New components always have one;
+     * it is {@code null} only for components created before the link existed.
+     */
+    private UUID projectId;
+
+    /**
      * Creates a new, not yet saved component ({@code id} is {@code null}).
      */
-    public Component(String name, String description, UUID responsibleUserId) {
-        this(null, name, description, responsibleUserId);
+    public Component(String name, String description, UUID responsibleUserId, UUID projectId) {
+        this(null, name, description, responsibleUserId, projectId);
     }
 
-    public Component(UUID id, String name, String description, UUID responsibleUserId) {
+    public Component(UUID id, String name, String description, UUID responsibleUserId, UUID projectId) {
         this.id = id;
         this.name = name;
         this.description = description;
         this.responsibleUserId = responsibleUserId;
+        this.projectId = projectId;
     }
 
     public UUID  getId() {
@@ -68,6 +75,10 @@ public class Component {
 
     public void setResponsibleUserId(UUID responsibleUserId) {
         this.responsibleUserId = responsibleUserId;
+    }
+
+    public UUID getProjectId() {
+        return projectId;
     }
 
 }

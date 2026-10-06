@@ -20,6 +20,7 @@ public final class ComponentMapper {
         entity.setName(domain.getName());
         entity.setDescription(domain.getDescription());
         entity.setResponsibleUserId(domain.getResponsibleUserId());
+        entity.setProjectId(domain.getProjectId());
         return entity;
     }
 
@@ -27,6 +28,7 @@ public final class ComponentMapper {
         if (entity == null) {
             return null;
         }
-        return new Component(entity.getId(), entity.getName(), entity.getDescription(), entity.getResponsibleUserId());
+        return new Component(entity.getId(), entity.getName(), entity.getDescription(),
+                entity.getResponsibleUserId(), entity.getProjectId());
     }
 }
