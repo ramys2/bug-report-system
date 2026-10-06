@@ -168,6 +168,25 @@ class BugReportServiceTest {
     }
 
     @Test
+    void getReportReturnsNullComponentWhenReportHasNone() {
+        var report = report(UUID.randomUUID());
+        report.setComponentId(null);
+        var reporter = namedUser("Joe Reporter");
+        var assignee = namedUser("Joe Developer");
+        var project = project("Bug Report");
+        when(bugReportRepository.findById(report.getId())).thenReturn(Optional.of(report));
+        when(userAccountRepository.findById(report.getReporterId())).thenReturn(Optional.of(reporter));
+        when(userAccountRepository.findById(report.getAssigneeId())).thenReturn(Optional.of(assignee));
+        when(softwareProjectRepository.findById(report.getProjectId())).thenReturn(Optional.of(project));
+
+        var result = service.getReport(report.getId());
+
+        assertThat(result.componentId()).isNull();
+        assertThat(result.componentName()).isNull();
+        verifyNoInteractions(componentRepository);
+    }
+
+    @Test
     void getReportThrowsWhenReportDoesNotExist() {
         var reportId = UUID.randomUUID();
         when(bugReportRepository.findById(reportId)).thenReturn(Optional.empty());
@@ -210,7 +229,8 @@ class BugReportServiceTest {
         var savedId = UUID.randomUUID();
         when(userAccountRepository.existsById(reporterId)).thenReturn(true);
         when(softwareProjectRepository.existsById(request.projectId())).thenReturn(true);
-        when(componentRepository.existsById(request.componentId())).thenReturn(true);
+        var component = componentOfProject(request.projectId());
+        when(componentRepository.findById(request.componentId())).thenReturn(Optional.of(component));
         var developer = mock(UserAccount.class);
         when(developer.getRole()).thenReturn(EUserRole.DEVELOPER);
         when(userAccountRepository.findById(request.assigneeId())).thenReturn(Optional.of(developer));
@@ -226,7 +246,7 @@ class BugReportServiceTest {
         var reportCaptor = ArgumentCaptor.forClass(BugReport.class);
         verify(userAccountRepository).existsById(reporterId);
         verify(softwareProjectRepository).existsById(request.projectId());
-        verify(componentRepository).existsById(request.componentId());
+        verify(componentRepository).findById(request.componentId());
         verify(bugReportRepository).save(reportCaptor.capture());
         var savedReport = reportCaptor.getValue();
         assertThat(savedReport.getReporterId()).isEqualTo(reporterId);
@@ -280,15 +300,48 @@ class BugReportServiceTest {
         var reporterId = UUID.randomUUID();
         when(userAccountRepository.existsById(reporterId)).thenReturn(true);
         when(softwareProjectRepository.existsById(request.projectId())).thenReturn(true);
-        when(componentRepository.existsById(request.componentId())).thenReturn(false);
+        when(componentRepository.findById(request.componentId())).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.create(reporterId, request))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Component with id=%s does not exist!".formatted(request.componentId()));
         verify(userAccountRepository).existsById(reporterId);
         verify(softwareProjectRepository).existsById(request.projectId());
-        verify(componentRepository).existsById(request.componentId());
+        verify(componentRepository).findById(request.componentId());
         verify(bugReportRepository, never()).save(any());
+    }
+
+    @Test
+    void createThrowsWhenComponentBelongsToAnotherProject() {
+        var request = createRequest();
+        var reporterId = UUID.randomUUID();
+        when(userAccountRepository.existsById(reporterId)).thenReturn(true);
+        when(softwareProjectRepository.existsById(request.projectId())).thenReturn(true);
+        var component = componentOfProject(UUID.randomUUID());
+        when(componentRepository.findById(request.componentId())).thenReturn(Optional.of(component));
+
+        assertThatThrownBy(() -> service.create(reporterId, request))
+                .isInstanceOf(BusinessRuleConflictException.class)
+                .hasMessage("Component with id=%s does not belong to project with id=%s."
+                        .formatted(request.componentId(), request.projectId()));
+        verify(bugReportRepository, never()).save(any());
+    }
+
+    @Test
+    void createAllowsReportWithoutComponent() {
+        var request = new CreateBugReportRequest(
+                null, UUID.randomUUID(), null, "Application crashes", null, null, null, null, EBugSeverity.HIGH);
+        var reporterId = UUID.randomUUID();
+        when(userAccountRepository.existsById(reporterId)).thenReturn(true);
+        when(softwareProjectRepository.existsById(request.projectId())).thenReturn(true);
+        when(bugReportRepository.save(any(BugReport.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        service.create(reporterId, request);
+
+        var reportCaptor = ArgumentCaptor.forClass(BugReport.class);
+        verify(bugReportRepository).save(reportCaptor.capture());
+        assertThat(reportCaptor.getValue().getComponentId()).isNull();
+        verifyNoInteractions(componentRepository);
     }
 
     @Test
@@ -467,7 +520,7 @@ class BugReportServiceTest {
     }
 
     @Test
-    void updateProjectChangesProjectAfterValidatingProject() {
+    void updateProjectChangesProjectAndRemovesComponentAfterValidatingProject() {
         var report = report(UUID.randomUUID());
         var projectId = UUID.randomUUID();
         var request = new UpdateProjectRequest(projectId);
@@ -477,23 +530,82 @@ class BugReportServiceTest {
         var result = service.updateProject(report.getId(), request);
 
         assertThat(report.getProjectId()).isEqualTo(projectId);
+        assertThat(report.getComponentId()).isNull();
         assertUpdateResponse(result, report);
         verify(softwareProjectRepository).existsById(projectId);
     }
 
     @Test
-    void updateComponentChangesComponentAfterValidatingComponent() {
+    void updateProjectKeepsComponentWhenProjectIsUnchanged() {
+        var report = report(UUID.randomUUID());
+        var componentId = report.getComponentId();
+        var request = new UpdateProjectRequest(report.getProjectId());
+        when(bugReportRepository.findById(report.getId())).thenReturn(Optional.of(report));
+        when(softwareProjectRepository.existsById(report.getProjectId())).thenReturn(true);
+
+        service.updateProject(report.getId(), request);
+
+        assertThat(report.getComponentId()).isEqualTo(componentId);
+    }
+
+    @Test
+    void updateComponentChangesComponentAfterValidatingItBelongsToTheReportsProject() {
         var report = report(UUID.randomUUID());
         var componentId = UUID.randomUUID();
         var request = new UpdateComponentRequest(componentId);
         when(bugReportRepository.findById(report.getId())).thenReturn(Optional.of(report));
-        when(componentRepository.existsById(componentId)).thenReturn(true);
+        var component = componentOfProject(report.getProjectId());
+        when(componentRepository.findById(componentId)).thenReturn(Optional.of(component));
 
         var result = service.updateComponent(report.getId(), request);
 
         assertThat(report.getComponentId()).isEqualTo(componentId);
         assertUpdateResponse(result, report);
-        verify(componentRepository).existsById(componentId);
+        verify(componentRepository).findById(componentId);
+    }
+
+    @Test
+    void updateComponentRemovesComponentWhenIdIsNull() {
+        var report = report(UUID.randomUUID());
+        when(bugReportRepository.findById(report.getId())).thenReturn(Optional.of(report));
+
+        var result = service.updateComponent(report.getId(), new UpdateComponentRequest(null));
+
+        assertThat(report.getComponentId()).isNull();
+        assertUpdateResponse(result, report);
+        verifyNoInteractions(componentRepository);
+    }
+
+    @Test
+    void updateComponentThrowsWhenComponentDoesNotExist() {
+        var report = report(UUID.randomUUID());
+        var componentId = UUID.randomUUID();
+        var originalComponentId = report.getComponentId();
+        when(bugReportRepository.findById(report.getId())).thenReturn(Optional.of(report));
+        when(componentRepository.findById(componentId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.updateComponent(report.getId(), new UpdateComponentRequest(componentId)))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessage("Component with id=%s does not exist!".formatted(componentId));
+        assertThat(report.getComponentId()).isEqualTo(originalComponentId);
+        verify(bugReportRepository, never()).save(any());
+    }
+
+    @Test
+    void updateComponentThrowsWhenComponentBelongsToAnotherProject() {
+        var report = report(UUID.randomUUID());
+        var componentId = UUID.randomUUID();
+        var originalComponentId = report.getComponentId();
+        when(bugReportRepository.findById(report.getId())).thenReturn(Optional.of(report));
+        var component = componentOfProject(UUID.randomUUID());
+        when(componentRepository.findById(componentId)).thenReturn(Optional.of(component));
+
+        assertThatThrownBy(() -> service.updateComponent(report.getId(), new UpdateComponentRequest(componentId)))
+                .isInstanceOf(BusinessRuleConflictException.class)
+                .hasMessage("Component with id=%s does not belong to project with id=%s."
+                        .formatted(componentId, report.getProjectId()));
+        assertThat(report.getComponentId()).isEqualTo(originalComponentId);
+        verify(bugReportRepository, never()).save(any());
     }
 
     @Test
@@ -588,19 +700,6 @@ class BugReportServiceTest {
     }
 
     @Test
-    void updateComponentThrowsWhenComponentDoesNotExist() {
-        var report = report(UUID.randomUUID());
-        var componentId = UUID.randomUUID();
-        when(bugReportRepository.findById(report.getId())).thenReturn(Optional.of(report));
-        when(componentRepository.existsById(componentId)).thenReturn(false);
-
-        assertThatThrownBy(() -> service.updateComponent(report.getId(), new UpdateComponentRequest(componentId)))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessage("Component with id=%s does not exist!".formatted(componentId));
-        verify(bugReportRepository, never()).save(any());
-    }
-
-    @Test
     void updateSeverityThrowsWhenReportDoesNotExist() {
         var reportId = UUID.randomUUID();
         var request = new UpdateSeverityRequest(EBugSeverity.LOW);
@@ -678,6 +777,12 @@ class BugReportServiceTest {
         var project = mock(SoftwareProject.class);
         when(project.getName()).thenReturn(name);
         return project;
+    }
+
+    private static Component componentOfProject(UUID projectId) {
+        var component = mock(Component.class);
+        when(component.getProjectId()).thenReturn(projectId);
+        return component;
     }
 
     private static Component component(String name) {

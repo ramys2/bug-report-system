@@ -244,6 +244,7 @@ class BugReportControllerTest {
         when(reportService.updateStatus(reportId, statusRequest)).thenReturn(response);
         when(reportService.updateProject(reportId, projectRequest)).thenReturn(response);
         when(reportService.updateComponent(reportId, componentRequest)).thenReturn(response);
+        when(reportService.updateComponent(reportId, new UpdateComponentRequest(null))).thenReturn(response);
         when(reportService.updateDescription(reportId, descriptionRequest)).thenReturn(response);
         when(reportService.updateStepsToReproduce(reportId, stepsRequest)).thenReturn(response);
         when(reportService.updateExpectedBehavior(reportId, expectedRequest)).thenReturn(response);
@@ -272,6 +273,10 @@ class BugReportControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"componentId\":\"%s\"}".formatted(componentId)))
                 .andExpect(status().isOk());
+        mockMvc.perform(patch("/api/reports/{reportId}/component", reportId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"componentId\":null}"))
+                .andExpect(status().isOk());
         mockMvc.perform(patch("/api/reports/{reportId}/description", reportId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"description\":\"Updated description\"}"))
@@ -294,6 +299,7 @@ class BugReportControllerTest {
         verify(reportService).updateStatus(reportId, statusRequest);
         verify(reportService).updateProject(reportId, projectRequest);
         verify(reportService).updateComponent(reportId, componentRequest);
+        verify(reportService).updateComponent(reportId, new UpdateComponentRequest(null));
         verify(reportService).updateDescription(reportId, descriptionRequest);
         verify(reportService).updateStepsToReproduce(reportId, stepsRequest);
         verify(reportService).updateExpectedBehavior(reportId, expectedRequest);

@@ -55,9 +55,9 @@ public class BugReportEntity {
     @Column(name = "project_id", nullable = false, length = 36)
     private UUID projectId;
 
-    /** Id of the {@code component}. Not null. */
+    /** Id of the {@code component}. Null if the report has no component. */
     @JdbcTypeCode(SqlTypes.CHAR)
-    @Column(name = "component_id", nullable = false, length = 36)
+    @Column(name = "component_id", length = 36)
     private UUID componentId;
 
     /** Short summary. Not null, up to 255 characters. */

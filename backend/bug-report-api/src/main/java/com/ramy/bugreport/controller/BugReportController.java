@@ -184,13 +184,13 @@ public class BugReportController {
      *
      * <p>Access: any signed-in user.
      *
-     * @param request body {@code {projectId, componentId, title, severity}} are required (title must not be blank);
-     *         {@code assigneeId, description, stepsToReproduce, expectedBehavior, actualBehavior} are optional
+     * @param request body {@code {projectId, title, severity}} are required (title must not be blank);
+     *         {@code componentId, assigneeId, description, stepsToReproduce, expectedBehavior, actualBehavior} are optional
      * @return 201 with {@code {id, message}}
      * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the project or component does not exist
-     * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if {@code assigneeId} is not a developer
+     * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if the component does not belong to the project or {@code assigneeId} is not a developer
      */
-    @Operation(summary = "Create a bug report", description = "Files a new report as the signed-in user. The report starts with status `OPEN`. Returns 404 if the project or component does not exist and 409 if `assigneeId` is not a developer. Access: any signed-in user.")
+    @Operation(summary = "Create a bug report", description = "Files a new report as the signed-in user. The report starts with status `OPEN`. `componentId` is optional. Returns 404 if the project or component does not exist and 409 if the component does not belong to the project or `assigneeId` is not a developer. Access: any signed-in user.")
     @ApiResponse(responseCode = "201", description = "Report created.")
     @BadRequestResponse
     @UnauthorizedResponse
@@ -326,7 +326,7 @@ public class BugReportController {
     }
 
     /**
-     * {@code PATCH /api/reports/{reportId}/project}: Moves the report to another project.
+     * {@code PATCH /api/reports/{reportId}/project}: Moves the report to another project. If the project changes, the report's component is removed.
      *
      * <p>Access: signed-in user; the service further requires the ADMIN role, or being the report's reporter or assignee.
      *
@@ -336,7 +336,7 @@ public class BugReportController {
      * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the report, or the project, does not exist
      * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if the report is closed
      */
-    @Operation(summary = "Move the report to another project", description = "Returns 409 if the report is closed. Access: signed-in user; the service further requires the ADMIN role, or being the report's reporter or assignee.")
+    @Operation(summary = "Move the report to another project", description = "If the project changes, the report's component is removed. Returns 409 if the report is closed. Access: signed-in user; the service further requires the ADMIN role, or being the report's reporter or assignee.")
     @ApiResponse(responseCode = "200", description = "Project changed.")
     @BadRequestResponse
     @UnauthorizedResponse
@@ -352,17 +352,17 @@ public class BugReportController {
     }
 
     /**
-     * {@code PATCH /api/reports/{reportId}/component}: Moves the report to another component (not checked against the report's project).
+     * {@code PATCH /api/reports/{reportId}/component}: Moves the report to another component of its project, or removes the component.
      *
      * <p>Access: signed-in user; the service further requires the ADMIN role, or being the report's reporter or assignee.
      *
      * @param reportId id of the report
-     * @param request body {@code componentId}; required
+     * @param request body {@code componentId}; {@code null} removes the component
      * @return 200 with the report id and a confirmation message
      * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the report, or the component, does not exist
-     * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if the report is closed
+     * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if the report is closed or the component does not belong to the report's project
      */
-    @Operation(summary = "Move the report to another component", description = "The component is not checked against the report's project. Returns 409 if the report is closed. Access: signed-in user; the service further requires the ADMIN role, or being the report's reporter or assignee.")
+    @Operation(summary = "Move the report to another component", description = "The component must belong to the report's project; a null `componentId` removes the component. Returns 409 if the report is closed or the component belongs to another project. Access: signed-in user; the service further requires the ADMIN role, or being the report's reporter or assignee.")
     @ApiResponse(responseCode = "200", description = "Component changed.")
     @BadRequestResponse
     @UnauthorizedResponse

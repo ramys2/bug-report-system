@@ -114,7 +114,7 @@ public class BugReportService {
     }
 
     /**
-     * Returns the full detail of one report, including its reporter, assignee, project and component.
+     * Returns the full detail of one report, including its reporter, assignee, project and component (if it has one).
      *
      * @param reportId id of the report
      * @throws ResourceNotFoundException if the report, or any user, project or component it refers to, does not exist
@@ -134,9 +134,11 @@ public class BugReportService {
         var project = softwareProjectRepository.findById(report.getProjectId())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Project with id=%s does not exist!".formatted(report.getProjectId())));
-        var component = componentRepository.findById(report.getComponentId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Component with id=%s does not exist!".formatted(report.getComponentId())));
+        var component = report.getComponentId() == null
+                ? null
+                : componentRepository.findById(report.getComponentId())
+                        .orElseThrow(() -> new ResourceNotFoundException(
+                                "Component with id=%s does not exist!".formatted(report.getComponentId())));
 
         return BugReportResponse.from(report, reporter, assignee, project, component);
     }
@@ -203,10 +205,10 @@ public class BugReportService {
      * In that case an {@link com.ramy.bugreport.messaging.event.AssigneeChangedEvent} is published to the assignee.
      *
      * @param reporterId id of the user filing the report
-     * @param request the report data; project, component, title and severity are required
+     * @param request the report data; project, title and severity are required, the component is optional
      * @return the id of the new report
      * @throws ResourceNotFoundException if the reporter, project or component does not exist
-     * @throws BusinessRuleConflictException if an assignee is given who is not a developer
+     * @throws BusinessRuleConflictException if the component does not belong to the project, or an assignee is given who is not a developer
      */
     @Transactional
     public CreateBugReportResponse create(UUID reporterId, CreateBugReportRequest request) {
@@ -227,11 +229,7 @@ public class BugReportService {
             );
         }
     
-        if (!componentRepository.existsById(componentId)) {
-            throw new ResourceNotFoundException(
-                    "Component with id=%s does not exist!".formatted(componentId)
-            );
-        }
+        requireComponentInProject(componentId, projectId);
 
         UserAccount assignee = null;
         if (request.assigneeId() != null) {
@@ -435,7 +433,8 @@ public class BugReportService {
     }
 
     /**
-     * Moves the report to another project.
+     * Moves the report to another project. If the project changes, the report's component is removed,
+     * because it belongs to the old project.
      *
      * <p>Requires the ADMIN role, or the caller being the report's reporter or assignee
      * (checked by {@code BugReportAuthorizer.canUpdate}); otherwise access is denied.
@@ -457,23 +456,25 @@ public class BugReportService {
             throw new ResourceNotFoundException("Project with id=%s does not exist!".formatted(projectId));
         }
 
-        report.setProjectId(projectId);
+        if (!projectId.equals(report.getProjectId())) {
+            report.setProjectId(projectId);
+            report.setComponentId(null);
+        }
         saveUpdated(report);
         return updateResponse(report);
     }
 
     /**
-     * Moves the report to another component.
-     * The component is not checked against the report's project.
+     * Moves the report to another component of the report's project, or removes the component.
      *
      * <p>Requires the ADMIN role, or the caller being the report's reporter or assignee
      * (checked by {@code BugReportAuthorizer.canUpdate}); otherwise access is denied.
      *
      * @param reportId id of the report to change
-     * @param request the new value
+     * @param request the new value; a {@code null} component id removes the component
      * @return confirmation containing the report id
      * @throws ResourceNotFoundException if the report or the component does not exist
-     * @throws BusinessRuleConflictException if the report is already closed
+     * @throws BusinessRuleConflictException if the report is already closed, or the component does not belong to the report's project
      */
     @Transactional
     @PreAuthorize(
@@ -482,9 +483,7 @@ public class BugReportService {
     public UpdateBugReportResponse updateComponent(UUID reportId, UpdateComponentRequest request) {
         var report = reportById(reportId);
         var componentId = request.componentId();
-        if (!componentRepository.existsById(componentId)) {
-            throw new ResourceNotFoundException("Component with id=%s does not exist!".formatted(componentId));
-        }
+        requireComponentInProject(componentId, report.getProjectId());
 
         report.setComponentId(componentId);
         saveUpdated(report);
@@ -602,6 +601,26 @@ public class BugReportService {
         }
 
         return report;
+    }
+
+    /**
+     * Checks that the component exists and belongs to the project. Does nothing if {@code componentId} is {@code null}
+     * (a report may have no component). A component without a project (created before components were linked to projects) never matches.
+     *
+     * @throws ResourceNotFoundException if the component does not exist
+     * @throws BusinessRuleConflictException if the component belongs to another project
+     */
+    private void requireComponentInProject(UUID componentId, UUID projectId) {
+        if (componentId == null) {
+            return;
+        }
+        var component = componentRepository.findById(componentId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Component with id=%s does not exist!".formatted(componentId)));
+        if (!projectId.equals(component.getProjectId())) {
+            throw new BusinessRuleConflictException(
+                    "Component with id=%s does not belong to project with id=%s.".formatted(componentId, projectId));
+        }
     }
 
     /** Sets {@code updatedAt} to the current time and saves the report. */

@@ -52,8 +52,8 @@ Only the role can be changed after construction.
 | `projectId` (`project_id`) | UUID | yes (in the API) | Foreign key to `software_project`. The column is nullable only so that components created before it existed survive; the API requires it for new ones. |
 | (`archived_at`) | datetime | no | Unused column. |
 
-A component belongs to one project. A bug report still refers to its project and its component
-independently; the code does not yet check that they match.
+A component belongs to one project. A bug report refers to a project and optionally to one of
+that project's components.
 
 ### BugReport (`bug_report`)
 
@@ -63,7 +63,7 @@ independently; the code does not yet check that they match.
 | `reporterId` (`reporter_id`) | UUID | yes | Foreign key to `user_account`: who filed the report. |
 | `assigneeId` (`assignee_id`) | UUID | no | Foreign key to `user_account`: who works on it; `null` while unassigned. |
 | `projectId` (`project_id`) | UUID | yes | Foreign key to `software_project`. |
-| `componentId` (`component_id`) | UUID | yes | Foreign key to `component`. |
+| `componentId` (`component_id`) | UUID | no | Foreign key to `component`; `null` for a report without a component. The component must belong to the report's project; the service checks this. |
 | `title` | string (255) | yes | Short summary. |
 | `description` | text | no | Free text. |
 | `stepsToReproduce` (`steps_to_reproduce`) | text | no | How to reproduce the bug. |
@@ -133,7 +133,8 @@ Enums are stored by name (`VARCHAR(32)`), and each one is also guarded by a `CHE
 - A **user** can be responsible for many components (each component has exactly one).
 - A **project** has many components (each component has one project, `null` only for old rows).
 - A **project** and a **component** can each have many bug reports. A report belongs to exactly
-  one of each. The code does not check that the component belongs to the project.
+  one project and has at most one component, which must belong to that project (checked by
+  `BugReportService`). Changing the report's project removes its component.
 - A **bug report** has many comments and at most one resolution (one-to-one, unique
   `resolution_id`).
 

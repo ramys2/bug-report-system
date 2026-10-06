@@ -14,7 +14,6 @@ marked in the code comments and were not confirmed by running the application.
 ## Backend
 
 ### Behavior and business rules
-- `updateComponent` does not check that the component belongs to the report's project.
 - `getDevelopers` loads all accounts and filters them in memory.
 - The `archived_at` column exists on `user_account`, `software_project` and `component`, but no entity, mapper or query uses it. Archiving does not exist in the code.
 - `BugReport`'s builder always starts a report as `OPEN` and cannot set id, status or resolution; `BugReportMapper.toDomain` sets them afterwards.

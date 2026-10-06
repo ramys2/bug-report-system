@@ -899,8 +899,9 @@ paths:
       - Bug reports
     post:
       description: "Files a new report as the signed-in user. The report starts with\
-        \ status `OPEN`. Returns 404 if the project or component does not exist and\
-        \ 409 if `assigneeId` is not a developer. Access: any signed-in user."
+        \ status `OPEN`. `componentId` is optional. Returns 404 if the project or\
+        \ component does not exist and 409 if the component does not belong to the\
+        \ project or `assigneeId` is not a developer. Access: any signed-in user."
       operationId: create
       parameters:
       - description: "CSRF token from `GET /api/csrf`. The token changes when you\
@@ -1301,8 +1302,9 @@ paths:
       - Comments
   /api/reports/{reportId}/component:
     patch:
-      description: "The component is not checked against the report's project. Returns\
-        \ 409 if the report is closed. Access: signed-in user; the service further\
+      description: "The component must belong to the report's project; a null `componentId`\
+        \ removes the component. Returns 409 if the report is closed or the component\
+        \ belongs to another project. Access: signed-in user; the service further\
         \ requires the ADMIN role, or being the report's reporter or assignee."
       operationId: updateComponent
       parameters:
@@ -1511,9 +1513,9 @@ paths:
       - Bug reports
   /api/reports/{reportId}/project:
     patch:
-      description: "Returns 409 if the report is closed. Access: signed-in user; the\
-        \ service further requires the ADMIN role, or being the report's reporter\
-        \ or assignee."
+      description: "If the project changes, the report's component is removed. Returns\
+        \ 409 if the report is closed. Access: signed-in user; the service further\
+        \ requires the ADMIN role, or being the report's reporter or assignee."
       operationId: updateProject
       parameters:
       - description: Id of the bug report.
@@ -1942,7 +1944,7 @@ components:
           example: Daniel Developer
         componentName:
           type: string
-          description: Name of the component.
+          description: Name of the component. Null if the report has no component.
           example: Backend API
         createdAt:
           type: string
@@ -2009,7 +2011,6 @@ components:
           description: Last modification time (ISO-8601).
           example: 2026-05-14T09:30:00
       required:
-      - componentName
       - createdAt
       - id
       - projectName
@@ -2139,7 +2140,7 @@ components:
         componentId:
           type: string
           format: uuid
-          description: Id of the component.
+          description: Id of the component. Optional; must belong to the project.
           example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
         description:
           type: string
@@ -2173,7 +2174,6 @@ components:
           example: Valid users cannot sign in
           minLength: 1
       required:
-      - componentId
       - projectId
       - severity
       - title
@@ -2478,10 +2478,9 @@ components:
         componentId:
           type: string
           format: uuid
-          description: Id of the new component.
+          description: Id of the new component, which must belong to the report's
+            project. Null removes the component.
           example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-      required:
-      - componentId
     UpdateComponentResponse:
       type: object
       description: "Response of the `PATCH /api/components/{componentId}/...` endpoints."

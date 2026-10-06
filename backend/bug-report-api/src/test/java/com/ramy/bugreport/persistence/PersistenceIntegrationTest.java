@@ -154,6 +154,7 @@ class PersistenceIntegrationTest {
         reportService.updateSeverity(report.getId(), new UpdateSeverityRequest(EBugSeverity.CRITICAL));
         reportService.updateStatus(report.getId(), new UpdateStatusRequest(EBugStatus.IN_PROGRESS));
         reportService.updateProject(report.getId(), new UpdateProjectRequest(otherProject.getId()));
+        assertThat(reports.findById(report.getId()).orElseThrow().getComponentId()).isNull();
         reportService.updateComponent(report.getId(), new UpdateComponentRequest(otherComponent.getId()));
         reportService.updateDescription(report.getId(), new UpdateDescriptionRequest("Updated description"));
         reportService.updateStepsToReproduce(report.getId(), new UpdateStepsToReproduceRequest("Updated steps"));
