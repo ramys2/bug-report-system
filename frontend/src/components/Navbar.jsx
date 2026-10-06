@@ -59,7 +59,7 @@ function Navbar() {
                         className="d-flex align-items-center gap-2 link-secondary link-underline-opacity-0 link-underline-opacity-100-hover"
                     >
                         <i aria-hidden="true" className="bi bi-person-circle fs-4" />
-                        {auth.currentUser.username}
+                        {auth.currentUser.name}
                     </span>
                     <button
                         type="button"

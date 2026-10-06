@@ -11,7 +11,7 @@ import com.ramy.bugreport.openapi.ApiExamples;
  * A comment in {@code GET /api/comments?reportId=...}.
  *
  * @param id comment id
- * @param bugReportId id of the commented report
+ * @param reportId id of the commented report
  * @param authorId id of the author
  * @param authorName display name of the author
  * @param content comment text
@@ -22,7 +22,7 @@ public record CommentResponse(
         @Schema(description = "Comment id.", example = ApiExamples.UUID, requiredMode = Schema.RequiredMode.REQUIRED)
         UUID id,
         @Schema(description = "Id of the commented report.", example = ApiExamples.UUID, requiredMode = Schema.RequiredMode.REQUIRED)
-        UUID bugReportId,
+        UUID reportId,
         @Schema(description = "Id of the author.", example = ApiExamples.UUID, requiredMode = Schema.RequiredMode.REQUIRED)
         UUID authorId,
         @Schema(description = "Display name of the author.", example = "Rachel Reporter", requiredMode = Schema.RequiredMode.REQUIRED)

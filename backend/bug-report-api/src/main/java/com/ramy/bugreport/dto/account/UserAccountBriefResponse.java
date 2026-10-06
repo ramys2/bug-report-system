@@ -9,13 +9,13 @@ import com.ramy.bugreport.openapi.ApiExamples;
 /**
  * A search hit in {@code GET /api/accounts/users}.
  *
- * @param userId account id
+ * @param id account id
  * @param name display name
  */
 @Schema(description = "A search hit in `GET /api/accounts/users`.")
 public record UserAccountBriefResponse(
         @Schema(description = "Account id.", example = ApiExamples.UUID, requiredMode = Schema.RequiredMode.REQUIRED)
-        UUID userId,
+        UUID id,
         @Schema(description = "Display name.", example = "Daniel Developer", requiredMode = Schema.RequiredMode.REQUIRED)
         String name
 ) {

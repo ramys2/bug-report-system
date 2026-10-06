@@ -67,9 +67,9 @@ public class UserAccountController {
      *
      * <p>Access: ADMIN role.
      *
-     * @return 200 with a list of {@code {id, username, email, role}}, where {@code username} is the account's display name
+     * @return 200 with a list of {@code {id, name, email, role}}
      */
-    @Operation(summary = "List all accounts", description = "Access: ADMIN role. `username` is the account's display name.")
+    @Operation(summary = "List all accounts", description = "Access: ADMIN role.")
     @ApiResponse(responseCode = "200", description = "All accounts.")
     @UnauthorizedResponse
     @ForbiddenResponse
@@ -99,7 +99,7 @@ public class UserAccountController {
      * <p>Access: ADMIN or DEVELOPER role.
      *
      * @param search optional text to look for
-     * @return 200 with a list of {@code {userId, name}}; empty if {@code search} is missing or blank
+     * @return 200 with a list of {@code {id, name}}; empty if {@code search} is missing or blank
      */
     @Operation(summary = "Search users by name", description = "Finds users whose name contains the text, ignoring case. The list is empty if `search` is missing or blank. Access: ADMIN or DEVELOPER role.")
     @ApiResponse(responseCode = "200", description = "Users whose name matches.")
@@ -124,7 +124,7 @@ public class UserAccountController {
      *
      * <p>Access: public, no sign-in needed.
      *
-     * @param request body {@code {username, email, password}}, all required and not blank; {@code email} must be a valid address
+     * @param request body {@code {name, email, password}}, all required and not blank; {@code email} must be a valid address
      * @return 201 with {@code {id, message}}
      * @throws com.ramy.bugreport.exception.DuplicateEmailException 409 if the (trimmed, lower-cased) email is already registered
      */

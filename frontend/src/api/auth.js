@@ -18,7 +18,7 @@ export function login(email, password) {
 /**
  * Fetches the signed-in user with `GET /api/auth/me`.
  *
- * @returns {JQuery.jqXHR} resolves with `{ id, username, email, role }` (`username` is the display name); rejects with 401 if not signed in
+ * @returns {JQuery.jqXHR} resolves with `{ id, name, email, role }`; rejects with 401 if not signed in
  */
 export function getCurrentUser() {
     return $.ajax({

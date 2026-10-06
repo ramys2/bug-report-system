@@ -11,7 +11,7 @@ import com.ramy.bugreport.openapi.ApiExamples;
  * A user account as returned by {@code GET /api/accounts} and {@code GET /api/auth/me}. Never contains the password hash.
  *
  * @param id account id
- * @param username the account's display name (despite the field name, not a login name)
+ * @param name the account's display name (the login name is {@code email})
  * @param email email address, which is also the login name
  * @param role the user's role
  */
@@ -19,8 +19,8 @@ import com.ramy.bugreport.openapi.ApiExamples;
 public record UserAccountResponse(
         @Schema(description = "Account id.", example = ApiExamples.UUID, requiredMode = Schema.RequiredMode.REQUIRED)
         UUID id,
-        @Schema(description = "The account's display name (despite the field name, not a login name).", example = "Alice Admin", requiredMode = Schema.RequiredMode.REQUIRED)
-        String username,
+        @Schema(description = "Display name.", example = "Alice Admin", requiredMode = Schema.RequiredMode.REQUIRED)
+        String name,
         @Schema(description = "Email address, which is also the login name.", example = "alice@example.com", requiredMode = Schema.RequiredMode.REQUIRED)
         String email,
         @Schema(description = "The user's role.", example = "DEVELOPER", requiredMode = Schema.RequiredMode.REQUIRED)

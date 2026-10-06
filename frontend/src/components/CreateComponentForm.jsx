@@ -103,7 +103,7 @@ export default function CreateComponentForm({ onCreated }) {
         createComponent({
             ...formValues,
             name: formValues.name.trim(),
-            responsibleUserId: responsibleUser ? responsibleUser.userId : null,
+            responsibleUserId: responsibleUser ? responsibleUser.id : null,
         })
             .done(() => {
                 setFormValues(initialFormValues);
@@ -193,7 +193,7 @@ export default function CreateComponentForm({ onCreated }) {
                                         <button
                                             className="btn btn-light d-block text-start w-100 rounded-0"
                                             disabled={isSubmitting}
-                                            key={user.userId}
+                                            key={user.id}
                                             onClick={() => selectResponsibleUser(user)}
                                             type="button"
                                         >

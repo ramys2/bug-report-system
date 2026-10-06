@@ -29,8 +29,6 @@ marked in the code comments and were not confirmed by running the application.
 
 ### API design
 - `BugReportResponse` serializes the domain `Resolution` object directly, tying the API shape to the domain class.
-- `UserAccountResponse.username` holds the display name; the login name is `email`.
-- DTO naming is inconsistent: `id` / `userId` / `reportId`, and `username` / `name` / `author`.
 - The component update path segment is camelCase (`/responsibleUserId`), unlike the kebab-case report segments (`/steps-to-reproduce`).
 
 ### Messaging

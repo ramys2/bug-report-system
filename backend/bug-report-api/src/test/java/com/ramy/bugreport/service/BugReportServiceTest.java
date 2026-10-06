@@ -87,10 +87,10 @@ class BugReportServiceTest {
 
         var result = service.getAll();
 
-        assertThat(result).extracting(response -> response.reportId())
+        assertThat(result).extracting(response -> response.id())
                 .containsExactly(first.getId(), second.getId());
         assertThat(result.getFirst())
-                .extracting("title", "author", "assignee", "status", "severity", "createdAt")
+                .extracting("title", "reporterName", "assigneeName", "status", "severity", "createdAt")
                 .containsExactly(
                         "Application crashes", "Reporter", "Assignee", EBugStatus.OPEN, EBugSeverity.HIGH,
                         LocalDateTime.of(2026, 7, 13, 12, 5));
@@ -204,7 +204,7 @@ class BugReportServiceTest {
         when(bugReportRepository.findByReporterId(reporterId)).thenReturn(List.of(report));
 
         assertThat(service.getReportsByReporter(reporterId))
-                .extracting(response -> response.reportId())
+                .extracting(response -> response.id())
                 .containsExactly(report.getId());
         verify(bugReportRepository).findByReporterId(reporterId);
     }
@@ -217,7 +217,7 @@ class BugReportServiceTest {
         when(bugReportRepository.findByAssigneeId(assigneeId)).thenReturn(List.of(report));
 
         assertThat(service.getReportsByAssignee(assigneeId))
-                .extracting(response -> response.reportId())
+                .extracting(response -> response.id())
                 .containsExactly(report.getId());
         verify(bugReportRepository).findByAssigneeId(assigneeId);
     }
@@ -370,7 +370,7 @@ class BugReportServiceTest {
         assertThat(report.getResolution().getCommitUrl()).isEqualTo(request.commitUrl());
         assertThat(report.getResolution().getResolvedAt()).isBetween(before, LocalDateTime.now());
         assertThat(report.getStatus()).isEqualTo(EBugStatus.CLOSED);
-        assertThat(result.reportId()).isEqualTo(report.getId());
+        assertThat(result.id()).isEqualTo(report.getId());
         assertThat(result.message()).isEqualTo("Task has been closed successfully!");
         verify(bugReportRepository).findById(report.getId());
         verify(bugReportRepository).save(report);

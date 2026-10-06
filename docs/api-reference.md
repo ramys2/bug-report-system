@@ -64,7 +64,7 @@ sequenceDiagram
         C->>A: GET /api/csrf (token for the new session)
         A-->>C: 200 {token}
         C->>A: GET /api/auth/me
-        A-->>C: 200 {id, username, email, role}
+        A-->>C: 200 {id, name, email, role}
     else wrong credentials
         A-->>C: 401
     end
@@ -102,12 +102,12 @@ Needs the CSRF header. Answers 200 with an empty body and ends the session.
 
 ### `GET /api/auth/me`
 
-Any signed-in user. Returns the current user (`username` is the display name).
+Any signed-in user. Returns the current user.
 
 ```json
 {
   "id": "a00638ee-4890-4ea6-8def-9ea2f2f4e827",
-  "username": "Alice Admin",
+  "name": "Alice Admin",
   "email": "admin@bugreport.local",
   "role": "ADMIN"
 }
@@ -140,15 +140,15 @@ closed report.`).
 
 ### `GET /api/reports`, `/reported`, `/assigned`
 
-Return a list of brief reports. `assignee` is `null` when unassigned. `createdAt` is an ISO-8601 timestamp.
+Return a list of brief reports. `assigneeName` is `null` when unassigned. `createdAt` is an ISO-8601 timestamp.
 
 ```json
 [
   {
-    "reportId": "01c5b494-8826-4bc8-8044-3dd3f4aa8068",
+    "id": "01c5b494-8826-4bc8-8044-3dd3f4aa8068",
     "title": "Severity selector overflows on mobile",
-    "author": "Alice Admin",
-    "assignee": null,
+    "reporterName": "Alice Admin",
+    "assigneeName": null,
     "status": "OPEN",
     "severity": "LOW",
     "createdAt": "2026-09-29T11:46:00.123456"
@@ -268,7 +268,7 @@ and the assignee by email.
 Answers 201 with the id of the closed report.
 
 ```json
-{ "reportId": "b77f24c8-e300-4baa-8fda-471702256066", "message": "Task has been closed successfully!" }
+{ "id": "b77f24c8-e300-4baa-8fda-471702256066", "message": "Task has been closed successfully!" }
 ```
 
 Errors: 404 (no such report), 409 (`Report is already closed and cannot be reopened.`).
@@ -327,7 +327,7 @@ no email.
 [
   {
     "id": "4ae01c39-1fdc-4b43-aca6-ebd5a4ad78ce",
-    "bugReportId": "01c5b494-8826-4bc8-8044-3dd3f4aa8068",
+    "reportId": "01c5b494-8826-4bc8-8044-3dd3f4aa8068",
     "authorId": "1268f562-274d-408e-9e1f-dc053320323f",
     "authorName": "Daniel Developer",
     "content": "Reproduced, working on a fix.",
@@ -421,7 +421,7 @@ component.
 ### `POST /api/accounts`
 
 ```json
-{ "username": "New User", "email": "new.user@example.com", "password": "Secret123!" }
+{ "name": "New User", "email": "new.user@example.com", "password": "Secret123!" }
 ```
 
 All fields are required and not blank; `email` must be a valid address (an address with
@@ -432,11 +432,11 @@ registration that differs only in case answers 409
 
 ### `GET /api/accounts`
 
-`username` is the display name; the login name is `email`.
+`name` is the display name; the login name is `email`.
 
 ```json
 [
-  { "id": "a00638ee-4890-4ea6-8def-9ea2f2f4e827", "username": "Alice Admin", "email": "admin@bugreport.local", "role": "ADMIN" }
+  { "id": "a00638ee-4890-4ea6-8def-9ea2f2f4e827", "name": "Alice Admin", "email": "admin@bugreport.local", "role": "ADMIN" }
 ]
 ```
 
@@ -451,7 +451,7 @@ registration that differs only in case answers 409
 Case-insensitive search in the name; an empty or missing `search` returns `[]`.
 
 ```json
-[ { "userId": "6f30e1aa-1cb9-453b-a82a-77cd9dfde971", "name": "Rachel Reporter" } ]
+[ { "id": "6f30e1aa-1cb9-453b-a82a-77cd9dfde971", "name": "Rachel Reporter" } ]
 ```
 
 ### `PATCH /api/accounts/{userId}/role`

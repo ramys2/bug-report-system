@@ -9,10 +9,10 @@ import { getCsrfToken } from "./csrf";
 /**
  * A report as listed by `GET /api/reports`, `/reported` and `/assigned`.
  * @typedef {object} BugReportBrief
- * @property {string} reportId
+ * @property {string} id
  * @property {string} title
- * @property {string} author display name of the reporter
- * @property {string|null} assignee display name of the assignee, `null` if unassigned
+ * @property {string} reporterName display name of the reporter
+ * @property {string|null} assigneeName display name of the assignee, `null` if unassigned
  * @property {Status} status
  * @property {Severity} severity
  * @property {string} createdAt ISO-8601 timestamp
@@ -126,7 +126,7 @@ export function createReport(report) {
  *
  * @param {string} reportId id of the report
  * @param {{description: string, fixedVersion?: string, commitUrl?: string}} resolution how the bug was resolved; `description` is required
- * @returns {JQuery.jqXHR} resolves (201) with `{ reportId, message }`; rejects with 409 if already closed
+ * @returns {JQuery.jqXHR} resolves (201) with `{ id, message }`; rejects with 409 if already closed
  */
 export function closeReport(reportId, resolution) {
     const csrfToken = getCsrfToken();

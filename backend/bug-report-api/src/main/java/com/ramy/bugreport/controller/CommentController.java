@@ -58,7 +58,7 @@ public class CommentController {
      * <p>Access: any signed-in user.
      *
      * @param reportId id of the report; required
-     * @return 200 with a list of {@code {id, bugReportId, authorId, authorName, content, createdAt}}; empty if there are none
+     * @return 200 with a list of {@code {id, reportId, authorId, authorName, content, createdAt}}; empty if there are none
      * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the report does not exist
      */
     @Operation(summary = "List the comments of a report", description = "Newest first; empty if there are none. Access: any signed-in user.")

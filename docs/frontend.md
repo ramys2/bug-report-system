@@ -89,7 +89,7 @@ still reachable when signed in.
 
 `AuthProvider` holds `currentUser` in React state and shares it (with `loadCurrentUser` and
 `logout`) through `AuthContext`. `currentUser` has three states: `undefined` (not checked yet),
-`null` (not signed in) and the user object `{id, username, email, role}`.
+`null` (not signed in) and the user object `{id, name, email, role}`.
 
 ```mermaid
 sequenceDiagram

@@ -29,7 +29,7 @@ public class AuthController {
      *
      * <p>Access: any signed-in user (401 otherwise).
      *
-     * @return 200 with {@code {id, username, email, role}}, where {@code username} is the display name
+     * @return 200 with {@code {id, name, email, role}}
      */
     @Operation(summary = "Get the signed-in user", description = "Returns the account of the current session. Access: any signed-in user. Login (`POST /api/auth/login`) and logout (`POST /api/auth/logout`) are handled by Spring Security, not by this controller.")
     @ApiResponse(responseCode = "200", description = "The signed-in user.")

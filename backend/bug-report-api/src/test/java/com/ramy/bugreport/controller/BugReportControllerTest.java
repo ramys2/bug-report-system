@@ -75,9 +75,9 @@ class BugReportControllerTest {
 
         mockMvc.perform(get("/api/reports"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].reportId").value(reportId.toString()))
-                .andExpect(jsonPath("$[0].author").value("Leo Tester"))
-                .andExpect(jsonPath("$[0].assignee").value(nullValue()))
+                .andExpect(jsonPath("$[0].id").value(reportId.toString()))
+                .andExpect(jsonPath("$[0].reporterName").value("Leo Tester"))
+                .andExpect(jsonPath("$[0].assigneeName").value(nullValue()))
                 .andExpect(jsonPath("$[0].status").value("OPEN"))
                 .andExpect(jsonPath("$[0].createdAt").value("2026-07-13T12:05:00"));
 
@@ -141,7 +141,7 @@ class BugReportControllerTest {
 
         mockMvc.perform(get("/api/reports/reported"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].reportId").value(reportId.toString()));
+                .andExpect(jsonPath("$[0].id").value(reportId.toString()));
 
         verify(reportService).getReportsByReporter(reporterId);
     }
@@ -157,7 +157,7 @@ class BugReportControllerTest {
 
         mockMvc.perform(get("/api/reports/assigned"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].reportId").value(reportId.toString()));
+                .andExpect(jsonPath("$[0].id").value(reportId.toString()));
 
         verify(reportService).getReportsByAssignee(assigneeId);
     }
@@ -201,7 +201,7 @@ class BugReportControllerTest {
                                 }
                                 """))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.reportId").value(reportId.toString()))
+                .andExpect(jsonPath("$.id").value(reportId.toString()))
                 .andExpect(jsonPath("$.message").value("Task has been closed successfully!"));
 
         verify(reportService).close(reportId, request);

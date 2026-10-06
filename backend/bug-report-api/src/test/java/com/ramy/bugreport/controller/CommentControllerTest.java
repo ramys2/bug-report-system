@@ -58,7 +58,7 @@ class CommentControllerTest {
         mockMvc.perform(get("/api/comments").param("reportId", reportId.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(commentId.toString()))
-                .andExpect(jsonPath("$[0].bugReportId").value(reportId.toString()))
+                .andExpect(jsonPath("$[0].reportId").value(reportId.toString()))
                 .andExpect(jsonPath("$[0].authorName").value("Ramy"));
 
         verify(commentService).getComments(reportId);
