@@ -123,6 +123,7 @@ class PersistenceIT {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void projectAndComponentServiceUpdatesArePersisted() {
         projectService.updateName(project.getId(), new UpdateSoftwareProjectNameRequest("Renamed project"));
         projectService.updateDescription(project.getId(), new UpdateSoftwareProjectDescriptionRequest("Long text ".repeat(100)));

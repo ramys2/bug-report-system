@@ -3,6 +3,7 @@ package com.ramy.bugreport.service;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import com.ramy.bugreport.domain.SoftwareProject;
@@ -51,11 +52,12 @@ public class SoftwareProjectService {
     */
 
     /**
-     * Creates a project.
+     * Creates a project. Requires the ADMIN role.
      *
      * @return the id of the new project
      */
     @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
     public CreateSoftwareProjectResponse create(CreateSoftwareProjectRequest request) {
         SoftwareProject project = new SoftwareProject(request.name(), request.description());
         project = softwareProjectRepository.save(project);
@@ -72,11 +74,12 @@ public class SoftwareProjectService {
     */
 
     /**
-     * Renames a project.
+     * Renames a project. Requires the ADMIN or DEVELOPER role.
      *
      * @throws ResourceNotFoundException if the project does not exist
      */
     @Transactional
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
     public UpdateSoftwareProjectResponse updateName(
             UUID projectId,
             UpdateSoftwareProjectNameRequest request
@@ -88,11 +91,12 @@ public class SoftwareProjectService {
     }
 
     /**
-     * Replaces a project's description.
+     * Replaces a project's description. Requires the ADMIN or DEVELOPER role.
      *
      * @throws ResourceNotFoundException if the project does not exist
      */
     @Transactional
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
     public UpdateSoftwareProjectResponse updateDescription(
             UUID projectId,
             UpdateSoftwareProjectDescriptionRequest request

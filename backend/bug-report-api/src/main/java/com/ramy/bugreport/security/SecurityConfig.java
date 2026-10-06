@@ -27,8 +27,13 @@ import jakarta.servlet.http.HttpServletResponse;
  *
  * <p>Authentication is a session cookie created by {@code POST /api/auth/login}. Every URL not listed
  * in the rules is denied ({@code denyAll}). CSRF protection stays at Spring's default (enabled), so
- * state-changing requests need the token from {@code GET /api/csrf}. Rules that depend on the
- * individual resource (report ownership, comment author) are checked in the services with {@code @PreAuthorize}.
+ * state-changing requests need the token from {@code GET /api/csrf}.
+ *
+ * <p>Authorization has two layers. The URL rules below are the outer gate: they reject requests early,
+ * before the controller runs. The services repeat the role checks with {@code @PreAuthorize} and are the
+ * authoritative layer, so they stay safe when called from outside the API. Rules that depend on the
+ * individual resource (report ownership, comment author) exist only in the services. When changing a
+ * role rule, update both places.
  */
 @Configuration
 @EnableWebSecurity
