@@ -3,13 +3,15 @@
 # Services:
 #   backend   Spring Boot API, built from ./backend (port 8080)
 #   frontend  Vite dev server, built from ./frontend (port 5173); it proxies /api to http://backend:8080
-#   database  MariaDB with the bug_report database; ./database/init creates the bug_report_test
-#             database used by the backend tests (init scripts only run the first time, on an empty volume)
+#   database  MariaDB with the bug_report database
+#   database-test-init
+#             One-shot job that runs ./database/init to create the bug_report_test database used by
+#             the backend tests; safe to run repeatedly, so it also fixes volumes created earlier
 #   mailpit   Fake SMTP server that catches the notification emails; web UI on http://localhost:8025
 #   artemis   ActiveMQ Artemis message broker for bug report events; console on http://localhost:8161
 #
 # Usage:        docker compose up --build      start everything
-#               docker compose up -d database mailpit artemis
+#               docker compose up -d database database-test-init mailpit artemis
 #                                              start only the infrastructure (e.g. to run the backend yourself)
 #               docker compose down            stop; add -v to also delete the stored data
 # Requires:     Docker with the Compose plugin.
@@ -53,6 +55,18 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  # One-shot job: runs the init script against the running database and exits. The database image
+  # runs ./database/init only on an empty volume, so this creates bug_report_test on older volumes too.
+  database-test-init:
+    image: mariadb:latest
+    depends_on:
+      database:
+        condition: service_healthy
+    volumes:
+      - ./database/init:/init:ro
+    entrypoint: ["sh", "-c", "mariadb -h database -uroot -proot < /init/01-create-test-database.sql"]
+    restart: "no"
 
   # Catches outgoing emails; open http://localhost:8025 to read them.
   mailpit:

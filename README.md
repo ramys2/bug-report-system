@@ -412,7 +412,7 @@ cd bug-report-system
 docker compose up --build
 ```
 
-This builds the backend and frontend images and starts five services. The first start seeds the
+This builds the backend and frontend images and starts five services plus the one-shot `database-test-init` job. The first start seeds the
 demo data (see [Demo credentials](#demo-credentials)).
 
 ```mermaid
@@ -426,7 +426,7 @@ flowchart LR
     BE -->|"SMTP 1025"| MP
     DB --- V1[/"volume mariadb-data"/]
     MP --- V2[/"volume mailpit-data"/]
-    Init["database/init/<br/>creates bug_report_test"] -.->|"first start only"| DB
+    Init["database-test-init<br/>creates bug_report_test"] -.->|"runs once per up"| DB
 ```
 
 _Figure 6: Docker Compose services and volumes. Published on the host: 5173 (frontend), 8080
@@ -539,7 +539,7 @@ The integration tests use the database `bug_report_test` on `localhost:3306`
 the database first. The unit and controller tests need nothing.
 
 ```shell
-docker compose up -d database
+docker compose up -d database database-test-init
 cd backend
 mvn test                                                    # all tests
 mvn test -pl bug-report-api -am -Dtest=BugReportServiceTest -Dsurefire.failIfNoSpecifiedTests=false   # one test class
@@ -550,12 +550,10 @@ mvn test -pl bug-report-api -am -Dtest=BugReportServiceTest -Dsurefire.failIfNoS
 
 Notes:
 
-- `bug_report_test` is created by [database/init](database/init/01-create-test-database.sql) only
-  when the database volume is created. If your volume is older, create it once:
-
-  ```shell
-  docker compose exec database mariadb -uroot -proot -e "CREATE DATABASE IF NOT EXISTS bug_report_test; GRANT ALL PRIVILEGES ON bug_report_test.* TO 'bug_report'@'%'; FLUSH PRIVILEGES;"
-  ```
+- `bug_report_test` is created by the one-shot `database-test-init` service, which runs
+  [database/init](database/init/01-create-test-database.sql) against the running database and then
+  exits. The database image itself runs that script only on an empty volume, so this service is what
+  also fixes volumes created earlier. It is safe to run repeatedly.
 
 - The test log contains Artemis connection errors (`AMQ219007`), because the broker host is not
   reachable from your machine. The tests still pass.

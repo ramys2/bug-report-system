@@ -67,4 +67,3 @@ marked in the code comments and were not confirmed by running the application.
 - The Vite proxy target `http://backend:8080` (`frontend/vite.config.js`) only resolves inside the compose network, so `npm run dev` on the host has no working backend.
 - `docker-compose.yml` uses the `latest` tag for `mariadb` and `apache/activemq-artemis`, so versions are not pinned.
 - `backend/Dockerfile` hard-codes the jar name `bug-report-api-0.1.0-SNAPSHOT.jar`; changing the version in the pom breaks the image build.
-- `database/init/01-create-test-database.sql` only runs on an empty database volume, so an existing volume never gets the `bug_report_test` database.
