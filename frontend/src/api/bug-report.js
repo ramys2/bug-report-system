@@ -25,7 +25,7 @@ import { getCsrfToken } from "./csrf";
  * @property {string} reporterName
  * @property {string|null} assigneeName
  * @property {string} projectName
- * @property {string} componentName
+ * @property {string|null} componentName `null` if the report has no component
  * @property {string} title
  * @property {string|null} description
  * @property {string|null} stepsToReproduce
@@ -42,7 +42,7 @@ import { getCsrfToken } from "./csrf";
  * Body of `POST /api/reports`.
  * @typedef {object} NewBugReport
  * @property {string} projectId
- * @property {string} componentId
+ * @property {string|null} [componentId] id of a component of the chosen project; `null` or missing for no component
  * @property {string} title
  * @property {Severity} severity
  * @property {string} [assigneeId] id of a developer
@@ -204,8 +204,8 @@ export function updateProject(reportId, projectId) {
  * `PATCH /api/reports/{reportId}/component`.
  *
  * @param {string} reportId
- * @param {string} componentId
- * @returns {JQuery.jqXHR} resolves with `{ id, message }`
+ * @param {string|null} componentId id of a component of the report's project; `null` removes the component
+ * @returns {JQuery.jqXHR} resolves with `{ id, message }`; fails with 409 if the component belongs to another project
  */
 export function updateComponent(reportId, componentId) {
     return patchReport(reportId, "component", { componentId });

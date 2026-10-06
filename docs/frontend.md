@@ -149,8 +149,9 @@ handles `.done`, `.fail` and `.always`._
   send it as a header; JSON bodies use `contentType: "application/json"`.
 - Failures are shown to the user with `showToast(severity, message, summary)` (a `Toast` at the
   top of the app listens for a window event `app:toast` and hides each toast after 5 seconds).
-- `create-bug-report-options.js` provides the developers, projects and components used in select
-  fields (projects and components reduced to `{id, name}`).
+- `create-bug-report-options.js` provides the developers, projects and the components of one
+  project (`getComponentsByProject`) used in select fields (projects and components reduced to
+  `{id, name}`).
 
 ## Pages
 
@@ -158,7 +159,7 @@ handles `.done`, `.fail` and `.always`._
 | --- | --- | --- |
 | `/login` | `LoginPage` | `LoginForm`: email and password sign-in. The "Register" button has no function. A failed login is only written to the browser console. |
 | `/` | `HomePage` | Lists all reports (`GET /api/reports`) with the quick filters "Reported by me", "Assigned to me" and "Reset". "Create new +" opens a modal with `CreateBugReportForm` (`POST /api/reports`; see the known issue in the [API reference](api-reference.md#post-apireports)). |
-| `/reports/:id` | `BugReportPage` | Loads the report, its comments, the status transitions and the developer, project and component lists. Fields (assignee, severity, status, project, component, description, steps, expected and actual behavior) are edited inline, each with its own `PATCH` call. Comments can be added, and removed by their author or an admin. "Close issue" opens a modal for the resolution (with a confirmation dialog). A closed report is read-only and offers "Show resolution". |
+| `/reports/:id` | `BugReportPage` | Loads the report, its comments, the status transitions and the developer and project lists, and the components of the report's project (loaded again when the project changes; changing the project removes the report's component, shown as "None"). Fields (assignee, severity, status, project, component, description, steps, expected and actual behavior) are edited inline, each with its own `PATCH` call. Comments can be added, and removed by their author or an admin. "Close issue" opens a modal for the resolution (with a confirmation dialog). A closed report is read-only and offers "Show resolution". |
 | `/admin/projects` | `ProjectAdminPage` | Lists projects; rename and edit the description (admin or developer); create a project (admin only). |
 | `/admin/components` | `ComponentAdminPage` | Lists components; rename, edit the description, change the responsible user (found with the user search) and create components. |
 | `/admin/users` | `UserAdminPage` | Admin only. Lists all accounts, filtered and paged in the browser; changes a user's role. |

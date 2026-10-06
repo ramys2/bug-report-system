@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createReport } from "../api/bug-report";
+import { getComponentsByProject } from "../api/create-bug-report-options";
 import { showToast } from "./toast";
 
 /**
@@ -25,19 +26,46 @@ const severities = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
 /**
  * Form (meant to sit inside a `Modal`) for filing a new report with `POST /api/reports`.
  *
- * Title, project, component and severity are required; if one is missing a warning toast is shown and nothing is sent.
- * Empty optional fields (assignee, description, steps to reproduce, expected and actual behavior) are sent as `null`. On success the form is cleared and `onCreated` is called; on failure an error toast is shown.
+ * Title, project and severity are required; if one is missing a warning toast is shown and nothing is sent.
+ * The component field is shown only once a project is picked. It is optional and always starts as "None". The components to choose from are those of the picked project
+ * (`GET /api/components?projectId=...`); they are loaded again whenever the project changes, and results of outdated requests are ignored.
+ * If loading fails an error toast is shown and "None" stays the only choice.
+ * Empty optional fields (assignee, component, description, steps to reproduce, expected and actual behavior) are sent as `null`. On success the form is cleared and `onCreated` is called; on failure an error toast is shown.
  * The submit button is disabled while the request runs.
  *
  * @param {object} props
  * @param {{id: string, name: string}[]} props.developers users that can be chosen as assignee
  * @param {{id: string, name: string}[]} props.projects projects to choose from
- * @param {{id: string, name: string}[]} props.components components to choose from
  * @param {() => void} props.onCreated called after the report was created
  */
-function CreateBugReportForm({ developers, projects, components, onCreated }) {
+function CreateBugReportForm({ developers, projects, onCreated }) {
     const [formValues, setFormValues] = useState(initialFormValues);
+    const [components, setComponents] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    useEffect(() => {
+        if (!formValues.projectId) {
+            return undefined;
+        }
+
+        let isCurrentProject = true;
+
+        getComponentsByProject(formValues.projectId)
+            .done((projectComponents) => {
+                if (isCurrentProject) {
+                    setComponents(projectComponents);
+                }
+            })
+            .fail(() => {
+                if (isCurrentProject) {
+                    showToast("danger", "Failed to fetch components.", "Unable to load components");
+                }
+            });
+
+        return () => {
+            isCurrentProject = false;
+        };
+    }, [formValues.projectId]);
 
     function handleChange(event) {
         const { name, value } = event.target;
@@ -47,10 +75,20 @@ function CreateBugReportForm({ developers, projects, components, onCreated }) {
         }));
     }
 
+    function handleProjectChange(event) {
+        // The components belong to the project, so a new project clears the chosen component and the old list.
+        setFormValues((currentValues) => ({
+            ...currentValues,
+            projectId: event.target.value,
+            componentId: ""
+        }));
+        setComponents([]);
+    }
+
     function handleSubmit(event) {
         event.preventDefault();
 
-        if (!formValues.title.trim() || !formValues.projectId || !formValues.componentId || !formValues.severity) {
+        if (!formValues.title.trim() || !formValues.projectId || !formValues.severity) {
             showToast("warning", "Please fill in all required fields.", "Missing information");
             return;
         }
@@ -61,6 +99,7 @@ function CreateBugReportForm({ developers, projects, components, onCreated }) {
             ...formValues,
             title: formValues.title.trim(),
             assigneeId: formValues.assigneeId || null,
+            componentId: formValues.componentId || null,
             description: formValues.description || null,
             stepsToReproduce: formValues.stepsToReproduce || null,
             expectedBehavior: formValues.expectedBehavior || null,
@@ -68,6 +107,7 @@ function CreateBugReportForm({ developers, projects, components, onCreated }) {
         })
             .done(() => {
                 setFormValues(initialFormValues);
+                setComponents([]);
                 onCreated();
             })
             .fail(() => {
@@ -129,7 +169,7 @@ function CreateBugReportForm({ developers, projects, components, onCreated }) {
                         name="projectId"
                         className="form-select"
                         value={formValues.projectId}
-                        onChange={handleChange}
+                        onChange={handleProjectChange}
                         required
                     >
                         <option value="">Select a project</option>
@@ -141,24 +181,25 @@ function CreateBugReportForm({ developers, projects, components, onCreated }) {
                     </select>
                 </div>
 
-                <div className="mb-3">
-                    <label className="form-label" htmlFor="bug-report-component">Component *</label>
-                    <select
-                        id="bug-report-component"
-                        name="componentId"
-                        className="form-select"
-                        value={formValues.componentId}
-                        onChange={handleChange}
-                        required
-                    >
-                        <option value="">Select a component</option>
-                        {components.map((component) => (
-                            <option key={component.id} value={component.id}>
-                                {component.name}
-                            </option>
-                        ))}
-                    </select>
-                </div>
+                {formValues.projectId && (
+                    <div className="mb-3">
+                        <label className="form-label" htmlFor="bug-report-component">Component</label>
+                        <select
+                            id="bug-report-component"
+                            name="componentId"
+                            className="form-select"
+                            value={formValues.componentId}
+                            onChange={handleChange}
+                        >
+                            <option value="">None</option>
+                            {components.map((component) => (
+                                <option key={component.id} value={component.id}>
+                                    {component.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                )}
 
                 <div className="mb-3">
                     <label className="form-label" htmlFor="bug-report-description">Description</label>

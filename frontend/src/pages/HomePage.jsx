@@ -7,7 +7,7 @@ import QuickFilters from "../components/QuickFilters";
 import { showToast } from "../components/toast";
 import "./HomePage.css";
 import { getAllReports, getAssigned, getReported } from "../api/bug-report";
-import { getComponents, getDevelopers, getProjects } from "../api/create-bug-report-options";
+import { getDevelopers, getProjects } from "../api/create-bug-report-options";
 
 /**
  * Element id of the "create bug report" modal, used to open it (via `data-bs-target`) and to close it from code.
@@ -17,7 +17,7 @@ const createBugReportModalId = "create-bug-report-modal";
 /**
  * Home page at `/`: the list of bug reports with quick filters and a "Create new" button that opens `CreateBugReportForm` in a modal.
  *
- * On mount it loads all reports (`GET /api/reports`) and the developers, projects and components that the create form offers as choices.
+ * On mount it loads all reports (`GET /api/reports`) and the developers and projects that the create form offers as choices (the form loads the components itself).
  * "Reported by me" and "Assigned to me" replace the list with `GET /api/reports/reported` or `/assigned`; Reset reloads all reports.
  * After a report is created the list is reloaded and the modal is closed. Failed requests show an error toast. Takes no props.
  */
@@ -26,7 +26,6 @@ function HomePage() {
     const [isQuickFilterActive, setIsQuickFilterActive] = useState(false);
     const [developers, setDevelopers] = useState([]);
     const [projects, setProjects] = useState([]);
-    const [components, setComponents] = useState([]);
 
     function loadAllReports() {
         getAllReports()
@@ -50,10 +49,6 @@ function HomePage() {
         getProjects()
             .done(setProjects)
             .fail(() => showToast("danger", "Failed to fetch projects.", "Unable to load projects"));
-
-        getComponents()
-            .done(setComponents)
-            .fail(() => showToast("danger", "Failed to fetch components.", "Unable to load components"));
     }, []);
 
     function onReportedByMe() {
@@ -119,7 +114,6 @@ function HomePage() {
                     <CreateBugReportForm
                         developers={developers}
                         projects={projects}
-                        components={components}
                         onCreated={onReportCreated}
                     />
                 </Modal>

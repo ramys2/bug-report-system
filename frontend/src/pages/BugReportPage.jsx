@@ -18,7 +18,7 @@ import {
 import { createComment, getComments, removeComment } from "../api/comment";
 import { formatDateTime } from "../utils/date";
 import "./BugReportPage.css";
-import { getComponents, getDevelopers, getProjects } from "../api/create-bug-report-options";
+import { getComponentsByProject, getDevelopers, getProjects } from "../api/create-bug-report-options";
 import AuthContext from "../components/AuthContext";
 import Modal from "../components/Modal";
 import { showToast } from "../components/toast";
@@ -39,6 +39,19 @@ const EMPTY_RESOLUTION = {
     fixedVersion: "",
     commitUrl: "",
 };
+
+/**
+ * Choice that stands for "no component" in the component select. `EditableSelectField` does not allow an empty option value,
+ * so this has an id of its own, which `updateComponentOrRemove` turns into `null` for the backend.
+ */
+const NO_COMPONENT = { id: "none", name: "None" };
+
+/**
+ * Saves the component choice with `PATCH /api/reports/{id}/component`; the `NO_COMPONENT` choice removes the component (`null`).
+ */
+function updateComponentOrRemove(reportId, componentId) {
+    return updateComponent(reportId, componentId === NO_COMPONENT.id ? null : componentId);
+}
 
 /**
  * Text shown for a value; empty or missing values become "Not provided".
@@ -300,8 +313,9 @@ function EditableSelectField({
 /**
  * Report detail page at `/reports/:id`.
  *
- * On load it fetches the report (`GET /api/reports/{id}`), its comments (`GET /api/reports/{id}/comments`) and the developers, projects and components
- * used by the select fields. It shows the report with in-place editing of assignee, severity, status, project, component, description,
+ * On load it fetches the report (`GET /api/reports/{id}`), its comments (`GET /api/reports/{id}/comments`) and the developers and projects
+ * used by the select fields. The components offered are those of the report's project (`GET /api/components?projectId=...`), loaded again when the project is
+ * changed; the backend then removes the report's component, so the page does the same and the component shows "None". It shows the report with in-place editing of assignee, severity, status, project, component, description,
  * steps to reproduce, expected and actual behavior, and a comment section (add: `POST .../comments`, remove: `DELETE /api/comments/{id}`).
  *
  * "Close issue" opens a modal that sends `POST /api/reports/{id}/resolution` after a confirmation dialog; afterwards the page treats the report as
@@ -326,6 +340,7 @@ export default function BugReportPage() {
     const [components, setComponents] = useState([]);
     const [statusTransitions, setStatusTransitions] = useState({});
     const isClosed = bugReport?.status === "CLOSED";
+    const projectId = bugReport?.projectId;
 
     useEffect(() => {
         getReport(id)
@@ -350,14 +365,34 @@ export default function BugReportPage() {
             .done(setProjects)
             .fail(() => showToast("danger", "Failed to fetch projects.", "Unable to load projects"));
 
-        getComponents()
-            .done(setComponents)
-            .fail(() => showToast("danger", "Failed to fetch components.", "Unable to load components"));
-
         getStatusTransitions()
             .done(setStatusTransitions)
             .fail(() => showToast("danger", "Failed to fetch status transitions.", "Unable to load statuses"));
     }, [id]);
+
+    useEffect(() => {
+        if (!projectId) {
+            return undefined;
+        }
+
+        let isCurrentProject = true;
+
+        getComponentsByProject(projectId)
+            .done((projectComponents) => {
+                if (isCurrentProject) {
+                    setComponents(projectComponents);
+                }
+            })
+            .fail(() => {
+                if (isCurrentProject) {
+                    showToast("danger", "Failed to fetch components.", "Unable to load components");
+                }
+            });
+
+        return () => {
+            isCurrentProject = false;
+        };
+    }, [projectId]);
 
     function saveComment() {
         setIsCommentSaving(true);
@@ -495,11 +530,20 @@ export default function BugReportPage() {
                                             getOptionValue={(project) => project.id}
                                             isEditable={!isClosed}
                                             label="Project"
-                                            onValueSaved={(project) => setBugReport((report) => ({
-                                                ...report,
-                                                projectId: project.id,
-                                                projectName: project.name,
-                                            }))}
+                                            onValueSaved={(project) => {
+                                                if (project.id === bugReport.projectId) {
+                                                    return; // same project: the backend keeps the component
+                                                }
+
+                                                setComponents([]);
+                                                setBugReport((report) => ({
+                                                    ...report,
+                                                    projectId: project.id,
+                                                    projectName: project.name,
+                                                    componentId: null,
+                                                    componentName: null,
+                                                }));
+                                            }}
                                             options={projects}
                                             reportId={bugReport.id}
                                             updateValue={updateProject}
@@ -513,14 +557,14 @@ export default function BugReportPage() {
                                             label="Component"
                                             onValueSaved={(component) => setBugReport((report) => ({
                                                 ...report,
-                                                componentId: component.id,
-                                                componentName: component.name,
+                                                componentId: component === NO_COMPONENT ? null : component.id,
+                                                componentName: component === NO_COMPONENT ? null : component.name,
                                             }))}
-                                            options={components}
+                                            options={[NO_COMPONENT, ...components]}
                                             reportId={bugReport.id}
-                                            updateValue={updateComponent}
-                                            currentValue={bugReport.componentId}
-                                            value={bugReport.componentName}
+                                            updateValue={updateComponentOrRemove}
+                                            currentValue={bugReport.componentId ?? NO_COMPONENT.id}
+                                            value={bugReport.componentName ?? NO_COMPONENT.name}
                                         />
                                         <ReportDetail label="Created at" value={formatDateTime(bugReport.createdAt)} />
                                         <ReportDetail label="Updated at" value={formatDateTime(bugReport.updatedAt)} />
