@@ -215,6 +215,12 @@
           "title": "[Security] Move credentials out of application.yml",
           "description": "Oddities.md > Backend > Security and access.\napplication.yml contains database, Artemis and mail credentials in plain text (development defaults). Use environment variables or profiles for anything beyond local development.",
           "color": "#a83f6a"
+        },
+        {
+          "id": "task-dc0880bd-b27a-4fcb-a770-cb10a3091bdc",
+          "title": "[Security] Enforce role checks in the service layer, not only in SecurityConfig",
+          "description": "Last year's review (A25N0146P.md): \"Autorizace na úrovni controllerů místo service vrstvy\" - it makes the service layer unsafe to reuse outside the API.\nVERIFIED: BugReportService, CommentService.delete and UserAccountService.updateRole use @PreAuthorize, but these rules exist only as URL matchers in SecurityConfig and have no check in the service:\n- GET /api/accounts (ADMIN), GET /api/accounts/users (ADMIN, DEVELOPER)\n- POST /api/projects (ADMIN), PATCH /api/projects/*/name and /description (ADMIN, DEVELOPER)\n- POST /api/components and PATCH /api/components/* (ADMIN, DEVELOPER)\nAdd @PreAuthorize to the matching methods in UserAccountService, SoftwareProjectService and ComponentService, and decide whether the URL rules stay as a second layer.",
+          "color": "#a83f6a"
         }
       ]
     },
