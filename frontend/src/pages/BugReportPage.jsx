@@ -161,10 +161,11 @@ function EditableReportSection({
 
 /**
  * Statuses a report can be moved to from each status; mirrors `EBugStatus.canTransitionTo` in the backend, which stays the authority.
- * `CLOSED` is never offered: reports are closed through the resolution form.
+ * `OPEN` has no entry because `ASSIGNED` is never offered: a report becomes `ASSIGNED` by picking an assignee.
+ * `CLOSED` is never offered either: reports are closed through the resolution form.
  */
 const STATUS_TRANSITIONS = {
-    OPEN: ["IN_PROGRESS", "NEEDS_INFORMATION"],
+    ASSIGNED: ["IN_PROGRESS", "NEEDS_INFORMATION"],
     IN_PROGRESS: ["NEEDS_INFORMATION", "REVIEWING"],
     NEEDS_INFORMATION: ["IN_PROGRESS"],
     REVIEWING: ["IN_PROGRESS"],
@@ -462,6 +463,7 @@ export default function BugReportPage() {
                                                 ...report,
                                                 assigneeId: developer.id,
                                                 assigneeName: developer.name,
+                                                status: report.status === "OPEN" ? "ASSIGNED" : report.status,
                                             }))}
                                             options={developers}
                                             placeholder="Select an assignee"

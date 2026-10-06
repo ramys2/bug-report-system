@@ -286,12 +286,12 @@ public class BugReportController {
      * <p>Access: signed-in user; the service further requires the ADMIN role, or being the report's reporter or assignee.
      *
      * @param reportId id of the report
-     * @param request body {@code status}; required, one of OPEN, ASSIGNED, IN_PROGRESS, NEEDS_INFORMATION, REVIEWING, REJECTED, CLOSED
+     * @param request body {@code status}; required, one of the {@code EBugStatus} values
      * @return 200 with the report id and a confirmation message
      * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the report does not exist
-     * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if the report is closed, or the requested status is {@code CLOSED}
+     * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if the report is closed, the requested status is {@code ASSIGNED} or {@code CLOSED}, or the transition is not allowed
      */
-    @Operation(summary = "Change the status", description = "The reporter and assignee are notified by email. Use the resolution endpoint to close a report. Returns 409 if the report is closed or the requested status is `CLOSED`. Access: signed-in user; the service further requires the ADMIN role, or being the report's reporter or assignee.")
+    @Operation(summary = "Change the status", description = "The reporter and assignee are notified by email. Use the resolution endpoint to close a report. Use the assignee endpoint to assign a report. Returns 409 if the report is closed, the requested status is `ASSIGNED` or `CLOSED`, or the transition is not allowed. Access: signed-in user; the service further requires the ADMIN role, or being the report's reporter or assignee.")
     @ApiResponse(responseCode = "200", description = "Status changed.")
     @BadRequestResponse
     @UnauthorizedResponse

@@ -14,7 +14,6 @@ marked in the code comments and were not confirmed by running the application.
 ## Backend
 
 ### Behavior and business rules
-- `BugReportService.create` with an assignee leaves the status `OPEN` and publishes no event. `updateAssignee` also leaves the status unchanged (never sets `ASSIGNED`), but it does publish an event.
 - `updateComponent` does not check that the component belongs to the report's project.
 - `getDevelopers` loads all accounts and filters them in memory.
 - The `archived_at` column exists on `user_account`, `software_project` and `component`, but no entity, mapper or query uses it. Archiving does not exist in the code.
@@ -56,7 +55,6 @@ marked in the code comments and were not confirmed by running the application.
 - `Modal` relies on Bootstrap's own JavaScript instead of React state.
 - `Toast` uses a hard-coded 5-second timeout.
 - `BugReportPage`: adding a comment does not check for blank text in the UI; the backend rejects it and only a generic error toast appears.
-- `BugReportPage`: changing the assignee in the UI does not change the status (same as the backend).
 - The admin pages `ProjectAdminPage` and `ComponentAdminPage` duplicate the inline `EditableName` component and the description-modal logic.
 - `ProjectAdminPage` reads `auth.currentUser.role` without a null check; this is only safe because `ProtectedRoute` guards the page.
 - `UserAdminPage` lets an admin start editing their own role, although the backend refuses it (only a generic toast is shown). It also loads all users and filters and pages them in the browser.

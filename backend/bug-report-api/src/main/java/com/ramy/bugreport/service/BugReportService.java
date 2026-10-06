@@ -176,10 +176,10 @@ public class BugReportService {
     */
     
     /**
-     * Creates a new report with status {@link EBugStatus#OPEN} and the current time as {@code createdAt} and {@code updatedAt}.
+     * Creates a new report with the current time as {@code createdAt} and {@code updatedAt}.
      *
-     * <p>If the request contains an assignee, the report is created with that assignee but its status
-     * stays {@code OPEN} and no notification event is published.
+     * <p>The status is {@link EBugStatus#OPEN}, or {@link EBugStatus#ASSIGNED} if the request contains an assignee.
+     * In that case an {@link com.ramy.bugreport.messaging.event.AssigneeChangedEvent} is published to the assignee.
      *
      * @param reporterId id of the user filing the report
      * @param request the report data; project, component, title and severity are required
@@ -212,8 +212,9 @@ public class BugReportService {
             );
         }
 
+        UserAccount assignee = null;
         if (request.assigneeId() != null) {
-            requireDeveloper(request.assigneeId());
+            assignee = requireDeveloper(request.assigneeId());
         }
 
         var now = LocalDateTime.now();
@@ -227,7 +228,16 @@ public class BugReportService {
             .updatedAt(now)
             .build();
 
+        if (assignee != null) {
+            report.setStatus(EBugStatus.ASSIGNED);
+        }
+
         report = bugReportRepository.save(report);
+
+        if (assignee != null) {
+            eventPublisher.publishEvent(new AssigneeChangedEvent(
+                    assignee.getName(), assignee.getEmailAddress(), report.getTitle()));
+        }
 
         return new CreateBugReportResponse(report.getId(), "Successfully created!");
     }
@@ -293,7 +303,7 @@ public class BugReportService {
     
     /**
      * Assigns the report to a developer and publishes an {@link com.ramy.bugreport.messaging.event.AssigneeChangedEvent}.
-     * The status is not changed.
+     * An {@link EBugStatus#OPEN} report becomes {@link EBugStatus#ASSIGNED}; the status of any other report is not changed.
      *
      * <p>Requires the ADMIN role, or the caller being the report's reporter or assignee
      * (checked by {@code BugReportAuthorizer.canUpdate}); otherwise access is denied.
@@ -314,6 +324,9 @@ public class BugReportService {
         var assignee = requireDeveloper(assigneeId);
 
         report.setAssigneeId(assigneeId);
+        if (report.getStatus() == EBugStatus.OPEN) {
+            report.setStatus(EBugStatus.ASSIGNED);
+        }
         saveUpdated(report);
         eventPublisher.publishEvent(new AssigneeChangedEvent(
                 assignee.getName(), assignee.getEmailAddress(), report.getTitle()));
@@ -347,8 +360,8 @@ public class BugReportService {
      * Changes the status and publishes a {@link com.ramy.bugreport.messaging.event.StatusChangedEvent}
      * to the reporter and, if present, the assignee. Setting the current status again changes nothing and publishes no event.
      *
-     * <p>{@link EBugStatus#CLOSED} cannot be set here; use {@link #close} instead. Other changes must be allowed by
-     * {@link EBugStatus#canTransitionTo}.
+     * <p>{@link EBugStatus#CLOSED} cannot be set here (use {@link #close}), and neither can {@link EBugStatus#ASSIGNED}
+     * (use {@link #updateAssignee}). Other changes must be allowed by {@link EBugStatus#canTransitionTo}.
      *
      * <p>Requires the ADMIN role, or the caller being the report's reporter or assignee
      * (checked by {@code BugReportAuthorizer.canUpdate}); otherwise access is denied.
@@ -357,8 +370,8 @@ public class BugReportService {
      * @param request the new value
      * @return confirmation containing the report id
      * @throws ResourceNotFoundException if the report does not exist
-     * @throws BusinessRuleConflictException if the report is already closed, the requested status is {@code CLOSED},
-     *         or the transition is not allowed
+     * @throws BusinessRuleConflictException if the report is already closed, the requested status is {@code CLOSED}
+     *         or {@code ASSIGNED}, or the transition is not allowed
      */
     @Transactional
     @PreAuthorize(
@@ -369,6 +382,10 @@ public class BugReportService {
 
         if (request.status() == EBugStatus.CLOSED) {
             throw new BusinessRuleConflictException("Use the resolution endpoint to close a report.");
+        }
+
+        if (request.status() == EBugStatus.ASSIGNED) {
+            throw new BusinessRuleConflictException("Use the assignee endpoint to assign a report.");
         }
 
         if (request.status() == report.getStatus()) {

@@ -40,22 +40,26 @@ to a message broker and sent to the people involved as emails.
   version and commit URL). A closed report can no longer be changed or commented on.
 - **Administration.** Admins and developers manage projects and components; admins manage
   user roles.
-- **Email notifications.** Assigning, changing the status and closing a report send an email
-  (caught by Mailpit in the development setup).
+- **Email notifications.** Assigning (also when creating a report with an assignee), changing
+  the status and closing a report send an email (caught by Mailpit in the development setup).
 
 ### Bug report lifecycle
 
-A report starts as `OPEN`. Status changes must follow the transitions below
-(`EBugStatus.canTransitionTo`); anything else is rejected with 409. Setting the current status
-again does nothing and sends no email. Assigning a developer does not change the status by
-itself. `CLOSED` can only be reached from `REVIEWING` by adding a resolution, and it is final.
-`ASSIGNED` and `REJECTED` exist in the enum but are not part of the lifecycle.
+A report starts as `OPEN`, or as `ASSIGNED` if it is created with an assignee. Status changes
+must follow the transitions below (`EBugStatus.canTransitionTo`); anything else is rejected with
+409. Setting the current status again does nothing and sends no email. `ASSIGNED` is reached only
+by assigning a developer (on creation, or from `OPEN` with `PATCH /api/reports/{reportId}/assignee`),
+never through the status endpoint; assigning a report that is not `OPEN` leaves its status
+unchanged. `CLOSED` can only be reached from `REVIEWING` by adding a resolution, and it is final.
+`REJECTED` exists in the enum but is not part of the lifecycle.
 
 ```mermaid
 stateDiagram-v2
     [*] --> OPEN : POST /api/reports
-    OPEN --> IN_PROGRESS
-    OPEN --> NEEDS_INFORMATION
+    [*] --> ASSIGNED : POST /api/reports with an assignee
+    OPEN --> ASSIGNED : assign a developer
+    ASSIGNED --> IN_PROGRESS
+    ASSIGNED --> NEEDS_INFORMATION
     IN_PROGRESS --> NEEDS_INFORMATION
     NEEDS_INFORMATION --> IN_PROGRESS
     IN_PROGRESS --> REVIEWING
@@ -65,7 +69,7 @@ stateDiagram-v2
 ```
 
 _Figure 1: Status lifecycle of a bug report (`EBugStatus`). Changing between the open statuses
-uses `PATCH /api/reports/{reportId}/status`, which rejects `CLOSED` and disallowed transitions._
+uses `PATCH /api/reports/{reportId}/status`, which rejects `ASSIGNED`, `CLOSED` and disallowed transitions._
 
 ## Architecture overview
 
@@ -304,7 +308,7 @@ or 409. URLs that are not explicitly allowed answer 403.
 | POST | `/api/reports/{reportId}/resolution` | Close a report | Owner or admin |
 | PATCH | `/api/reports/{reportId}/assignee` | Assign a developer | Owner or admin |
 | PATCH | `/api/reports/{reportId}/severity` | Change severity | Owner or admin |
-| PATCH | `/api/reports/{reportId}/status` | Change status (not to `CLOSED`) | Owner or admin |
+| PATCH | `/api/reports/{reportId}/status` | Change status (not to `ASSIGNED` or `CLOSED`) | Owner or admin |
 | PATCH | `/api/reports/{reportId}/project` | Move to another project | Owner or admin |
 | PATCH | `/api/reports/{reportId}/component` | Move to another component | Owner or admin |
 | PATCH | `/api/reports/{reportId}/description` | Replace the description | Owner or admin |
