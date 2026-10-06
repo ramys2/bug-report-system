@@ -160,16 +160,24 @@ function EditableReportSection({
 }
 
 /**
- * Statuses that can be chosen in the page. `CLOSED` is missing on purpose: reports are closed through the resolution form.
+ * Statuses a report can be moved to from each status; mirrors `EBugStatus.canTransitionTo` in the backend, which stays the authority.
+ * `CLOSED` is never offered: reports are closed through the resolution form.
  */
-const STATUS_OPTIONS = [
-    "OPEN",
-    "ASSIGNED",
-    "IN_PROGRESS",
-    "NEEDS_INFORMATION",
-    "REVIEWING",
-    "REJECTED",
-];
+const STATUS_TRANSITIONS = {
+    OPEN: ["IN_PROGRESS", "NEEDS_INFORMATION"],
+    IN_PROGRESS: ["NEEDS_INFORMATION", "REVIEWING"],
+    NEEDS_INFORMATION: ["IN_PROGRESS"],
+    REVIEWING: ["IN_PROGRESS"],
+};
+
+/**
+ * Options for the status select: the current status followed by the statuses it can change to.
+ * Empty if no change is possible, which disables editing.
+ */
+function statusOptions(currentStatus) {
+    const nextStatuses = STATUS_TRANSITIONS[currentStatus] ?? [];
+    return nextStatuses.length > 0 ? [currentStatus, ...nextStatuses] : [];
+}
 
 /**
  * Severities that can be chosen, same values as the backend enum.
@@ -480,7 +488,7 @@ export default function BugReportPage() {
                                             isEditable={!isClosed}
                                             label="Status"
                                             onValueSaved={(status) => setBugReport((report) => ({ ...report, status }))}
-                                            options={STATUS_OPTIONS}
+                                            options={statusOptions(bugReport.status)}
                                             reportId={bugReport.id}
                                             updateValue={updateStatus}
                                             currentValue={bugReport.status}

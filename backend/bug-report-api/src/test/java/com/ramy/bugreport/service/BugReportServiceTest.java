@@ -383,6 +383,33 @@ class BugReportServiceTest {
     }
 
     @Test
+    void updateStatusRejectsDisallowedTransition() {
+        var report = report(UUID.randomUUID());
+        var request = new UpdateStatusRequest(EBugStatus.REVIEWING);
+        when(bugReportRepository.findById(report.getId())).thenReturn(Optional.of(report));
+
+        assertThatThrownBy(() -> service.updateStatus(report.getId(), request))
+                .isInstanceOf(BusinessRuleConflictException.class)
+                .hasMessage("Cannot change status from OPEN to REVIEWING.");
+        assertThat(report.getStatus()).isEqualTo(EBugStatus.OPEN);
+        verifyNoInteractions(eventPublisher);
+    }
+
+    @Test
+    void updateStatusDoesNothingWhenStatusIsUnchanged() {
+        var report = report(UUID.randomUUID());
+        var request = new UpdateStatusRequest(EBugStatus.OPEN);
+        when(bugReportRepository.findById(report.getId())).thenReturn(Optional.of(report));
+
+        var result = service.updateStatus(report.getId(), request);
+
+        assertThat(report.getStatus()).isEqualTo(EBugStatus.OPEN);
+        assertUpdateResponse(result, report);
+        verify(bugReportRepository, never()).save(any());
+        verifyNoInteractions(eventPublisher);
+    }
+
+    @Test
     void updateStatusRejectsReopeningClosedReport() {
         var report = report(UUID.randomUUID());
         report.setStatus(EBugStatus.CLOSED);

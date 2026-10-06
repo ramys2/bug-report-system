@@ -345,9 +345,10 @@ public class BugReportService {
 
     /**
      * Changes the status and publishes a {@link com.ramy.bugreport.messaging.event.StatusChangedEvent}
-     * to the reporter and, if present, the assignee. The event is also published when the status is set to its current value.
+     * to the reporter and, if present, the assignee. Setting the current status again changes nothing and publishes no event.
      *
-     * <p>{@link EBugStatus#CLOSED} cannot be set here; use {@link #close} instead. No other transition rules are checked.
+     * <p>{@link EBugStatus#CLOSED} cannot be set here; use {@link #close} instead. Other changes must be allowed by
+     * {@link EBugStatus#canTransitionTo}.
      *
      * <p>Requires the ADMIN role, or the caller being the report's reporter or assignee
      * (checked by {@code BugReportAuthorizer.canUpdate}); otherwise access is denied.
@@ -356,7 +357,8 @@ public class BugReportService {
      * @param request the new value
      * @return confirmation containing the report id
      * @throws ResourceNotFoundException if the report does not exist
-     * @throws BusinessRuleConflictException if the report is already closed, or the requested status is {@code CLOSED}
+     * @throws BusinessRuleConflictException if the report is already closed, the requested status is {@code CLOSED},
+     *         or the transition is not allowed
      */
     @Transactional
     @PreAuthorize(
@@ -367,6 +369,15 @@ public class BugReportService {
 
         if (request.status() == EBugStatus.CLOSED) {
             throw new BusinessRuleConflictException("Use the resolution endpoint to close a report.");
+        }
+
+        if (request.status() == report.getStatus()) {
+            return updateResponse(report);
+        }
+
+        if (!report.getStatus().canTransitionTo(request.status())) {
+            throw new BusinessRuleConflictException(
+                    "Cannot change status from %s to %s.".formatted(report.getStatus(), request.status()));
         }
 
         report.setStatus(request.status());

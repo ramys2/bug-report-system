@@ -123,8 +123,8 @@ Enums are stored by name (`VARCHAR(32)`), and each one is also guarded by a `CHE
 | `EBugSeverity` | `LOW`, `MEDIUM`, `HIGH`, `CRITICAL` (least to most severe) | `BugReport.severity` |
 | `EBugStatus` | `OPEN`, `ASSIGNED`, `IN_PROGRESS`, `NEEDS_INFORMATION`, `REVIEWING`, `REJECTED`, `CLOSED` | `BugReport.status` |
 
-`EBugStatus` defines no transition rules; see the lifecycle diagram in the
-[README](../README.md#bug-report-lifecycle).
+`EBugStatus.canTransitionTo` defines the allowed status changes; see the lifecycle diagram in the
+[README](../README.md#bug-report-lifecycle). `ASSIGNED` and `REJECTED` are not part of the lifecycle.
 
 ## Relations
 
@@ -147,6 +147,7 @@ These rules are enforced by the service classes, not by the domain classes or th
 | --- | --- |
 | A closed report cannot be updated, assigned, commented on or have comments deleted (409). | `BugReportService.reportById`, `CommentService.requireOpenReport` |
 | A report is closed only by adding a resolution; setting the status to `CLOSED` directly is rejected (409). | `BugReportService.updateStatus`, `close` |
+| A status change must follow `EBugStatus.canTransitionTo` (409); setting the current status again does nothing and sends no notification. | `BugReportService.updateStatus` |
 | A report that already has a resolution cannot be closed again (409). | `BugReportService.close` |
 | Only a user with the `DEVELOPER` role can be an assignee (409). | `BugReportService.requireDeveloper` |
 | Only the reporter, the assignee or an admin can change or close a report. | `@PreAuthorize` with `BugReportAuthorizer.canUpdate` |

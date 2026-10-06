@@ -15,7 +15,6 @@ marked in the code comments and were not confirmed by running the application.
 
 ### Behavior and business rules
 - `BugReportService.create` with an assignee leaves the status `OPEN` and publishes no event. `updateAssignee` also leaves the status unchanged (never sets `ASSIGNED`), but it does publish an event.
-- `updateStatus` publishes a notification even when the status did not change. Besides rejecting `CLOSED`, no transition rules are checked.
 - `updateComponent` does not check that the component belongs to the report's project.
 - `getDevelopers` loads all accounts and filters them in memory.
 - The `archived_at` column exists on `user_account`, `software_project` and `component`, but no entity, mapper or query uses it. Archiving does not exist in the code.

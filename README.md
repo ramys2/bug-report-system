@@ -45,30 +45,27 @@ to a message broker and sent to the people involved as emails.
 
 ### Bug report lifecycle
 
-A report starts as `OPEN`. The code applies **no transition rules** between the open
-statuses: any status except `CLOSED` can be set at any time, and assigning a developer does not
-change the status by itself. `CLOSED` can only be reached by adding a resolution, and it is
-final.
+A report starts as `OPEN`. Status changes must follow the transitions below
+(`EBugStatus.canTransitionTo`); anything else is rejected with 409. Setting the current status
+again does nothing and sends no email. Assigning a developer does not change the status by
+itself. `CLOSED` can only be reached from `REVIEWING` by adding a resolution, and it is final.
+`ASSIGNED` and `REJECTED` exist in the enum but are not part of the lifecycle.
 
 ```mermaid
 stateDiagram-v2
     [*] --> OPEN : POST /api/reports
-
-    state "Not closed (any status can be set at any time)" as NotClosed {
-        OPEN
-        ASSIGNED
-        IN_PROGRESS
-        NEEDS_INFORMATION
-        REVIEWING
-        REJECTED
-    }
-
-    NotClosed --> CLOSED : POST /api/reports/{reportId}/resolution
+    OPEN --> IN_PROGRESS
+    OPEN --> NEEDS_INFORMATION
+    IN_PROGRESS --> NEEDS_INFORMATION
+    NEEDS_INFORMATION --> IN_PROGRESS
+    IN_PROGRESS --> REVIEWING
+    REVIEWING --> IN_PROGRESS
+    REVIEWING --> CLOSED : POST /api/reports/{reportId}/resolution
     CLOSED --> [*]
 ```
 
 _Figure 1: Status lifecycle of a bug report (`EBugStatus`). Changing between the open statuses
-uses `PATCH /api/reports/{reportId}/status`, which rejects `CLOSED`._
+uses `PATCH /api/reports/{reportId}/status`, which rejects `CLOSED` and disallowed transitions._
 
 ## Architecture overview
 
@@ -613,8 +610,6 @@ findings are in [Oddities.md](Oddities.md).
 - **Basic authentication only.** Session cookie and CSRF token, with three fixed roles. There
   is no password policy, password reset, email verification or account lockout.
 - **Demo passwords are hard-coded** and printed to the log at startup.
-- **No status transition rules.** Any open status can be set at any time; only `CLOSED` is
-  special.
 - **Attachments are not implemented.** An `Attachment` domain class exists, but there is no
   table, endpoint or user interface for it.
 - **Every signed-in user sees every report** (no per-project visibility).
