@@ -65,4 +65,3 @@ marked in the code comments and were not confirmed by running the application.
 
 - `run-backend.sh` called with two or more arguments prints a message but exits with status 0 (a bare `exit`), so it looks like success. An unknown single argument is ignored silently.
 - The Vite proxy target `http://backend:8080` (`frontend/vite.config.js`) only resolves inside the compose network, so `npm run dev` on the host has no working backend.
-- `docker-compose.yml` uses the `latest` tag for `mariadb` and `apache/activemq-artemis`, so versions are not pinned.
