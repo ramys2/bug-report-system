@@ -412,7 +412,7 @@ cd bug-report-system
 docker compose up --build
 ```
 
-This builds the backend and frontend images and starts five services. The first start seeds the
+This builds the backend and frontend images and starts five services plus the one-shot `database-test-init` job. The first start seeds the
 demo data (see [Demo credentials](#demo-credentials)).
 
 ```mermaid
@@ -426,7 +426,7 @@ flowchart LR
     BE -->|"SMTP 1025"| MP
     DB --- V1[/"volume mariadb-data"/]
     MP --- V2[/"volume mailpit-data"/]
-    Init["database/init/<br/>creates bug_report_test"] -.->|"first start only"| DB
+    Init["database-test-init<br/>creates bug_report_test"] -.->|"runs once per up"| DB
 ```
 
 _Figure 6: Docker Compose services and volumes. Published on the host: 5173 (frontend), 8080
@@ -532,30 +532,33 @@ tests.
 | --- | --- | --- |
 | Service unit tests (Mockito, no Spring) | 58 | Business rules of `BugReportService` (28), `UserAccountService` (9), `CommentService` (9), `ComponentService` (7) and `SoftwareProjectService` (5) |
 | Controller tests (standalone MockMvc, mocked services) | 25 | Routes, status codes and request handling of the five controllers |
-| Integration tests (`@SpringBootTest`, profile `test`) | 12 | `PersistenceIntegrationTest` (6): repositories and mapping against MariaDB; `UserRoleSecurityIntegrationTest` (6): role rules on the URLs with a real security configuration |
+| Integration tests (`@SpringBootTest`, profile `test`, classes named `*IT`) | 12 | `PersistenceIT` (6): repositories and mapping against MariaDB; `UserRoleSecurityIT` (6): role rules on the URLs with a real security configuration |
 
-The integration tests use the database `bug_report_test` on `localhost:3306`
+The unit and controller tests run with `mvn test` and need nothing. The integration tests run
+only in `mvn verify` (and `mvn install`), through the Failsafe plugin, and use the database
+`bug_report_test` on `localhost:3306`
 ([application-test.yml](backend/bug-report-api/src/test/resources/application-test.yml)), so start
-the database first. The unit and controller tests need nothing.
+the database first.
 
 ```shell
-docker compose up -d database
 cd backend
-mvn test                                                    # all tests
-mvn test -pl bug-report-api -am -Dtest=BugReportServiceTest -Dsurefire.failIfNoSpecifiedTests=false   # one test class
+mvn test                                                    # unit and controller tests, no database needed
+
+docker compose up -d database database-test-init            # needed for the integration tests
+mvn verify                                                  # all tests
+mvn test -pl bug-report-api -am -Dtest=BugReportServiceTest -Dsurefire.failIfNoSpecifiedTests=false   # one unit test class
+mvn verify -pl bug-report-api -am -Dit.test=PersistenceIT -Dtest=NoSuchTest -Dsurefire.failIfNoSpecifiedTests=false -Dfailsafe.failIfNoSpecifiedTests=false   # one integration test class
 ```
 
-`./build-backend.sh` also runs the tests. To build without them, use
+`./build-backend.sh` runs `mvn clean install`, so it also runs the integration tests. To build without them, use
 `mvn clean install -DskipTests` in `backend/`.
 
 Notes:
 
-- `bug_report_test` is created by [database/init](database/init/01-create-test-database.sql) only
-  when the database volume is created. If your volume is older, create it once:
-
-  ```shell
-  docker compose exec database mariadb -uroot -proot -e "CREATE DATABASE IF NOT EXISTS bug_report_test; GRANT ALL PRIVILEGES ON bug_report_test.* TO 'bug_report'@'%'; FLUSH PRIVILEGES;"
-  ```
+- `bug_report_test` is created by the one-shot `database-test-init` service, which runs
+  [database/init](database/init/01-create-test-database.sql) against the running database and then
+  exits. The database image itself runs that script only on an empty volume, so this service is what
+  also fixes volumes created earlier. It is safe to run repeatedly.
 
 - The test log contains Artemis connection errors (`AMQ219007`), because the broker host is not
   reachable from your machine. The tests still pass.

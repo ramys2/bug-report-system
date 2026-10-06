@@ -55,7 +55,7 @@ import com.ramy.bugreport.service.SoftwareProjectService;
 // No test transaction: every read must work after the adapter's transaction closes.
 @SpringBootTest
 @ActiveProfiles("test")
-class PersistenceIntegrationTest {
+class PersistenceIT {
     @Autowired private IUserAccountRepository users;
     @Autowired private ISoftwareProjectRepository projects;
     @Autowired private IComponentRepository components;

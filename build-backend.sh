@@ -5,7 +5,7 @@
 #
 # Usage:        ./build-backend.sh   (run from the repository root, because of the relative `cd backend`)
 # Requires:     JDK 21 and Maven. The tests need a MariaDB reachable at localhost:3306 with the
-#               bug_report_test database (see database/init/ and docker-compose.yml).
+#               bug_report_test database (created by the database-test-init service, see docker-compose.yml).
 
 cd backend
 
