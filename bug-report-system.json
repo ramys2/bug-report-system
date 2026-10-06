@@ -19,6 +19,12 @@
           "color": "#4a9270"
         },
         {
+          "id": "task-280e7f0c-cbb7-4749-8388-acdae6c100ef",
+          "title": "Implement UI translation",
+          "description": "",
+          "color": "#4a9270"
+        },
+        {
           "id": "task-754b8d21-38b0-4f75-8c4b-b39d37096d21",
           "title": "Refactor Dockerfile for frontend",
           "description": "Refactor Dockerfile for frontend so it is possible to build the application and run it over 'nginx'.",
@@ -83,102 +89,6 @@
           "title": "[Design] Decide whether to map JPA associations",
           "description": "Oddities.md > Backend > Small things.\nOnly BugReportEntity.resolution is a JPA association; other relations are plain UUID columns with foreign keys only in V1__Base.sql, so services load related rows by hand.",
           "color": "#4f78c4"
-        },
-        {
-          "id": "task-f6c68f8d-329b-429a-9287-49c6e7a95eb3",
-          "title": "[Refactor] Query developers in the database instead of filtering in memory",
-          "description": "Oddities.md > Backend > Behavior.\nUserAccountService.getDevelopers loads all accounts and filters by role in memory. Use a repository query by role (findAllByRole exists).",
-          "color": "#7a5ab5"
-        },
-        {
-          "id": "task-c641dcae-69f6-4921-897c-e6b5a6b3db42",
-          "title": "[Refactor] Simplify BugReport builder and mapper handling of id, status and resolution",
-          "description": "Oddities.md > Backend > Behavior.\nThe builder always starts a report as OPEN and cannot set id, status or resolution; BugReportMapper.toDomain sets them afterwards with setters. Consider a cleaner way to rebuild a report from the database.",
-          "color": "#7a5ab5"
-        },
-        {
-          "id": "task-77302767-c203-481e-90d9-8a2048187445",
-          "title": "[Refactor] Fix the misleading comment about comment removal in SecurityConfig",
-          "description": "Oddities.md > Backend > Security and access.\nThe comment says comment removal is \"an administrative action\", but the URL rule only needs a signed-in user and the service allows ADMIN or the comment's author. Fix the comment (or change the rule).",
-          "color": "#7a5ab5"
-        },
-        {
-          "id": "task-e067761c-0b7d-470c-a53c-64dc659cbcad",
-          "title": "[Refactor] Make the CORS origin configurable",
-          "description": "Oddities.md > Backend > Security and access.\nSecurityConfig hard-codes http://localhost:5173 as the only allowed origin. Move it to a property.",
-          "color": "#7a5ab5"
-        },
-        {
-          "id": "task-5dd2d146-394c-459e-b8bd-0b741833d446",
-          "title": "[Refactor] Avoid a database lookup on every request in CurrentUserAuthenticationFilter",
-          "description": "Oddities.md > Backend > Security and access.\nThe filter reloads the user on each request so role changes apply immediately. Decide if that trade-off is fine or if caching is needed.",
-          "color": "#7a5ab5"
-        },
-        {
-          "id": "task-5e312a7f-eec7-4e08-9f80-9609ec1ed16f",
-          "title": "[Refactor] Add a ResolutionResponse DTO",
-          "description": "Oddities.md > Backend > API design.\nBugReportResponse serializes the domain Resolution object directly, tying the API shape to the domain class.",
-          "color": "#7a5ab5"
-        },
-        {
-          "id": "task-042b3297-2e2c-4bd3-89fd-57d11ff31509",
-          "title": "[Refactor] Make the email sender address configurable",
-          "description": "Oddities.md > Backend > Messaging.\nno-reply@bugreport.local is hard-coded in BugReportEventConsumer.",
-          "color": "#7a5ab5"
-        },
-        {
-          "id": "task-dbddb7d8-a728-4576-84bc-7e623cf5d3dc",
-          "title": "[Refactor] Fix the misleading in-memory database comment in BugReportApplication",
-          "description": "Oddities.md > Backend > Small things.\nThe comment \"These accounts exist only in the in-memory demo database\" is wrong: the app and the tests use MariaDB.",
-          "color": "#7a5ab5"
-        },
-        {
-          "id": "task-70c47ecf-7510-4f74-a52a-ce603332b99c",
-          "title": "[Refactor] Replace jQuery ($.ajax) with fetch",
-          "description": "Oddities.md > Frontend.\njQuery is used for all requests although fetch is available.",
-          "color": "#7a5ab5"
-        },
-        {
-          "id": "task-95318641-408e-4605-bd73-9b04a89daef8",
-          "title": "[Refactor] Clean up the api modules",
-          "description": "Oddities.md > Frontend.\n- api files differ in style (quoted \"url\" keys, missing semicolons)\n- api/create-bug-report-options.js duplicates getAllProjects and getAllComponents",
-          "color": "#7a5ab5"
-        },
-        {
-          "id": "task-760fb4c5-b2a0-4eee-89b5-e3e2a867e613",
-          "title": "[Refactor] Replace Bootstrap modal DOM handling with React state",
-          "description": "Oddities.md > Frontend.\nModal relies on Bootstrap's JavaScript, and pages open and close modals with document.getElementById plus the Bootstrap Modal API, mixing DOM access with React state.",
-          "color": "#7a5ab5"
-        },
-        {
-          "id": "task-a4f36f79-db06-490f-b84f-79dcf63f5033",
-          "title": "[Refactor] Make the Toast timeout configurable",
-          "description": "Oddities.md > Frontend.\nToast uses a hard-coded 5-second timeout.",
-          "color": "#7a5ab5"
-        },
-        {
-          "id": "task-507699ce-5c1d-4ed0-85c4-f4bf4426f24e",
-          "title": "[Refactor] Share EditableName and description-modal code between the admin pages",
-          "description": "Oddities.md > Frontend.\nProjectAdminPage and ComponentAdminPage duplicate the inline EditableName component and the description-modal logic.",
-          "color": "#7a5ab5"
-        },
-        {
-          "id": "task-89b0e4fe-96c9-4a65-a538-68a5a3fbd9ea",
-          "title": "[Refactor] Guard auth.currentUser in ProjectAdminPage",
-          "description": "Oddities.md > Frontend.\nProjectAdminPage reads auth.currentUser.role without a null check; it is only safe because ProtectedRoute guards the page.",
-          "color": "#7a5ab5"
-        },
-        {
-          "id": "task-4ee32e3a-c17b-4657-9aef-703e58bd0c74",
-          "title": "[Refactor] Filter and page users on the server in UserAdminPage",
-          "description": "Oddities.md > Frontend.\nUserAdminPage loads all users and filters and pages them in the browser.",
-          "color": "#7a5ab5"
-        },
-        {
-          "id": "task-f1e9731b-869e-4d1e-9fbb-929aa9bf8dd1",
-          "title": "[Refactor] Load form option lists lazily in HomePage and BugReportPage",
-          "description": "Oddities.md > Frontend.\nDevelopers, projects and components are loaded on mount even if the create form or the select fields are never used.",
-          "color": "#7a5ab5"
         }
       ]
     },
@@ -223,6 +133,96 @@
       "name": "In progress",
       "tasks": [
         {
+          "id": "task-4ee32e3a-c17b-4657-9aef-703e58bd0c74",
+          "title": "[Refactor] Filter and page users on the server in UserAdminPage",
+          "description": "Oddities.md > Frontend.\nUserAdminPage loads all users and filters and pages them in the browser.",
+          "color": "#7a5ab5"
+        },
+        {
+          "id": "task-89b0e4fe-96c9-4a65-a538-68a5a3fbd9ea",
+          "title": "[Refactor] Guard auth.currentUser in ProjectAdminPage",
+          "description": "Oddities.md > Frontend.\nProjectAdminPage reads auth.currentUser.role without a null check; it is only safe because ProtectedRoute guards the page.",
+          "color": "#7a5ab5"
+        },
+        {
+          "id": "task-dbddb7d8-a728-4576-84bc-7e623cf5d3dc",
+          "title": "[Refactor] Fix the misleading in-memory database comment in BugReportApplication",
+          "description": "Oddities.md > Backend > Small things.\nThe comment \"These accounts exist only in the in-memory demo database\" is wrong: the app and the tests use MariaDB.",
+          "color": "#7a5ab5"
+        },
+        {
+          "id": "task-f6c68f8d-329b-429a-9287-49c6e7a95eb3",
+          "title": "[Refactor] Query developers in the database instead of filtering in memory",
+          "description": "Oddities.md > Backend > Behavior.\nUserAccountService.getDevelopers loads all accounts and filters by role in memory. Use a repository query by role (findAllByRole exists).",
+          "color": "#7a5ab5"
+        },
+        {
+          "id": "task-c641dcae-69f6-4921-897c-e6b5a6b3db42",
+          "title": "[Refactor] Simplify BugReport builder and mapper handling of id, status and resolution",
+          "description": "Oddities.md > Backend > Behavior.\nThe builder always starts a report as OPEN and cannot set id, status or resolution; BugReportMapper.toDomain sets them afterwards with setters. Consider a cleaner way to rebuild a report from the database.",
+          "color": "#7a5ab5"
+        },
+        {
+          "id": "task-77302767-c203-481e-90d9-8a2048187445",
+          "title": "[Refactor] Fix the misleading comment about comment removal in SecurityConfig",
+          "description": "Oddities.md > Backend > Security and access.\nThe comment says comment removal is \"an administrative action\", but the URL rule only needs a signed-in user and the service allows ADMIN or the comment's author. Fix the comment (or change the rule).",
+          "color": "#7a5ab5"
+        },
+        {
+          "id": "task-e067761c-0b7d-470c-a53c-64dc659cbcad",
+          "title": "[Refactor] Make the CORS origin configurable",
+          "description": "Oddities.md > Backend > Security and access.\nSecurityConfig hard-codes http://localhost:5173 as the only allowed origin. Move it to a property.",
+          "color": "#7a5ab5"
+        },
+        {
+          "id": "task-507699ce-5c1d-4ed0-85c4-f4bf4426f24e",
+          "title": "[Refactor] Share EditableName and description-modal code between the admin pages",
+          "description": "Oddities.md > Frontend.\nProjectAdminPage and ComponentAdminPage duplicate the inline EditableName component and the description-modal logic.",
+          "color": "#7a5ab5"
+        },
+        {
+          "id": "task-5dd2d146-394c-459e-b8bd-0b741833d446",
+          "title": "[Refactor] Avoid a database lookup on every request in CurrentUserAuthenticationFilter",
+          "description": "Oddities.md > Backend > Security and access.\nThe filter reloads the user on each request so role changes apply immediately. Decide if that trade-off is fine or if caching is needed.",
+          "color": "#7a5ab5"
+        },
+        {
+          "id": "task-042b3297-2e2c-4bd3-89fd-57d11ff31509",
+          "title": "[Refactor] Make the email sender address configurable",
+          "description": "Oddities.md > Backend > Messaging.\nno-reply@bugreport.local is hard-coded in BugReportEventConsumer.",
+          "color": "#7a5ab5"
+        },
+        {
+          "id": "task-70c47ecf-7510-4f74-a52a-ce603332b99c",
+          "title": "[Refactor] Replace jQuery ($.ajax) with fetch",
+          "description": "Oddities.md > Frontend.\njQuery is used for all requests although fetch is available.",
+          "color": "#7a5ab5"
+        },
+        {
+          "id": "task-95318641-408e-4605-bd73-9b04a89daef8",
+          "title": "[Refactor] Clean up the api modules",
+          "description": "Oddities.md > Frontend.\n- api files differ in style (quoted \"url\" keys, missing semicolons)\n- api/create-bug-report-options.js duplicates getAllProjects and getAllComponents",
+          "color": "#7a5ab5"
+        },
+        {
+          "id": "task-760fb4c5-b2a0-4eee-89b5-e3e2a867e613",
+          "title": "[Refactor] Replace Bootstrap modal DOM handling with React state",
+          "description": "Oddities.md > Frontend.\nModal relies on Bootstrap's JavaScript, and pages open and close modals with document.getElementById plus the Bootstrap Modal API, mixing DOM access with React state.",
+          "color": "#7a5ab5"
+        },
+        {
+          "id": "task-a4f36f79-db06-490f-b84f-79dcf63f5033",
+          "title": "[Refactor] Make the Toast timeout configurable",
+          "description": "Oddities.md > Frontend.\nToast uses a hard-coded 5-second timeout.",
+          "color": "#7a5ab5"
+        },
+        {
+          "id": "task-f1e9731b-869e-4d1e-9fbb-929aa9bf8dd1",
+          "title": "[Refactor] Load form option lists lazily in HomePage and BugReportPage",
+          "description": "Oddities.md > Frontend.\nDevelopers, projects and components are loaded on mount even if the create form or the select fields are never used.",
+          "color": "#7a5ab5"
+        },
+        {
           "id": "task-dc9e8a35-8e0d-4518-979f-3c6cc4506dc4",
           "title": "[Design] Use one path style for update endpoints",
           "description": "Oddities.md > Backend > API design.\nComponent uses the camelCase segment /responsibleUserId; report endpoints use kebab-case (/steps-to-reproduce).",
@@ -263,6 +263,12 @@
           "title": "[UX] Add a close (X) button to the description modals of the admin pages",
           "description": "Oddities.md > Frontend.",
           "color": "#3a9ab5"
+        },
+        {
+          "id": "task-5e312a7f-eec7-4e08-9f80-9609ec1ed16f",
+          "title": "[Refactor] Add a ResolutionResponse DTO",
+          "description": "Oddities.md > Backend > API design.\nBugReportResponse serializes the domain Resolution object directly, tying the API shape to the domain class.",
+          "color": "#7a5ab5"
         }
       ]
     },
