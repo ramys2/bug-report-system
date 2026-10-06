@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ramy.bugreport.dto.component.CreateComponentRequest;
@@ -62,18 +63,23 @@ public class ComponentController {
     */
 
     /**
-     * {@code GET /api/components}: lists all components.
+     * {@code GET /api/components}: lists all components, or only the components of one project.
      *
      * <p>Access: any signed-in user.
      *
-     * @return 200 with a list of {@code {id, name, description, responsibleUserName}}
+     * @param projectId optional; if given, only components of this project are listed
+     * @return 200 with a list of {@code {id, name, description, responsibleUserName, projectId}}
+     * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if {@code projectId} is given but no such project exists
      */
-    @Operation(summary = "List all components", description = "Access: any signed-in user.")
-    @ApiResponse(responseCode = "200", description = "All components.")
+    @Operation(summary = "List components", description = "Access: any signed-in user. Without `projectId` all components are returned; with it only the components of that project, or 404 if the project does not exist.")
+    @ApiResponse(responseCode = "200", description = "The components.")
     @UnauthorizedResponse
+    @NotFoundResponse
     @GetMapping
-    public List<ComponentResponse> getAll() {
-        return componentService.getAll();
+    public List<ComponentResponse> getAll(
+            @Parameter(description = "Only list components of this project.", example = ApiExamples.UUID) @RequestParam(required = false) UUID projectId
+    ) {
+        return componentService.getAll(projectId);
     }
 
     /*
@@ -89,11 +95,11 @@ public class ComponentController {
      *
      * <p>Access: ADMIN or DEVELOPER role.
      *
-     * @param request body {@code {name}} is required and not blank; {@code description} and {@code responsibleUserId} are optional
+     * @param request body {@code {name, projectId}} are required ({@code name} not blank); {@code description} and {@code responsibleUserId} are optional
      * @return 201 with {@code {id, message}}
-     * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if {@code responsibleUserId} is given but no such user exists
+     * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the project does not exist, or {@code responsibleUserId} is given but no such user exists
      */
-    @Operation(summary = "Create a component", description = "Access: ADMIN or DEVELOPER role. `responsibleUserId` is optional; if given, it must belong to an existing user, otherwise the request fails with 404.")
+    @Operation(summary = "Create a component", description = "Access: ADMIN or DEVELOPER role. `projectId` must belong to an existing project. `responsibleUserId` is optional; if given, it must belong to an existing user. Otherwise the request fails with 404.")
     @ApiResponse(responseCode = "201", description = "Component created.")
     @BadRequestResponse
     @UnauthorizedResponse

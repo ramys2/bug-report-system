@@ -48,11 +48,12 @@ Only the role can be changed after construction.
 | `id` | UUID | yes | Primary key. |
 | `name` | string (255) | yes | Display name. |
 | `description` | text | no | Free text. |
-| `responsibleUserId` (`responsible_user_id`) | UUID | yes | Foreign key to `user_account`. |
+| `responsibleUserId` (`responsible_user_id`) | UUID | no | Foreign key to `user_account`. |
+| `projectId` (`project_id`) | UUID | yes (in the API) | Foreign key to `software_project`. The column is nullable only so that components created before it existed survive; the API requires it for new ones. |
 | (`archived_at`) | datetime | no | Unused column. |
 
-A component is not linked to a project in the database; a bug report refers to both a project and
-a component independently.
+A component belongs to one project. A bug report still refers to its project and its component
+independently; the code does not yet check that they match.
 
 ### BugReport (`bug_report`)
 
@@ -130,6 +131,7 @@ Enums are stored by name (`VARCHAR(32)`), and each one is also guarded by a `CHE
 
 - A **user** can report many bug reports, be assigned many, and write many comments.
 - A **user** can be responsible for many components (each component has exactly one).
+- A **project** has many components (each component has one project, `null` only for old rows).
 - A **project** and a **component** can each have many bug reports. A report belongs to exactly
   one of each. The code does not check that the component belongs to the project.
 - A **bug report** has many comments and at most one resolution (one-to-one, unique
@@ -191,6 +193,7 @@ classDiagram
         String name
         String description
         UUID responsibleUserId
+        UUID projectId
     }
     class BugReport {
         UUID id
@@ -224,6 +227,7 @@ classDiagram
     BugReport ..> SoftwareProject : projectId
     BugReport ..> Component : componentId
     Component ..> UserAccount : responsibleUserId
+    Component ..> SoftwareProject : projectId
     Comment ..> BugReport : bugReportId
     Comment ..> UserAccount : authorId
 ```

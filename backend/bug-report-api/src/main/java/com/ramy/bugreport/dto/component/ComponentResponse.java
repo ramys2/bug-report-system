@@ -14,6 +14,7 @@ import com.ramy.bugreport.openapi.ApiExamples;
  * @param name display name
  * @param description description; may be null
  * @param responsibleUserName display name of the responsible user; null if that user cannot be found
+ * @param projectId id of the project the component belongs to; null for components created before the link existed
  */
 @Schema(description = "A component in `GET /api/components`.")
 public record ComponentResponse(
@@ -24,7 +25,9 @@ public record ComponentResponse(
         @Schema(description = "Description. May be null.", example = "REST API and persistence layer.")
         String description,
         @Schema(description = "Display name of the responsible user. Null if that user cannot be found.", example = "Daniel Developer")
-        String responsibleUserName
+        String responsibleUserName,
+        @Schema(description = "Id of the project the component belongs to. Null for components created before the link existed.", example = ApiExamples.UUID)
+        UUID projectId
 ) {
 
     public static ComponentResponse from(Component component, UserAccount responsibleUser) {
@@ -32,6 +35,7 @@ public record ComponentResponse(
                 component.getId(),
                 component.getName(),
                 component.getDescription(),
-                responsibleUser == null ? null : responsibleUser.getName());
+                responsibleUser == null ? null : responsibleUser.getName(),
+                component.getProjectId());
     }
 }

@@ -39,6 +39,11 @@ public class ComponentRepositoryJpaAdapter implements IComponentRepository {
     }
 
     @Override
+    public List<Component> findByProjectId(UUID projectId) {
+        return repository.findByProjectId(projectId).stream().map(ComponentMapper::toDomain).toList();
+    }
+
+    @Override
     @Transactional
     public Component save(Component domain) {
         return ComponentMapper.toDomain(repository.save(ComponentMapper.toEntity(domain)));

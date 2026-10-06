@@ -386,8 +386,19 @@ paths:
       - Comments
   /api/components:
     get:
-      description: "Access: any signed-in user."
+      description: "Access: any signed-in user. Without `projectId` all components\
+        \ are returned; with it only the components of that project, or 404 if the\
+        \ project does not exist."
       operationId: getAll_2
+      parameters:
+      - description: Only list components of this project.
+        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        in: query
+        name: projectId
+        required: false
+        schema:
+          type: string
+          format: uuid
       responses:
         "200":
           content:
@@ -396,20 +407,26 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ComponentResponse"
-          description: All components.
+          description: The components.
         "401":
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiErrorResponse"
           description: Not signed in.
-      summary: List all components
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: A referenced resource does not exist.
+      summary: List components
       tags:
       - Components
     post:
-      description: "Access: ADMIN or DEVELOPER role. `responsibleUserId` is not validated\
-        \ as required, but the database requires it; a missing or unknown user is\
-        \ expected to fail with 409 (TODO(verify): not validated by the service)."
+      description: "Access: ADMIN or DEVELOPER role. `projectId` must belong to an\
+        \ existing project. `responsibleUserId` is optional; if given, it must belong\
+        \ to an existing user. Otherwise the request fails with 404."
       operationId: create_3
       parameters:
       - description: "CSRF token from `GET /api/csrf`. The token changes when you\
@@ -451,13 +468,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiErrorResponse"
           description: "The role or ownership check failed, or the CSRF token is missing."
-        "409":
+        "404":
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiErrorResponse"
-          description: The request conflicts with a business rule or with existing
-            data.
+          description: A referenced resource does not exist.
       summary: Create a component
       tags:
       - Components
@@ -2098,6 +2114,12 @@ components:
           description: Display name of the responsible user. Null if that user cannot
             be found.
           example: Daniel Developer
+        projectId:
+          type: string
+          format: uuid
+          description: Id of the project the component belongs to. Null for components
+            created before the link existed.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
       required:
       - id
       - name
@@ -2229,13 +2251,21 @@ components:
           description: Display name.
           example: Backend API
           minLength: 1
+        projectId:
+          type: string
+          format: uuid
+          description: Id of the project the component belongs to. Must belong to
+            an existing project.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
         responsibleUserId:
           type: string
           format: uuid
-          description: Id of the responsible user.
+          description: Optional id of the responsible user. Must belong to an existing
+            user.
           example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
       required:
       - name
+      - projectId
     CreateComponentResponse:
       type: object
       description: Response of `POST /api/components`.

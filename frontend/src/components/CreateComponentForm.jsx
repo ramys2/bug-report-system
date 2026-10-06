@@ -1,18 +1,20 @@
 import { useEffect, useState } from "react";
 import { createComponent } from "../api/component";
 import { searchUsers } from "../api/account";
+import { getAllProjects } from "../api/project";
 import { showToast } from "./toast";
 
 /**
- * Empty form state for name and description; also used to reset the form after a successful submit.
+ * Empty form state for name, project and description; also used to reset the form after a successful submit.
  */
-const initialFormValues = { name: "", description: "" };
+const initialFormValues = { name: "", projectId: "", description: "" };
 
 /**
  * Form (meant to sit inside a `Modal`) for creating a component with `POST /api/components`.
  *
- * The responsible user is picked by searching users by name (`GET /api/accounts/users?search=...`); results of outdated searches are ignored.
- * Only the name is required; the responsible user is optional. If the backend answers 404 (the user no longer exists), its message is shown in the error toast.
+ * The projects to choose from are loaded once when the form is mounted (`GET /api/projects`). The responsible user is picked by searching users by name
+ * (`GET /api/accounts/users?search=...`); results of outdated searches are ignored.
+ * Name and project are required; the responsible user is optional. If the backend answers 404 (the user no longer exists), its message is shown in the error toast.
  * On success the form is cleared and `onCreated` is called.
  *
  * @param {object} props
@@ -20,11 +22,18 @@ const initialFormValues = { name: "", description: "" };
  */
 export default function CreateComponentForm({ onCreated }) {
     const [formValues, setFormValues] = useState(initialFormValues);
+    const [projects, setProjects] = useState([]);
     const [responsibleUser, setResponsibleUser] = useState(null);
     const [search, setSearch] = useState("");
     const [users, setUsers] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    useEffect(() => {
+        getAllProjects()
+            .done(setProjects)
+            .fail(() => showToast("danger", "Unable to fetch projects.", "Unable to load projects"));
+    }, []);
 
     useEffect(() => {
         const normalizedSearch = search.trim();
@@ -85,8 +94,8 @@ export default function CreateComponentForm({ onCreated }) {
     function handleSubmit(event) {
         event.preventDefault();
 
-        if (!formValues.name.trim()) {
-            showToast("warning", "Please enter a component name.", "Missing information");
+        if (!formValues.name.trim() || !formValues.projectId) {
+            showToast("warning", "Please enter a component name and choose a project.", "Missing information");
             return;
         }
 
@@ -127,6 +136,24 @@ export default function CreateComponentForm({ onCreated }) {
                         required
                         value={formValues.name}
                     />
+                </div>
+                <div className="mb-3">
+                    <label className="form-label" htmlFor="new-component-project">Project *</label>
+                    <select
+                        className="form-select"
+                        id="new-component-project"
+                        name="projectId"
+                        onChange={handleChange}
+                        required
+                        value={formValues.projectId}
+                    >
+                        <option value="">Select a project</option>
+                        {projects.map((project) => (
+                            <option key={project.id} value={project.id}>
+                                {project.name}
+                            </option>
+                        ))}
+                    </select>
                 </div>
                 <div className="mb-3">
                     <label className="form-label" htmlFor="new-component-description">Description</label>

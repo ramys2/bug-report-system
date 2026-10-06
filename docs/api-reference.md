@@ -368,7 +368,7 @@ answer 200 with `{"id": "...", "message": "Project updated successfully!"}`.
 
 | Method | Path | Purpose | Access |
 | --- | --- | --- | --- |
-| GET | `/api/components` | All components | Signed in |
+| GET | `/api/components` | All components, or those of one project with `?projectId=` | Signed in |
 | POST | `/api/components` | Create a component | Admin or developer |
 | PATCH | `/api/components/{componentId}/name` | Rename | Admin or developer |
 | PATCH | `/api/components/{componentId}/description` | Replace the description | Admin or developer |
@@ -385,20 +385,25 @@ endpoints.
     "id": "f3065c82-1632-439f-b51c-a84c8fc0a2b8",
     "name": "Backend API",
     "description": "REST API and persistence layer.",
-    "responsibleUserName": "Daniel Developer"
+    "responsibleUserName": "Daniel Developer",
+    "projectId": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
   }
 ]
 ```
 
+`GET /api/components?projectId=<id>` lists only the components of that project and answers 404 if
+the project does not exist. `projectId` in the response is `null` for components created before
+components were linked to projects.
+
 `POST` body:
 
 ```json
-{ "name": "Push Notifications", "description": "Push service.", "responsibleUserId": "8afb36ab-36d0-46ea-b0bb-a673d8fbff46" }
+{ "name": "Push Notifications", "projectId": "3fa85f64-5717-4562-b3fc-2c963f66afa6", "description": "Push service.", "responsibleUserId": "8afb36ab-36d0-46ea-b0bb-a673d8fbff46" }
 ```
 
-Answers 201 with `{"id": "...", "message": "Successfully created!"}`. Only `name` (not blank) is
-validated. `responsibleUserId` is checked only by the database: a missing or unknown user
-answers **409** `Request conflicts with existing data.` (verified). `PATCH` bodies are
+Answers 201 with `{"id": "...", "message": "Successfully created!"}`. `name` (not blank) and
+`projectId` are required; an unknown project answers 404. `responsibleUserId` is checked by the
+service: an unknown user answers 404. `PATCH` bodies are
 `{"name": "..."}`, `{"description": "..."}` and `{"responsibleUserId": "<id>"}`; they answer 200
 with `{"id": "...", "message": "Component updated successfully!"}`, or 404 for an unknown
 component.

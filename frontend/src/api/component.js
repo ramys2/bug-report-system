@@ -4,7 +4,7 @@ import { getCsrfToken } from "./csrf";
 /**
  * `GET /api/components`: lists all components.
  *
- * @returns {JQuery.jqXHR} resolves with a list of `{ id, name, description, responsibleUserName }`
+ * @returns {JQuery.jqXHR} resolves with a list of `{ id, name, description, responsibleUserName, projectId }`; `projectId` is `null` for components created before they belonged to projects
  */
 export function getAllComponents() {
     return $.ajax({
@@ -16,8 +16,8 @@ export function getAllComponents() {
 /**
  * `POST /api/components` (ADMIN or DEVELOPER).
  *
- * @param {{name: string, description?: string, responsibleUserId?: string}} component `name` must not be blank; `responsibleUserId` is optional, but must belong to an existing user
- * @returns {JQuery.jqXHR} resolves (201) with `{ id, message }`; fails with 404 and `{ message }` if the user does not exist
+ * @param {{name: string, projectId: string, description?: string, responsibleUserId?: string}} component `name` must not be blank; `projectId` must belong to an existing project; `responsibleUserId` is optional, but must belong to an existing user
+ * @returns {JQuery.jqXHR} resolves (201) with `{ id, message }`; fails with 404 and `{ message }` if the project or the user does not exist
  */
 export function createComponent(component) {
     return postComponent(component);

@@ -1,6 +1,7 @@
 package com.ramy.bugreport.controller;
 
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -47,8 +48,9 @@ class ComponentControllerTest {
     @Test
     void getAllUsesComponentsRoute() throws Exception {
         var componentId = UUID.randomUUID();
-        when(componentService.getAll()).thenReturn(List.of(new ComponentResponse(
-                componentId, "API", "Handles public endpoints", "Joe Responsible")));
+        var projectId = UUID.randomUUID();
+        when(componentService.getAll(null)).thenReturn(List.of(new ComponentResponse(
+                componentId, "API", "Handles public endpoints", "Joe Responsible", projectId)));
 
         mockMvc.perform(get("/api/components"))
                 .andExpect(status().isOk())
@@ -57,14 +59,28 @@ class ComponentControllerTest {
                 .andExpect(jsonPath("$[0].description")
                         .value("Handles public endpoints"))
                 .andExpect(jsonPath("$[0].responsibleUserName")
-                        .value("Joe Responsible"));
+                        .value("Joe Responsible"))
+                .andExpect(jsonPath("$[0].projectId").value(projectId.toString()));
 
-        verify(componentService).getAll();
+        verify(componentService).getAll(null);
+    }
+
+    @Test
+    void getAllPassesTheProjectIdQueryParameter() throws Exception {
+        var projectId = UUID.randomUUID();
+        when(componentService.getAll(projectId)).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/components").param("projectId", projectId.toString()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isEmpty());
+
+        verify(componentService).getAll(projectId);
     }
 
     @Test
     void createAcceptsMissingOptionalFieldsAndReturnsCreated() throws Exception {
-        var request = new CreateComponentRequest("API", null, null);
+        var projectId = UUID.randomUUID();
+        var request = new CreateComponentRequest("API", projectId, null, null);
         var componentId = UUID.randomUUID();
         when(componentService.create(request))
                 .thenReturn(new CreateComponentResponse(componentId, "Successfully created!"));
@@ -73,14 +89,25 @@ class ComponentControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                  "name": "API"
+                                  "name": "API",
+                                  "projectId": "%s"
                                 }
-                                """))
+                                """.formatted(projectId)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(componentId.toString()))
                 .andExpect(jsonPath("$.message").value("Successfully created!"));
 
         verify(componentService).create(request);
+    }
+
+    @Test
+    void createRejectsMissingProjectId() throws Exception {
+        mockMvc.perform(post("/api/components")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\": \"API\"}"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(componentService);
     }
 
     @Test
