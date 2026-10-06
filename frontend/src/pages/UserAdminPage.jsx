@@ -17,7 +17,7 @@ const PAGE_SIZE = 10;
  * Save calls `PATCH /api/accounts/{id}/role`; on success `onRoleSaved` is called, on failure an error toast is shown (the backend refuses e.g. removing the last admin or changing your own role).
  *
  * @param {object} props
- * @param {{id: string, username: string, email: string, role: string}} props.user the account shown
+ * @param {{id: string, name: string, email: string, role: string}} props.user the account shown
  * @param {(userId: string, role: string) => void} props.onRoleSaved called with the new role after it was saved
  */
 function EditableRole({ user, onRoleSaved }) {
@@ -45,7 +45,7 @@ function EditableRole({ user, onRoleSaved }) {
     if (!isEditing) {
         return (
             <button
-                aria-label={`Edit role for ${user.username}`}
+                aria-label={`Edit role for ${user.name}`}
                 className="btn btn-outline-secondary btn-sm"
                 onClick={startEditing}
                 type="button"
@@ -59,7 +59,7 @@ function EditableRole({ user, onRoleSaved }) {
     return (
         <div className="d-flex align-items-center gap-2">
             <select
-                aria-label={`Role for ${user.username}`}
+                aria-label={`Role for ${user.name}`}
                 className="form-select form-select-sm"
                 disabled={isSaving}
                 onChange={(event) => setDraftRole(event.target.value)}
@@ -78,7 +78,7 @@ function EditableRole({ user, onRoleSaved }) {
                 {isSaving ? "Saving..." : "Save"}
             </button>
             <button
-                aria-label={`Cancel role change for ${user.username}`}
+                aria-label={`Cancel role change for ${user.name}`}
                 className="btn btn-outline-secondary btn-sm"
                 disabled={isSaving}
                 onClick={() => setIsEditing(false)}
@@ -93,13 +93,13 @@ function EditableRole({ user, onRoleSaved }) {
 /**
  * Admin page at `/admin/users` (ADMIN only): all accounts in a table with role editing.
  *
- * Loads every account once (`GET /api/accounts`); filtering by id, username, email and role and paging (10 per page) are done in the browser.
+ * Loads every account once (`GET /api/accounts`); filtering by id, name, email and role and paging (10 per page) are done in the browser.
  * Takes no props.
  */
 export default function UserAdminPage() {
     const [users, setUsers] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [filters, setFilters] = useState({ id: "", username: "", email: "", role: "" });
+    const [filters, setFilters] = useState({ id: "", name: "", email: "", role: "" });
     const [page, setPage] = useState(1);
 
     useEffect(() => {
@@ -116,7 +116,7 @@ export default function UserAdminPage() {
 
         return users.filter((user) => (
             user.id.toLowerCase().includes(normalizedFilters.id)
-            && user.username.toLowerCase().includes(normalizedFilters.username)
+            && user.name.toLowerCase().includes(normalizedFilters.name)
             && user.email.toLowerCase().includes(normalizedFilters.email)
             && (!normalizedFilters.role || user.role.toLowerCase() === normalizedFilters.role)
         ));
@@ -132,7 +132,7 @@ export default function UserAdminPage() {
     }
 
     function clearFilters() {
-        setFilters({ id: "", username: "", email: "", role: "" });
+        setFilters({ id: "", name: "", email: "", role: "" });
         setPage(1);
     }
 
@@ -160,8 +160,8 @@ export default function UserAdminPage() {
                             <input className="form-control" id="user-id-filter" onChange={(event) => updateFilter("id", event.target.value)} value={filters.id} />
                         </div>
                         <div className="col-12 col-md-6 col-xl-3">
-                            <label className="form-label" htmlFor="username-filter">Username</label>
-                            <input className="form-control" id="username-filter" onChange={(event) => updateFilter("username", event.target.value)} value={filters.username} />
+                            <label className="form-label" htmlFor="name-filter">Name</label>
+                            <input className="form-control" id="name-filter" onChange={(event) => updateFilter("name", event.target.value)} value={filters.name} />
                         </div>
                         <div className="col-12 col-md-6 col-xl-3">
                             <label className="form-label" htmlFor="email-filter">Email</label>
@@ -186,7 +186,7 @@ export default function UserAdminPage() {
                             <thead className="table-light sticky-top">
                                 <tr>
                                     <th scope="col">ID</th>
-                                    <th scope="col">Username</th>
+                                    <th scope="col">Name</th>
                                     <th scope="col">Email</th>
                                     <th scope="col">Role</th>
                                 </tr>
@@ -199,7 +199,7 @@ export default function UserAdminPage() {
                                 ) : visibleUsers.map((user) => (
                                     <tr key={user.id}>
                                         <td className="small text-break">{user.id}</td>
-                                        <td>{user.username}</td>
+                                        <td>{user.name}</td>
                                         <td>{user.email}</td>
                                         <td><EditableRole onRoleSaved={handleRoleSaved} user={user} /></td>
                                     </tr>

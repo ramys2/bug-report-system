@@ -169,7 +169,7 @@ function EditableResponsibleUser({ component, onResponsibleUserSaved }) {
         }
 
         setIsSaving(true);
-        updateComponentResponsibleUser(component.id, user.userId)
+        updateComponentResponsibleUser(component.id, user.id)
             .done(() => {
                 onResponsibleUserSaved(component.id, user.name);
                 setIsEditing(false);
@@ -225,7 +225,7 @@ function EditableResponsibleUser({ component, onResponsibleUserSaved }) {
                         <button
                             className="btn btn-light d-block text-start w-100 rounded-0"
                             disabled={isSaving}
-                            key={user.userId}
+                            key={user.id}
                             onClick={() => saveResponsibleUser(user)}
                             type="button"
                         >

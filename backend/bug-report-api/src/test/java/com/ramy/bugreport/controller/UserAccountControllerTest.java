@@ -55,7 +55,7 @@ class UserAccountControllerTest {
         mockMvc.perform(get("/api/accounts"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(accountId.toString()))
-                .andExpect(jsonPath("$[0].username").value("Ramy"))
+                .andExpect(jsonPath("$[0].name").value("Ramy"))
                 .andExpect(jsonPath("$[0].email").value("ramy@example.com"))
                 .andExpect(jsonPath("$[0].role").value("REPORTER"));
 
@@ -82,7 +82,7 @@ class UserAccountControllerTest {
 
         mockMvc.perform(get("/api/accounts/users").param("search", "ram"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].userId").value(accountId.toString()))
+                .andExpect(jsonPath("$[0].id").value(accountId.toString()))
                 .andExpect(jsonPath("$[0].name").value("Ramy"));
 
         verify(userAccountService).searchUsers("ram");
@@ -98,7 +98,7 @@ class UserAccountControllerTest {
         mockMvc.perform(post("/api/accounts")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"username":"Ramy","email":"ramy@example.com","password":"Password123!"}
+                                {"name":"Ramy","email":"ramy@example.com","password":"Password123!"}
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(accountId.toString()));

@@ -4,7 +4,7 @@ import { getCsrfToken } from "./csrf";
 /**
  * `GET /api/accounts` (ADMIN only): lists all accounts.
  *
- * @returns {JQuery.jqXHR} resolves with a list of `{ id, username, email, role }`
+ * @returns {JQuery.jqXHR} resolves with a list of `{ id, name, email, role }`
  */
 export function getAllAccounts() {
     return $.ajax({
@@ -17,7 +17,7 @@ export function getAllAccounts() {
  * `GET /api/accounts/users?search=...` (ADMIN or DEVELOPER): finds users by name, ignoring case.
  *
  * @param {string} search text to look for
- * @returns {JQuery.jqXHR} resolves with a list of `{ userId, name }`; empty for a blank search
+ * @returns {JQuery.jqXHR} resolves with a list of `{ id, name }`; empty for a blank search
  */
 export function searchUsers(search) {
     return $.ajax({

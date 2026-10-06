@@ -107,7 +107,7 @@ public class UserAccountService {
         }
 
         UserAccount userAccount = new UserAccount(
-                request.username(),
+                request.name(),
                 emailAddress,
                 passwordEncoder.encode(request.password()),
                 EUserRole.REPORTER);

@@ -33,7 +33,7 @@ tags:
 paths:
   /api/accounts:
     get:
-      description: "Access: ADMIN role. `username` is the account's display name."
+      description: "Access: ADMIN role."
       operationId: getAll_3
       responses:
         "200":
@@ -197,7 +197,11 @@ paths:
               $ref: "#/components/schemas/UpdateRoleRequest"
         required: true
       responses:
-        "204":
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdateUserAccountResponse"
           description: Role changed.
         "400":
           content:
@@ -327,8 +331,7 @@ paths:
       - Authentication
   /api/comments:
     get:
-      description: "Newest first; empty if there are none. `reportId` is required.\
-        \ Access: any signed-in user."
+      description: "Newest first; empty if there are none. Access: any signed-in user."
       operationId: getComments
       parameters:
       - description: Id of the bug report.
@@ -373,7 +376,7 @@ paths:
     post:
       description: "Adds a comment as the signed-in user. Returns 409 if the report\
         \ is closed. Access: any signed-in user."
-      operationId: create_1
+      operationId: create_3
       parameters:
       - description: "CSRF token from `GET /api/csrf`. The token changes when you\
           \ sign in, so fetch a new one after login."
@@ -532,7 +535,7 @@ paths:
       description: "Access: ADMIN or DEVELOPER role. `projectId` must belong to an\
         \ existing project. `responsibleUserId` is optional; if given, it must belong\
         \ to an existing user. Otherwise the request fails with 404."
-      operationId: create_3
+      operationId: create_2
       parameters:
       - description: "CSRF token from `GET /api/csrf`. The token changes when you\
           \ sign in, so fetch a new one after login."
@@ -707,7 +710,7 @@ paths:
   /api/components/{componentId}/responsibleUserId:
     patch:
       description: "Access: ADMIN or DEVELOPER role. Note the camelCase path segment.\
-        \ A non-existing user fails with 409 from the database foreign key."
+        \ Fails with 404 if the component or the user does not exist."
       operationId: updateResponsibleUserId
       parameters:
       - description: Id of the component.
@@ -813,7 +816,7 @@ paths:
       - Projects
     post:
       description: "Access: ADMIN role."
-      operationId: create_2
+      operationId: create_1
       parameters:
       - description: "CSRF token from `GET /api/csrf`. The token changes when you\
           \ sign in, so fetch a new one after login."
@@ -1107,6 +1110,41 @@ paths:
                 $ref: "#/components/schemas/ApiErrorResponse"
           description: Not signed in.
       summary: List reports filed by the signed-in user
+      tags:
+      - Bug reports
+  /api/reports/status-transitions:
+    get:
+      description: "Maps each status to the statuses that can be chosen next with\
+        \ the status endpoint. `ASSIGNED` and `CLOSED` are never listed; they are\
+        \ reached by assigning a developer and by closing the report. Access: any\
+        \ signed-in user."
+      operationId: getStatusTransitions
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: array
+                  items:
+                    type: string
+                    enum:
+                    - OPEN
+                    - ASSIGNED
+                    - IN_PROGRESS
+                    - NEEDS_INFORMATION
+                    - REVIEWING
+                    - REJECTED
+                    - CLOSED
+          description: Allowed next statuses by current status.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+      summary: List the allowed status changes
       tags:
       - Bug reports
   /api/reports/{reportId}:
@@ -1718,9 +1756,11 @@ paths:
   /api/reports/{reportId}/status:
     patch:
       description: "The reporter and assignee are notified by email. Use the resolution\
-        \ endpoint to close a report. Returns 409 if the report is closed or the requested\
-        \ status is `CLOSED`. Access: signed-in user; the service further requires\
-        \ the ADMIN role, or being the report's reporter or assignee."
+        \ endpoint to close a report. Use the assignee endpoint to assign a report.\
+        \ Returns 409 if the report is closed, the requested status is `ASSIGNED`\
+        \ or `CLOSED`, or the transition is not allowed. Access: signed-in user; the\
+        \ service further requires the ADMIN role, or being the report's reporter\
+        \ or assignee."
       operationId: updateStatus
       parameters:
       - description: Id of the bug report.
@@ -1883,9 +1923,9 @@ components:
           example: Rachel Reporter
         createdAt:
           type: string
-          description: "Creation time formatted as `dd-MM-yyyy HH:mm` (a string, unlike\
-            \ other timestamps)."
-          example: 14-05-2026 09:30
+          format: date-time
+          description: Creation time (ISO-8601).
+          example: 2026-05-14T09:30:00
         reportId:
           type: string
           format: uuid
@@ -1931,10 +1971,20 @@ components:
           type: string
           description: Actual behavior. May be null.
           example: The server returns HTTP 500 and the user remains signed out.
+        assigneeId:
+          type: string
+          format: uuid
+          description: Id of the assignee. Null if unassigned.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
         assigneeName:
           type: string
           description: Display name of the assignee. Null if unassigned.
           example: Daniel Developer
+        componentId:
+          type: string
+          format: uuid
+          description: Id of the component. Null if the report has no component.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
         componentName:
           type: string
           description: Name of the component. Null if the report has no component.
@@ -1956,6 +2006,11 @@ components:
           type: string
           format: uuid
           description: Report id.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        projectId:
+          type: string
+          format: uuid
+          description: Id of the project.
           example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
         projectName:
           type: string
@@ -2006,6 +2061,7 @@ components:
       required:
       - createdAt
       - id
+      - projectId
       - projectName
       - reporterName
       - severity
@@ -2049,7 +2105,7 @@ components:
       - reportId
     CommentResponse:
       type: object
-      description: "A comment in `GET /api/comments?reportId=...`."
+      description: A comment in `GET /api/comments?reportId=...`.
       properties:
         authorId:
           type: string
@@ -2103,17 +2159,17 @@ components:
           type: string
           description: Display name.
           example: Backend API
-        responsibleUserName:
-          type: string
-          description: Display name of the responsible user. Null if that user cannot
-            be found.
-          example: Daniel Developer
         projectId:
           type: string
           format: uuid
           description: Id of the project the component belongs to. Null for components
             created before the link existed.
           example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        responsibleUserName:
+          type: string
+          description: Display name of the responsible user. Null if that user cannot
+            be found.
+          example: Daniel Developer
       required:
       - id
       - name
@@ -2188,7 +2244,7 @@ components:
       - message
     CreateCommentRequest:
       type: object
-      description: "Request body of `POST /api/comments`."
+      description: Request body of `POST /api/comments`.
       properties:
         content:
           type: string
@@ -2205,8 +2261,7 @@ components:
       - reportId
     CreateCommentResponse:
       type: object
-      description: "Response of `POST /api/comments`: the saved\
-        \ comment."
+      description: "Response of `POST /api/comments`: the saved comment."
       properties:
         authorId:
           type: string
@@ -2322,20 +2377,20 @@ components:
           description: Email address.
           example: alice@example.com
           minLength: 1
+        name:
+          type: string
+          description: Display name.
+          example: Alice Admin
+          minLength: 1
         password:
           type: string
           description: Plain-text password.
           example: S3cret-pass!
           minLength: 1
-        username:
-          type: string
-          description: Display name.
-          example: Alice Admin
-          minLength: 1
       required:
       - email
+      - name
       - password
-      - username
     CreateUserAccountResponse:
       type: object
       description: Response of `POST /api/accounts`.
@@ -2477,8 +2532,8 @@ components:
         componentId:
           type: string
           format: uuid
-          description: Id of the new component, which must belong to the report's
-            project. Null removes the component.
+          description: "Id of the new component, which must belong to the report's\
+            \ project. Null removes the component."
           example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
     UpdateComponentResponse:
       type: object
@@ -2632,22 +2687,38 @@ components:
           example: "Open sign in, enter valid credentials, and submit the form."
       required:
       - stepsToReproduce
+    UpdateUserAccountResponse:
+      type: object
+      description: "Response of the `PATCH /api/accounts/{userId}/...` endpoints."
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Id of the account.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        message:
+          type: string
+          description: Confirmation text.
+          example: User role updated successfully!
+      required:
+      - id
+      - message
     UserAccountBriefResponse:
       type: object
       description: A search hit in `GET /api/accounts/users`.
       properties:
-        name:
-          type: string
-          description: Display name.
-          example: Daniel Developer
-        userId:
+        id:
           type: string
           format: uuid
           description: Account id.
           example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        name:
+          type: string
+          description: Display name.
+          example: Daniel Developer
       required:
+      - id
       - name
-      - userId
     UserAccountResponse:
       type: object
       description: A user account as returned by `GET /api/accounts` and `GET /api/auth/me`.
@@ -2662,6 +2733,10 @@ components:
           format: uuid
           description: Account id.
           example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        name:
+          type: string
+          description: Display name.
+          example: Alice Admin
         role:
           type: string
           description: The user's role.
@@ -2670,13 +2745,8 @@ components:
           - DEVELOPER
           - ADMIN
           example: DEVELOPER
-        username:
-          type: string
-          description: "The account's display name (despite the field name, not a\
-            \ login name)."
-          example: Alice Admin
       required:
       - email
       - id
+      - name
       - role
-      - username
