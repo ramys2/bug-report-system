@@ -5,7 +5,7 @@ import { getCsrfToken } from "./csrf";
  * `GET /api/comments?reportId=...`: lists the comments of a report, newest first.
  *
  * @param {string} reportId
- * @returns {JQuery.jqXHR} resolves with a list of `{ id, bugReportId, authorId, authorName, content, createdAt }`
+ * @returns {JQuery.jqXHR} resolves with a list of `{ id, reportId, authorId, authorName, content, createdAt }`
  */
 export function getComments(reportId) {
     return $.ajax({

@@ -327,7 +327,7 @@ no email.
 [
   {
     "id": "4ae01c39-1fdc-4b43-aca6-ebd5a4ad78ce",
-    "bugReportId": "01c5b494-8826-4bc8-8044-3dd3f4aa8068",
+    "reportId": "01c5b494-8826-4bc8-8044-3dd3f4aa8068",
     "authorId": "1268f562-274d-408e-9e1f-dc053320323f",
     "authorName": "Daniel Developer",
     "content": "Reproduced, working on a fix.",

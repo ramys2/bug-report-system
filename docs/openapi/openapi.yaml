@@ -2116,11 +2116,6 @@ components:
           type: string
           description: Display name of the author.
           example: Rachel Reporter
-        bugReportId:
-          type: string
-          format: uuid
-          description: Id of the commented report.
-          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
         content:
           type: string
           description: Comment text.
@@ -2135,13 +2130,18 @@ components:
           format: uuid
           description: Comment id.
           example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        reportId:
+          type: string
+          format: uuid
+          description: Id of the commented report.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
       required:
       - authorId
       - authorName
-      - bugReportId
       - content
       - createdAt
       - id
+      - reportId
     ComponentResponse:
       type: object
       description: A component in `GET /api/components`.
