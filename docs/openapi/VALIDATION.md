@@ -84,7 +84,7 @@ Then try it out, in this order (**Try it out**, then **Execute**):
 2. `POST /api/auth/login`: paste the token into `X-CSRF-TOKEN`, set `username` to `admin@bugreport.local` and `password` to `Admin123!`. Expected: `200` with an empty body.
 3. `GET /api/csrf` **again** and copy the new token. The token changes when you sign in.
 4. `GET /api/reports`: expected `200` and a list of the three demo reports.
-5. `POST /api/reports/{reportId}/comments`: use the `reportId` of "Severity selector overflows on mobile" from step 4, paste the new token, and use the body `{"content": "Try it out from Swagger UI"}`. Expected: `201` with `id`, `authorId`, `authorName`, `content` and `createdAt`.
+5. `POST /api/comments`: paste the new token and use the body `{"reportId": "<id>", "content": "Try it out from Swagger UI"}`, with the `reportId` of "Severity selector overflows on mobile" from step 4. Expected: `201` with `id`, `authorId`, `authorName`, `content` and `createdAt`.
 
 If it fails:
 - The page does not load or shows `403`: the docs URLs are not permitted in `SecurityConfig`.
@@ -132,24 +132,24 @@ If it fails: `401` means the session cookie was not sent (repeat the sign-in blo
 
 ```bash
 OPEN_ID=$(curl -s -b $COOKIES http://localhost:8080/api/reports | grep -o '"reportId":"[^"]*","title":"Severity' | cut -d'"' -f4)
-curl -s -b $COOKIES -w "\n%{http_code}\n" -X POST -H "X-CSRF-TOKEN: $TOKEN" -H 'Content-Type: application/json' -d '{"content":"Checked from the validation guide."}' http://localhost:8080/api/reports/$OPEN_ID/comments
+curl -s -b $COOKIES -w "\n%{http_code}\n" -X POST -H "X-CSRF-TOKEN: $TOKEN" -H 'Content-Type: application/json' -d "{\"reportId\":\"$OPEN_ID\",\"content\":\"Checked from the validation guide.\"}" http://localhost:8080/api/comments
 ```
 
 Expected: status `201` and a body like
 `{"id":"...","authorId":"...","authorName":"Alice Admin","content":"Checked from the validation guide.","createdAt":"2026-09-30T21:54:27.109210036"}`.
-This matches `POST /api/reports/{reportId}/comments`, response `201`, schema `CreateCommentResponse`.
+This matches `POST /api/comments`, response `201`, schema `CreateCommentResponse`.
 If it fails: `403` means the token is old (run the sign-in block again); `400` means the JSON body is malformed;
-an empty `OPEN_ID` (URL ends in `/reports//comments`) means the demo data was changed and no report has that title.
+an empty `OPEN_ID` (the body contains `"reportId":""`, which answers `400`) means the demo data was changed and no report has that title.
 
 **An error case (409).** Commenting on the closed report:
 
 ```bash
 CLOSED_ID=$(curl -s -b $COOKIES http://localhost:8080/api/reports | grep -o '"reportId":"[^"]*","title":"Profile' | cut -d'"' -f4)
-curl -s -b $COOKIES -w "\n%{http_code}\n" -X POST -H "X-CSRF-TOKEN: $TOKEN" -H 'Content-Type: application/json' -d '{"content":"Too late."}' http://localhost:8080/api/reports/$CLOSED_ID/comments
+curl -s -b $COOKIES -w "\n%{http_code}\n" -X POST -H "X-CSRF-TOKEN: $TOKEN" -H 'Content-Type: application/json' -d "{\"reportId\":\"$CLOSED_ID\",\"content\":\"Too late.\"}" http://localhost:8080/api/comments
 ```
 
 Expected: status `409` and the body `{"message":"Comments cannot be changed on a closed report."}`.
-This matches the `409` response of `POST /api/reports/{reportId}/comments`, schema `ApiErrorResponse`
+This matches the `409` response of `POST /api/comments`, schema `ApiErrorResponse`
 (the same `{"message": "..."}` body is used for every error).
 
 **An error case (404).** A report id that does not exist:

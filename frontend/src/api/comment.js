@@ -2,7 +2,7 @@ import $ from "jquery"
 import { getCsrfToken } from "./csrf";
 
 /**
- * `GET /api/reports/{reportId}/comments`: lists the comments of a report, newest first.
+ * `GET /api/comments?reportId=...`: lists the comments of a report, newest first.
  *
  * @param {string} reportId
  * @returns {JQuery.jqXHR} resolves with a list of `{ id, bugReportId, authorId, authorName, content, createdAt }`
@@ -10,12 +10,13 @@ import { getCsrfToken } from "./csrf";
 export function getComments(reportId) {
     return $.ajax({
         method: "GET",
-        url: `/api/reports/${reportId}/comments`,
+        url: "/api/comments",
+        data: { reportId },
     })
 }
 
 /**
- * `POST /api/reports/{reportId}/comments`: adds a comment. Sends the cached CSRF token (see csrf.js), which `login()` and `AuthProvider` load once the user is signed in.
+ * `POST /api/comments`: adds a comment to a report. Sends the cached CSRF token (see csrf.js), which `login()` and `AuthProvider` load once the user is signed in.
  *
  * @param {string} reportId
  * @param {{content: string}} comment the text; must not be blank
@@ -26,9 +27,9 @@ export function createComment(reportId, comment) {
 
     return $.ajax({
         method: "POST",
-        url: `/api/reports/${reportId}/comments`,
+        url: "/api/comments",
         contentType: "application/json",
-        data: JSON.stringify(comment),
+        data: JSON.stringify({ reportId, ...comment }),
         headers: {
             [csrfToken.headerName]: csrfToken.token,
         },

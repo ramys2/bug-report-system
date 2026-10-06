@@ -5,6 +5,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -113,6 +114,25 @@ class UserRoleSecurityIntegrationTest {
 
         mockMvc.perform(roleUpdate(reporter.getId()).with(authentication(staleAdminSession)).with(csrf()))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void unauthenticatedCommentCreationReturns401() throws Exception {
+        mockMvc.perform(commentCreation().with(csrf()))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void signedInUserPassesTheUrlRuleForCommentCreation() throws Exception {
+        // 404 (unknown report) proves the request got past SecurityConfig; a missing rule would answer 403.
+        mockMvc.perform(commentCreation().with(authentication(authenticationFor(reporter))).with(csrf()))
+                .andExpect(status().isNotFound());
+    }
+
+    private org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder commentCreation() {
+        return post("/api/comments")
+                .contentType("application/json")
+                .content("{\"reportId\":\"%s\",\"content\":\"Hello\"}".formatted(UUID.randomUUID()));
     }
 
     private org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder roleUpdate(UUID userId) {

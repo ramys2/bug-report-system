@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ramy.bugreport.dto.comment.CommentResponse;
@@ -34,7 +35,7 @@ import com.ramy.bugreport.openapi.NotFoundResponse;
 import com.ramy.bugreport.openapi.ConflictResponse;
 
 /**
- * REST endpoints for comments on bug reports: {@code /api/reports/{reportId}/comments} and {@code /api/comments/{commentId}}.
+ * REST endpoints for comments on bug reports: everything is under {@code /api/comments}.
  *
  * <p>Errors are returned as JSON {@code {"message": "..."}} ({@link com.ramy.bugreport.exception.ApiErrorResponse}):
  * 400 for invalid input, 401 when not signed in, 403 when the role or ownership check fails,
@@ -43,7 +44,7 @@ import com.ramy.bugreport.openapi.ConflictResponse;
  */
 @Tag(name = "Comments")
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/api/comments")
 public class CommentController {
     private final CommentService commentService;
 
@@ -52,11 +53,11 @@ public class CommentController {
     }
 
     /**
-     * {@code GET /api/reports/{reportId}/comments}: lists the comments of a report, newest first.
+     * {@code GET /api/comments?reportId=...}: lists the comments of a report, newest first.
      *
      * <p>Access: any signed-in user.
      *
-     * @param reportId id of the report
+     * @param reportId id of the report; required
      * @return 200 with a list of {@code {id, bugReportId, authorId, authorName, content, createdAt}}; empty if there are none
      * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the report does not exist
      */
@@ -65,20 +66,19 @@ public class CommentController {
     @BadRequestResponse
     @UnauthorizedResponse
     @NotFoundResponse
-    @GetMapping("/reports/{reportId}/comments")
+    @GetMapping
     public List<CommentResponse> getComments(
-            @Parameter(description = "Id of the bug report.", example = ApiExamples.UUID) @PathVariable UUID reportId
+            @Parameter(description = "Id of the bug report.", example = ApiExamples.UUID, required = true) @RequestParam UUID reportId
     ) {
         return commentService.getComments(reportId);
     }
 
     /**
-     * {@code POST /api/reports/{reportId}/comments}: adds a comment as the signed-in user.
+     * {@code POST /api/comments}: adds a comment as the signed-in user.
      *
      * <p>Access: any signed-in user.
      *
-     * @param reportId id of the report
-     * @param request body {@code {content}}, required and not blank
+     * @param request body {@code {reportId, content}}; both required, {@code content} not blank
      * @return 201 with {@code {id, authorId, authorName, content, createdAt}}
      * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the report does not exist
      * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if the report is closed
@@ -90,13 +90,12 @@ public class CommentController {
     @ForbiddenResponse
     @NotFoundResponse
     @ConflictResponse
-    @PostMapping("/reports/{reportId}/comments")
+    @PostMapping
     public ResponseEntity<CreateCommentResponse> create(
-            @Parameter(description = "Id of the bug report.", example = ApiExamples.UUID) @PathVariable UUID reportId,
             @AuthenticationPrincipal UserAccountDetails account,
             @Valid @RequestBody CreateCommentRequest request
     ) {
-        var response = commentService.create(reportId, account.getId(), request);
+        var response = commentService.create(account.getId(), request);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(response);
@@ -120,7 +119,7 @@ public class CommentController {
     @ForbiddenResponse
     @NotFoundResponse
     @ConflictResponse
-    @DeleteMapping("/comments/{commentId}")
+    @DeleteMapping("/{commentId}")
     public ResponseEntity<Void> delete(
             @Parameter(description = "Id of the comment.", example = ApiExamples.UUID) @PathVariable UUID commentId
     ) {

@@ -94,7 +94,7 @@ class CommentServiceTest {
     void createValidatesReferencesBuildsAndSavesComment() {
         var reportId = UUID.randomUUID();
         var authorId = UUID.randomUUID();
-        var request = new CreateCommentRequest("Working on a fix.");
+        var request = new CreateCommentRequest(reportId, "Working on a fix.");
         var commentId = UUID.randomUUID();
         var savedComment = org.mockito.Mockito.mock(Comment.class);
         var author = org.mockito.Mockito.mock(UserAccount.class);
@@ -109,7 +109,7 @@ class CommentServiceTest {
         when(author.getName()).thenReturn("Ramy");
         var before = LocalDateTime.now();
 
-        var result = service.create(reportId, authorId, request);
+        var result = service.create(authorId, request);
 
         var commentCaptor = ArgumentCaptor.forClass(Comment.class);
         verify(commentRepository).save(commentCaptor.capture());
@@ -129,10 +129,10 @@ class CommentServiceTest {
     void createThrowsWhenReportDoesNotExist() {
         var reportId = UUID.randomUUID();
         var authorId = UUID.randomUUID();
-        var request = new CreateCommentRequest("Working on a fix.");
+        var request = new CreateCommentRequest(reportId, "Working on a fix.");
         when(bugReportRepository.findById(reportId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.create(reportId, authorId, request))
+        assertThatThrownBy(() -> service.create(authorId, request))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Report with id: %s".formatted(reportId));
         verifyNoInteractions(userAccountRepository, commentRepository);
@@ -142,12 +142,12 @@ class CommentServiceTest {
     void createThrowsWhenAuthorDoesNotExist() {
         var reportId = UUID.randomUUID();
         var authorId = UUID.randomUUID();
-        var request = new CreateCommentRequest("Working on a fix.");
+        var request = new CreateCommentRequest(reportId, "Working on a fix.");
         var report = openReport();
         when(bugReportRepository.findById(reportId)).thenReturn(Optional.of(report));
         when(userAccountRepository.findById(authorId)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.create(reportId, authorId, request))
+        assertThatThrownBy(() -> service.create(authorId, request))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("User with id=%s does not exist!".formatted(authorId));
         verifyNoInteractions(commentRepository);
@@ -175,7 +175,7 @@ class CommentServiceTest {
         when(bugReportRepository.findById(reportId)).thenReturn(Optional.of(report));
 
         assertThatThrownBy(() -> service.create(
-                reportId, UUID.randomUUID(), new CreateCommentRequest("Working on a fix.")))
+                UUID.randomUUID(), new CreateCommentRequest(reportId, "Working on a fix.")))
                 .isInstanceOf(BusinessRuleConflictException.class)
                 .hasMessage("Comments cannot be changed on a closed report.");
 

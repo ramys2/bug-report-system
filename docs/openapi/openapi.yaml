@@ -325,6 +325,111 @@ paths:
       summary: Get the signed-in user
       tags:
       - Authentication
+  /api/comments:
+    get:
+      description: "Newest first; empty if there are none. `reportId` is required.\
+        \ Access: any signed-in user."
+      operationId: getComments
+      parameters:
+      - description: Id of the bug report.
+        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        in: query
+        name: reportId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CommentResponse"
+          description: "Comments of the report, newest first."
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Validation failed, the JSON is malformed, or a path or query\
+            \ value (for example an id) is malformed."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: A referenced resource does not exist.
+      summary: List the comments of a report
+      tags:
+      - Comments
+    post:
+      description: "Adds a comment as the signed-in user. Returns 409 if the report\
+        \ is closed. Access: any signed-in user."
+      operationId: create_1
+      parameters:
+      - description: "CSRF token from `GET /api/csrf`. The token changes when you\
+          \ sign in, so fetch a new one after login."
+        in: header
+        name: X-CSRF-TOKEN
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCommentRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateCommentResponse"
+          description: Comment created.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Validation failed, the JSON is malformed, or a path or query\
+            \ value (for example an id) is malformed."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "The role or ownership check failed, or the CSRF token is missing."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: A referenced resource does not exist.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: The request conflicts with a business rule or with existing
+            data.
+      summary: Add a comment
+      tags:
+      - Comments
   /api/comments/{commentId}:
     delete:
       description: "Access: signed-in user; the service further requires the ADMIN\
@@ -1188,118 +1293,6 @@ paths:
       summary: Change the assignee
       tags:
       - Bug reports
-  /api/reports/{reportId}/comments:
-    get:
-      description: "Newest first; empty if there are none. Access: any signed-in user."
-      operationId: getComments
-      parameters:
-      - description: Id of the bug report.
-        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-        in: path
-        name: reportId
-        required: true
-        schema:
-          type: string
-          format: uuid
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/CommentResponse"
-          description: "Comments of the report, newest first."
-        "400":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiErrorResponse"
-          description: "Validation failed, the JSON is malformed, or a path or query\
-            \ value (for example an id) is malformed."
-        "401":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiErrorResponse"
-          description: Not signed in.
-        "404":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiErrorResponse"
-          description: A referenced resource does not exist.
-      summary: List the comments of a report
-      tags:
-      - Comments
-    post:
-      description: "Adds a comment as the signed-in user. Returns 409 if the report\
-        \ is closed. Access: any signed-in user."
-      operationId: create_1
-      parameters:
-      - description: Id of the bug report.
-        example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
-        in: path
-        name: reportId
-        required: true
-        schema:
-          type: string
-          format: uuid
-      - description: "CSRF token from `GET /api/csrf`. The token changes when you\
-          \ sign in, so fetch a new one after login."
-        in: header
-        name: X-CSRF-TOKEN
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: "#/components/schemas/CreateCommentRequest"
-        required: true
-      responses:
-        "201":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/CreateCommentResponse"
-          description: Comment created.
-        "400":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiErrorResponse"
-          description: "Validation failed, the JSON is malformed, or a path or query\
-            \ value (for example an id) is malformed."
-        "401":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiErrorResponse"
-          description: Not signed in.
-        "403":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiErrorResponse"
-          description: "The role or ownership check failed, or the CSRF token is missing."
-        "404":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiErrorResponse"
-          description: A referenced resource does not exist.
-        "409":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiErrorResponse"
-          description: The request conflicts with a business rule or with existing
-            data.
-      summary: Add a comment
-      tags:
-      - Comments
   /api/reports/{reportId}/component:
     patch:
       description: "The component must belong to the report's project; a null `componentId`\
@@ -2056,7 +2049,7 @@ components:
       - reportId
     CommentResponse:
       type: object
-      description: "A comment in `GET /api/reports/{reportId}/comments`."
+      description: "A comment in `GET /api/comments?reportId=...`."
       properties:
         authorId:
           type: string
@@ -2195,18 +2188,24 @@ components:
       - message
     CreateCommentRequest:
       type: object
-      description: "Request body of `POST /api/reports/{reportId}/comments`."
+      description: "Request body of `POST /api/comments`."
       properties:
         content:
           type: string
           description: Comment text.
           example: This also happens in a private browser window.
           minLength: 1
+        reportId:
+          type: string
+          format: uuid
+          description: Id of the report to comment on.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
       required:
       - content
+      - reportId
     CreateCommentResponse:
       type: object
-      description: "Response of `POST /api/reports/{reportId}/comments`: the saved\
+      description: "Response of `POST /api/comments`: the saved\
         \ comment."
       properties:
         authorId:

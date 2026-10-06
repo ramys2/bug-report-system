@@ -316,8 +316,8 @@ or 409. URLs that are not explicitly allowed answer 403.
 | PATCH | `/api/reports/{reportId}/steps-to-reproduce` | Replace the steps to reproduce | Owner or admin |
 | PATCH | `/api/reports/{reportId}/expected-behavior` | Replace the expected behavior | Owner or admin |
 | PATCH | `/api/reports/{reportId}/actual-behavior` | Replace the actual behavior | Owner or admin |
-| GET | `/api/reports/{reportId}/comments` | List comments of a report | Signed in |
-| POST | `/api/reports/{reportId}/comments` | Add a comment | Signed in |
+| GET | `/api/comments?reportId=...` | List comments of a report | Signed in |
+| POST | `/api/comments` | Add a comment (`reportId` in the body) | Signed in |
 | DELETE | `/api/comments/{commentId}` | Delete a comment | Author or admin |
 
 > **Known issue:** `POST /api/reports` currently answers 409 for valid input, because the
