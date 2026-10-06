@@ -11,6 +11,6 @@ FROM eclipse-temurin:21-jre-ubi10-minimal AS runtime
 
 WORKDIR /opt/app
 
-COPY --from=build /build/bug-report-api/target/bug-report-api-0.1.0-SNAPSHOT.jar ./app.jar
+COPY --from=build /build/bug-report-api/target/app.jar ./app.jar
 
 CMD ["java", "-jar", "app.jar"]
