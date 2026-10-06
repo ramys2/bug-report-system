@@ -5,6 +5,7 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import com.ramy.bugreport.domain.Component;
@@ -86,7 +87,7 @@ public class ComponentService {
     */
 
     /**
-     * Creates a component.
+     * Creates a component. Requires the ADMIN or DEVELOPER role.
      *
      * <p>The project must exist. The responsible user is optional; if an id is given, the user must exist.
      *
@@ -94,6 +95,7 @@ public class ComponentService {
      * @throws ResourceNotFoundException if the project does not exist, or a responsible user id is given and no such user exists
      */
     @Transactional
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
     public CreateComponentResponse create(CreateComponentRequest request) {
         requireProjectExists(request.projectId());
         if (request.responsibleUserId() != null) {
@@ -118,11 +120,12 @@ public class ComponentService {
     */
 
     /**
-     * Renames a component.
+     * Renames a component. Requires the ADMIN or DEVELOPER role.
      *
      * @throws ResourceNotFoundException if the component does not exist
      */
     @Transactional
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
     public UpdateComponentResponse updateName(UUID componentId, UpdateComponentNameRequest request) {
         var component = componentById(componentId);
         component.setName(request.name());
@@ -131,11 +134,12 @@ public class ComponentService {
     }
 
     /**
-     * Replaces a component's description.
+     * Replaces a component's description. Requires the ADMIN or DEVELOPER role.
      *
      * @throws ResourceNotFoundException if the component does not exist
      */
     @Transactional
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
     public UpdateComponentResponse updateDescription(
             UUID componentId,
             UpdateComponentDescriptionRequest request
@@ -147,11 +151,12 @@ public class ComponentService {
     }
 
     /**
-     * Changes the user responsible for a component.
+     * Changes the user responsible for a component. Requires the ADMIN or DEVELOPER role.
      *
      * @throws ResourceNotFoundException if the component or the user does not exist
      */
     @Transactional
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
     public UpdateComponentResponse updateResponsibleUserId(
             UUID componentId,
             UpdateComponentResponsibleUserRequest request

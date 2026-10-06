@@ -51,7 +51,8 @@ public class UserAccountService {
     * ============================================
     */
 
-    /** Returns all accounts. */
+    /** Returns all accounts. Requires the ADMIN role. */
+    @PreAuthorize("hasRole('ADMIN')")
     public List<UserAccountResponse> getAll() {
         return userAccountRepository.findAll()
                 .stream()
@@ -71,9 +72,12 @@ public class UserAccountService {
     /**
      * Finds accounts whose name contains the search text, ignoring case.
      *
+     * <p>Requires the ADMIN or DEVELOPER role.
+     *
      * @param search text to look for; surrounding whitespace is trimmed
      * @return the matches, or an empty list if {@code search} is {@code null} or blank
      */
+    @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
     public List<UserAccountBriefResponse> searchUsers(String search) {
         if (search == null || search.isBlank()) {
             return List.of();
