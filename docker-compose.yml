@@ -39,7 +39,7 @@ services:
 
   # MariaDB; data is kept in the mariadb-data volume.
   database:
-    image: mariadb:latest
+    image: mariadb:12.3.3
     environment:
       MARIADB_ROOT_PASSWORD: root
       MARIADB_DATABASE: bug_report
@@ -59,7 +59,7 @@ services:
   # One-shot job: runs the init script against the running database and exits. The database image
   # runs ./database/init only on an empty volume, so this creates bug_report_test on older volumes too.
   database-test-init:
-    image: mariadb:latest
+    image: mariadb:12.3.3
     depends_on:
       database:
         condition: service_healthy
@@ -70,7 +70,7 @@ services:
 
   # Catches outgoing emails; open http://localhost:8025 to read them.
   mailpit:
-    image: axllent/mailpit
+    image: axllent/mailpit:v1.31.1
     container_name: mailpit
     restart: unless-stopped
     volumes:
@@ -85,7 +85,7 @@ services:
 
   # Message broker between the event publisher and the email consumer.
   artemis:
-    image: apache/activemq-artemis:latest-alpine
+    image: apache/activemq-artemis:2.44.0-alpine
     container_name: artemis
     restart: unless-stopped
     ports:
