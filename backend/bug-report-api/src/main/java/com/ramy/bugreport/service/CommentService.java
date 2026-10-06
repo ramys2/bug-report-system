@@ -85,15 +85,15 @@ public class CommentService {
     /**
      * Adds a comment to a report, timestamped with the current time.
      *
-     * @param reportId id of the report to comment on
      * @param authorId id of the commenting user
-     * @param request the comment text
+     * @param request the id of the report to comment on and the comment text
      * @return the saved comment with its author
      * @throws ResourceNotFoundException if the report or the author does not exist
      * @throws BusinessRuleConflictException if the report is closed
      */
     @Transactional
-    public CreateCommentResponse create(UUID reportId, UUID authorId, CreateCommentRequest request) {
+    public CreateCommentResponse create(UUID authorId, CreateCommentRequest request) {
+        var reportId = request.reportId();
         requireOpenReport(reportId);
 
         UserAccount author = userAccountRepository.findById(authorId)

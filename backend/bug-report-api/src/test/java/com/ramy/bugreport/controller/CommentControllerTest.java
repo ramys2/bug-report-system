@@ -1,6 +1,7 @@
 package com.ramy.bugreport.controller;
 
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -41,19 +42,20 @@ class CommentControllerTest {
     void setUp() {
         mockMvc = MockMvcBuilders
                 .standaloneSetup(new CommentController(commentService))
+                .setControllerAdvice(new com.ramy.bugreport.exception.ApiExceptionHandler())
                 .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
                 .build();
         SecurityContextHolder.clearContext();
     }
 
     @Test
-    void getCommentsUsesReportCommentsRoute() throws Exception {
+    void getCommentsUsesCommentsRouteWithReportIdParameter() throws Exception {
         var reportId = UUID.randomUUID();
         var commentId = UUID.randomUUID();
         when(commentService.getComments(reportId))
                 .thenReturn(List.of(commentResponse(commentId, reportId)));
 
-        mockMvc.perform(get("/api/reports/{reportId}/comments", reportId))
+        mockMvc.perform(get("/api/comments").param("reportId", reportId.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(commentId.toString()))
                 .andExpect(jsonPath("$[0].bugReportId").value(reportId.toString()))
@@ -63,25 +65,35 @@ class CommentControllerTest {
     }
 
     @Test
-    void createUsesReportCommentsRouteAndReturnsCreated() throws Exception {
+    void getCommentsRequiresReportId() throws Exception {
+        mockMvc.perform(get("/api/comments"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Request contains invalid values."));
+
+        verifyNoInteractions(commentService);
+    }
+
+    @Test
+    void createUsesCommentsRouteAndReturnsCreated() throws Exception {
         var reportId = UUID.randomUUID();
         var authorId = UUID.randomUUID();
         var commentId = UUID.randomUUID();
         var createdAt = LocalDateTime.now();
-        var request = new CreateCommentRequest("Working on a fix.");
-        when(commentService.create(reportId, authorId, request))
+        var request = new CreateCommentRequest(reportId, "Working on a fix.");
+        when(commentService.create(authorId, request))
                 .thenReturn(new CreateCommentResponse(
                         commentId, authorId, "Ramy", request.content(), createdAt));
 
         authenticate(authorId);
 
-        mockMvc.perform(post("/api/reports/{reportId}/comments", reportId)
+        mockMvc.perform(post("/api/comments")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
+                                  "reportId": "%s",
                                   "content": "Working on a fix."
                                 }
-                """))
+                """.formatted(reportId)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(commentId.toString()))
                 .andExpect(jsonPath("$.authorId").value(authorId.toString()))
@@ -89,7 +101,17 @@ class CommentControllerTest {
                 .andExpect(jsonPath("$.content").value(request.content()))
                 .andExpect(jsonPath("$.createdAt").isNotEmpty());
 
-        verify(commentService).create(reportId, authorId, request);
+        verify(commentService).create(authorId, request);
+    }
+
+    @Test
+    void createRejectsMissingReportId() throws Exception {
+        mockMvc.perform(post("/api/comments")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"content\": \"Working on a fix.\"}"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(commentService);
     }
 
     @Test

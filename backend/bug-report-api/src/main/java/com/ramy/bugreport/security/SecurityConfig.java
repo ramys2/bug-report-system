@@ -115,7 +115,7 @@ public class SecurityConfig {
 					// All signed-in users can read data and participate in discussions.
 					.requestMatchers(HttpMethod.GET, "/api/**")
 					.authenticated()
-					.requestMatchers(HttpMethod.POST, "/api/reports/*/comments")
+					.requestMatchers(HttpMethod.POST, "/api/comments")
 					.authenticated()
 
 					// Comment removal is an administrative action.

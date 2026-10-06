@@ -304,11 +304,11 @@ no email.
 
 | Method | Path | Purpose | Access |
 | --- | --- | --- | --- |
-| GET | `/api/reports/{reportId}/comments` | Comments of a report, newest first | Signed in |
-| POST | `/api/reports/{reportId}/comments` | Add a comment | Signed in |
+| GET | `/api/comments?reportId=...` | Comments of a report, newest first (`reportId` is required) | Signed in |
+| POST | `/api/comments` | Add a comment to a report | Signed in |
 | DELETE | `/api/comments/{commentId}` | Delete a comment | Admin or the comment's author |
 
-`POST` body: `{"content": "Reproduced, working on a fix."}` (not blank, otherwise 400). Response
+`POST` body: `{"reportId": "<report id>", "content": "Reproduced, working on a fix."}` (`reportId` required, `content` not blank, otherwise 400; 404 if the report does not exist, 409 if it is closed). Response
 (201):
 
 ```json

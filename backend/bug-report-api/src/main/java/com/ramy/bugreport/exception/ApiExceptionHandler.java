@@ -6,6 +6,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -46,9 +47,10 @@ public class ApiExceptionHandler {
     @ExceptionHandler({
             MethodArgumentNotValidException.class,
             HttpMessageNotReadableException.class,
-            MethodArgumentTypeMismatchException.class
+            MethodArgumentTypeMismatchException.class,
+            MissingServletRequestParameterException.class
     })
-    /** Maps failed validation, unreadable JSON and malformed path or query values (e.g. a bad UUID) to 400 with a generic message. */
+    /** Maps failed validation, unreadable JSON, malformed path or query values (e.g. a bad UUID) and missing required query parameters to 400 with a generic message. */
     public ResponseEntity<ApiErrorResponse> handleInvalidRequest() {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ApiErrorResponse("Request contains invalid values."));

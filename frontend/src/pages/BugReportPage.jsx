@@ -313,10 +313,10 @@ function EditableSelectField({
 /**
  * Report detail page at `/reports/:id`.
  *
- * On load it fetches the report (`GET /api/reports/{id}`), its comments (`GET /api/reports/{id}/comments`) and the developers and projects
+ * On load it fetches the report (`GET /api/reports/{id}`), its comments (`GET /api/comments?reportId={id}`) and the developers and projects
  * used by the select fields. The components offered are those of the report's project (`GET /api/components?projectId=...`), loaded again when the project is
  * changed; the backend then removes the report's component, so the page does the same and the component shows "None". It shows the report with in-place editing of assignee, severity, status, project, component, description,
- * steps to reproduce, expected and actual behavior, and a comment section (add: `POST .../comments`, remove: `DELETE /api/comments/{id}`).
+ * steps to reproduce, expected and actual behavior, and a comment section (add: `POST /api/comments`, remove: `DELETE /api/comments/{id}`).
  *
  * "Close issue" opens a modal that sends `POST /api/reports/{id}/resolution` after a confirmation dialog; afterwards the page treats the report as
  * closed (nothing is editable, no comments can be added or removed) and offers "Show resolution" instead. Whether a comment can be removed is

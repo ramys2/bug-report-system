@@ -8,7 +8,7 @@ import com.ramy.bugreport.domain.UserAccount;
 import io.swagger.v3.oas.annotations.media.Schema;
 import com.ramy.bugreport.openapi.ApiExamples;
 /**
- * Response of {@code POST /api/reports/{reportId}/comments}: the saved comment.
+ * Response of {@code POST /api/comments}: the saved comment.
  *
  * @param id id of the new comment
  * @param authorId id of the author
@@ -16,7 +16,7 @@ import com.ramy.bugreport.openapi.ApiExamples;
  * @param content comment text
  * @param createdAt when the comment was written (ISO-8601)
  */
-@Schema(description = "Response of `POST /api/reports/{reportId}/comments`: the saved comment.")
+@Schema(description = "Response of `POST /api/comments`: the saved comment.")
 public record CreateCommentResponse(
         @Schema(description = "Id of the new comment.", example = ApiExamples.UUID, requiredMode = Schema.RequiredMode.REQUIRED)
         UUID id,
