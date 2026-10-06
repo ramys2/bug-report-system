@@ -65,6 +65,19 @@ export function getAllReports() {
 }
 
 /**
+ * `GET /api/reports/status-transitions`: the statuses that can be chosen next, by current status.
+ * `ASSIGNED` and `CLOSED` are never listed; statuses with no choice are missing.
+ *
+ * @returns {JQuery.jqXHR} resolves with an object such as `{ "ASSIGNED": ["IN_PROGRESS", "NEEDS_INFORMATION"] }`
+ */
+export function getStatusTransitions() {
+    return $.ajax({
+        method: "GET",
+        url: "/api/reports/status-transitions",
+    })
+}
+
+/**
  * `GET /api/reports/reported`: lists the reports filed by the signed-in user.
  *
  * @returns {JQuery.jqXHR} resolves with a list of `BugReportBrief`
@@ -165,7 +178,8 @@ export function updateSeverity(reportId, severity) {
 }
 
 /**
- * `PATCH /api/reports/{reportId}/status`. `CLOSED` is rejected (409); use `closeReport()` instead.
+ * `PATCH /api/reports/{reportId}/status`. Changes not listed by `getStatusTransitions()` are rejected (409); `ASSIGNED` is set
+ * by `updateAssignee()` and `CLOSED` by `closeReport()`.
  *
  * @param {string} reportId
  * @param {Status} status

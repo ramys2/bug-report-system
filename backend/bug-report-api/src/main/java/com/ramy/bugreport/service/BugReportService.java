@@ -1,6 +1,8 @@
 package com.ramy.bugreport.service;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.Map;
 import java.util.List;
 import java.util.Objects;
@@ -92,6 +94,25 @@ public class BugReportService {
         return mapToBriefResponses(bugReportRepository.findAll());
     }
     
+    /**
+     * Returns, for each status, the statuses that can be chosen as the next one with {@link #updateStatus}.
+     * Statuses without such a target are left out. {@code ASSIGNED} and {@code CLOSED} are never listed, because
+     * they are reached through {@link #updateAssignee} and {@link #close}.
+     */
+    public Map<EBugStatus, List<EBugStatus>> getStatusTransitions() {
+        var transitions = new EnumMap<EBugStatus, List<EBugStatus>>(EBugStatus.class);
+        for (var from : EBugStatus.values()) {
+            var targets = Arrays.stream(EBugStatus.values())
+                    .filter(from::canTransitionTo)
+                    .filter(target -> target != EBugStatus.ASSIGNED && target != EBugStatus.CLOSED)
+                    .toList();
+            if (!targets.isEmpty()) {
+                transitions.put(from, targets);
+            }
+        }
+        return transitions;
+    }
+
     /**
      * Returns the full detail of one report, including its reporter, assignee, project and component.
      *

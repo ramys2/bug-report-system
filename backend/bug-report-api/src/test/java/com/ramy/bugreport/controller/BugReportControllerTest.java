@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -81,6 +82,19 @@ class BugReportControllerTest {
                 .andExpect(jsonPath("$[0].createdAt").value("2026-07-13T12:05:00"));
 
         verify(reportService).getAll();
+    }
+
+    @Test
+    void getStatusTransitionsUsesItsOwnRouteAndSerializesStatusNames() throws Exception {
+        when(reportService.getStatusTransitions())
+                .thenReturn(Map.of(EBugStatus.ASSIGNED, List.of(EBugStatus.IN_PROGRESS, EBugStatus.NEEDS_INFORMATION)));
+
+        mockMvc.perform(get("/api/reports/status-transitions"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.ASSIGNED[0]").value("IN_PROGRESS"))
+                .andExpect(jsonPath("$.ASSIGNED[1]").value("NEEDS_INFORMATION"));
+
+        verify(reportService).getStatusTransitions();
     }
 
     @Test

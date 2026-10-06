@@ -3,6 +3,7 @@ package com.ramy.bugreport.controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.ramy.bugreport.domain.EBugStatus;
 import com.ramy.bugreport.dto.report.BugReportBriefResponse;
 import com.ramy.bugreport.dto.report.BugReportResponse;
 import com.ramy.bugreport.dto.report.CloseBugReportRequest;
@@ -25,6 +26,7 @@ import com.ramy.bugreport.service.BugReportService;
 import jakarta.validation.Valid;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -94,6 +96,23 @@ public class BugReportController {
         return reportService.getAll();
     }
     
+    /**
+     * {@code GET /api/reports/status-transitions}: lists which statuses can be chosen next from each status.
+     *
+     * <p>Access: any signed-in user.
+     *
+     * @return 200 with a map from a status to the statuses it can be changed to with
+     *         {@code PATCH /api/reports/{reportId}/status}, e.g. {@code {"ASSIGNED": ["IN_PROGRESS", "NEEDS_INFORMATION"]}};
+     *         statuses with no such target are missing
+     */
+    @Operation(summary = "List the allowed status changes", description = "Maps each status to the statuses that can be chosen next with the status endpoint. `ASSIGNED` and `CLOSED` are never listed; they are reached by assigning a developer and by closing the report. Access: any signed-in user.")
+    @ApiResponse(responseCode = "200", description = "Allowed next statuses by current status.")
+    @UnauthorizedResponse
+    @GetMapping("/status-transitions")
+    public Map<EBugStatus, List<EBugStatus>> getStatusTransitions() {
+        return reportService.getStatusTransitions();
+    }
+
     /**
      * {@code GET /api/reports/{reportId}}: returns the full detail of one report.
      *

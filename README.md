@@ -304,6 +304,7 @@ or 409. URLs that are not explicitly allowed answer 403.
 | GET | `/api/reports/{reportId}` | Get one report in full | Signed in |
 | GET | `/api/reports/reported` | Reports filed by me | Signed in |
 | GET | `/api/reports/assigned` | Reports assigned to me | Signed in |
+| GET | `/api/reports/status-transitions` | Statuses that can be chosen next, by current status | Signed in |
 | POST | `/api/reports` | File a report (currently fails, see below) | Signed in |
 | POST | `/api/reports/{reportId}/resolution` | Close a report | Owner or admin |
 | PATCH | `/api/reports/{reportId}/assignee` | Assign a developer | Owner or admin |

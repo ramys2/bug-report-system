@@ -158,13 +158,15 @@ handles `.done`, `.fail` and `.always`._
 | --- | --- | --- |
 | `/login` | `LoginPage` | `LoginForm`: email and password sign-in. The "Register" button has no function. A failed login is only written to the browser console. |
 | `/` | `HomePage` | Lists all reports (`GET /api/reports`) with the quick filters "Reported by me", "Assigned to me" and "Reset". "Create new +" opens a modal with `CreateBugReportForm` (`POST /api/reports`; see the known issue in the [API reference](api-reference.md#post-apireports)). |
-| `/reports/:id` | `BugReportPage` | Loads the report, its comments and the developer, project and component lists. Fields (assignee, severity, status, project, component, description, steps, expected and actual behavior) are edited inline, each with its own `PATCH` call. Comments can be added, and removed by their author or an admin. "Close issue" opens a modal for the resolution (with a confirmation dialog). A closed report is read-only and offers "Show resolution". |
+| `/reports/:id` | `BugReportPage` | Loads the report, its comments, the status transitions and the developer, project and component lists. Fields (assignee, severity, status, project, component, description, steps, expected and actual behavior) are edited inline, each with its own `PATCH` call. Comments can be added, and removed by their author or an admin. "Close issue" opens a modal for the resolution (with a confirmation dialog). A closed report is read-only and offers "Show resolution". |
 | `/admin/projects` | `ProjectAdminPage` | Lists projects; rename and edit the description (admin or developer); create a project (admin only). |
 | `/admin/components` | `ComponentAdminPage` | Lists components; rename, edit the description, change the responsible user (found with the user search) and create components. |
 | `/admin/users` | `UserAdminPage` | Admin only. Lists all accounts, filtered and paged in the browser; changes a user's role. |
 
-The status selector on `BugReportPage` does not offer `CLOSED`, because closing goes through the
-resolution form.
+The status selector on `BugReportPage` offers only the statuses returned by
+`GET /api/reports/status-transitions` for the current status. It never offers `ASSIGNED` (set by
+picking an assignee) or `CLOSED` (set through the resolution form), and it is disabled for an
+`OPEN` report.
 
 ## Shared components
 

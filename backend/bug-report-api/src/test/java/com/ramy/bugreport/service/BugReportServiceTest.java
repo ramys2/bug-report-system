@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -94,6 +95,17 @@ class BugReportServiceTest {
                         "Application crashes", "Reporter", "Assignee", EBugStatus.OPEN, EBugSeverity.HIGH,
                         LocalDateTime.of(2026, 7, 13, 12, 5));
         verify(bugReportRepository).findAll();
+    }
+
+    @Test
+    void getStatusTransitionsListsSelectableTargetsOnly() {
+        var result = service.getStatusTransitions();
+
+        assertThat(result).containsOnly(
+                Map.entry(EBugStatus.ASSIGNED, List.of(EBugStatus.IN_PROGRESS, EBugStatus.NEEDS_INFORMATION)),
+                Map.entry(EBugStatus.IN_PROGRESS, List.of(EBugStatus.NEEDS_INFORMATION, EBugStatus.REVIEWING)),
+                Map.entry(EBugStatus.NEEDS_INFORMATION, List.of(EBugStatus.IN_PROGRESS)),
+                Map.entry(EBugStatus.REVIEWING, List.of(EBugStatus.IN_PROGRESS)));
     }
 
     @Test

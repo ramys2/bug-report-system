@@ -4,6 +4,7 @@ import { Modal as BootstrapModal } from "bootstrap";
 import {
     closeReport,
     getReport,
+    getStatusTransitions,
     updateAssignee,
     updateActualBehavior,
     updateComponent,
@@ -160,23 +161,11 @@ function EditableReportSection({
 }
 
 /**
- * Statuses a report can be moved to from each status; mirrors `EBugStatus.canTransitionTo` in the backend, which stays the authority.
- * `OPEN` has no entry because `ASSIGNED` is never offered: a report becomes `ASSIGNED` by picking an assignee.
- * `CLOSED` is never offered either: reports are closed through the resolution form.
+ * Options for the status select: the current status followed by the statuses it can change to, as listed by
+ * `GET /api/reports/status-transitions`. Empty if no change is possible, which disables editing.
  */
-const STATUS_TRANSITIONS = {
-    ASSIGNED: ["IN_PROGRESS", "NEEDS_INFORMATION"],
-    IN_PROGRESS: ["NEEDS_INFORMATION", "REVIEWING"],
-    NEEDS_INFORMATION: ["IN_PROGRESS"],
-    REVIEWING: ["IN_PROGRESS"],
-};
-
-/**
- * Options for the status select: the current status followed by the statuses it can change to.
- * Empty if no change is possible, which disables editing.
- */
-function statusOptions(currentStatus) {
-    const nextStatuses = STATUS_TRANSITIONS[currentStatus] ?? [];
+function statusOptions(statusTransitions, currentStatus) {
+    const nextStatuses = statusTransitions[currentStatus] ?? [];
     return nextStatuses.length > 0 ? [currentStatus, ...nextStatuses] : [];
 }
 
@@ -335,6 +324,7 @@ export default function BugReportPage() {
     const [developers, setDevelopers] = useState([]);
     const [projects, setProjects] = useState([]);
     const [components, setComponents] = useState([]);
+    const [statusTransitions, setStatusTransitions] = useState({});
     const isClosed = bugReport?.status === "CLOSED";
 
     useEffect(() => {
@@ -363,6 +353,10 @@ export default function BugReportPage() {
         getComponents()
             .done(setComponents)
             .fail(() => showToast("danger", "Failed to fetch components.", "Unable to load components"));
+
+        getStatusTransitions()
+            .done(setStatusTransitions)
+            .fail(() => showToast("danger", "Failed to fetch status transitions.", "Unable to load statuses"));
     }, [id]);
 
     function saveComment() {
@@ -490,7 +484,7 @@ export default function BugReportPage() {
                                             isEditable={!isClosed}
                                             label="Status"
                                             onValueSaved={(status) => setBugReport((report) => ({ ...report, status }))}
-                                            options={statusOptions(bugReport.status)}
+                                            options={statusOptions(statusTransitions, bugReport.status)}
                                             reportId={bugReport.id}
                                             updateValue={updateStatus}
                                             currentValue={bugReport.status}
