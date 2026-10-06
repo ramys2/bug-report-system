@@ -20,7 +20,7 @@ function BugReportList({ reports }) {
 
             <div className="d-flex flex-column gap-2">
                 {reports.map((report) => (
-                    <BugReportRow key={report.reportId} report={report} />
+                    <BugReportRow key={report.id} report={report} />
                 ))}
             </div>
         </section>

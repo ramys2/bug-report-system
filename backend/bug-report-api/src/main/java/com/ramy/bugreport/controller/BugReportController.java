@@ -85,7 +85,7 @@ public class BugReportController {
      *
      * <p>Access: any signed-in user. There is no filtering by owner.
      *
-     * @return 200 with a list of {@code {reportId, title, author, assignee, status, severity, createdAt}};
+     * @return 200 with a list of {@code {id, title, reporterName, assigneeName, status, severity, createdAt}};
      *         {@code assignee} is {@code null} if unassigned and {@code createdAt} is ISO-8601
      */
     @Operation(summary = "List all bug reports", description = "Lists all reports in brief form. Access: any signed-in user. There is no filtering by owner.")
@@ -216,7 +216,7 @@ public class BugReportController {
      *
      * @param reportId id of the report
      * @param request body {@code {description}} is required and not blank; {@code fixedVersion, commitUrl} are optional
-     * @return 201 with {@code {reportId, message}}
+     * @return 201 with {@code {id, message}}
      * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the report does not exist
      * @throws com.ramy.bugreport.exception.BusinessRuleConflictException 409 if the report is already closed
      */

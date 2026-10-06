@@ -29,7 +29,7 @@ marked in the code comments and were not confirmed by running the application.
 
 ### API design
 - `BugReportResponse` serializes the domain `Resolution` object directly, tying the API shape to the domain class.
-- DTO naming is still inconsistent for reports and comments: `BugReportBriefResponse` and `CloseBugReportResponse` use `reportId` instead of `id`, `CommentResponse` uses `bugReportId` (its request uses `reportId`), and `BugReportBriefResponse` uses `author` / `assignee` instead of `reporterName` / `assigneeName`.
+- DTO naming is still inconsistent for comments: `CommentResponse` uses `bugReportId`, while its request and the query parameter use `reportId`.
 - The component update path segment is camelCase (`/responsibleUserId`), unlike the kebab-case report segments (`/steps-to-reproduce`).
 
 ### Messaging

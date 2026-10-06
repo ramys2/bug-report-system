@@ -140,15 +140,15 @@ closed report.`).
 
 ### `GET /api/reports`, `/reported`, `/assigned`
 
-Return a list of brief reports. `assignee` is `null` when unassigned. `createdAt` is an ISO-8601 timestamp.
+Return a list of brief reports. `assigneeName` is `null` when unassigned. `createdAt` is an ISO-8601 timestamp.
 
 ```json
 [
   {
-    "reportId": "01c5b494-8826-4bc8-8044-3dd3f4aa8068",
+    "id": "01c5b494-8826-4bc8-8044-3dd3f4aa8068",
     "title": "Severity selector overflows on mobile",
-    "author": "Alice Admin",
-    "assignee": null,
+    "reporterName": "Alice Admin",
+    "assigneeName": null,
     "status": "OPEN",
     "severity": "LOW",
     "createdAt": "2026-09-29T11:46:00.123456"
@@ -268,7 +268,7 @@ and the assignee by email.
 Answers 201 with the id of the closed report.
 
 ```json
-{ "reportId": "b77f24c8-e300-4baa-8fda-471702256066", "message": "Task has been closed successfully!" }
+{ "id": "b77f24c8-e300-4baa-8fda-471702256066", "message": "Task has been closed successfully!" }
 ```
 
 Errors: 404 (no such report), 409 (`Report is already closed and cannot be reopened.`).

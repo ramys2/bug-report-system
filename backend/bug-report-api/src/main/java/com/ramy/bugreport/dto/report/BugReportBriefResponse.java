@@ -12,10 +12,10 @@ import com.ramy.bugreport.openapi.ApiExamples;
 /**
  * A report in the list endpoints ({@code GET /api/reports}, {@code /reported}, {@code /assigned}).
  *
- * @param reportId report id
+ * @param id report id
  * @param title short summary
- * @param author display name of the reporter
- * @param assignee display name of the assignee; null if unassigned
+ * @param reporterName display name of the reporter
+ * @param assigneeName display name of the assignee; null if unassigned
  * @param status workflow status
  * @param severity severity
  * @param createdAt creation time (ISO-8601)
@@ -23,13 +23,13 @@ import com.ramy.bugreport.openapi.ApiExamples;
 @Schema(description = "A report in the list endpoints (`GET /api/reports`, `/reported`, `/assigned`).")
 public record BugReportBriefResponse(
         @Schema(description = "Report id.", example = ApiExamples.UUID, requiredMode = Schema.RequiredMode.REQUIRED)
-        UUID reportId,
+        UUID id,
         @Schema(description = "Short summary.", example = "Valid users cannot sign in", requiredMode = Schema.RequiredMode.REQUIRED)
         String title,
         @Schema(description = "Display name of the reporter.", example = "Rachel Reporter", requiredMode = Schema.RequiredMode.REQUIRED)
-        String author,
+        String reporterName,
         @Schema(description = "Display name of the assignee. Null if unassigned.", example = "Daniel Developer")
-        String assignee,
+        String assigneeName,
         @Schema(description = "Workflow status.", example = "IN_PROGRESS", requiredMode = Schema.RequiredMode.REQUIRED)
         EBugStatus status,
         @Schema(description = "Severity.", example = "CRITICAL", requiredMode = Schema.RequiredMode.REQUIRED)

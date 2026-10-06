@@ -214,7 +214,7 @@ class PersistenceIT {
 
         var closed = reports.findById(saved.getId()).orElseThrow();
         assertThat(closed.getStatus()).isEqualTo(EBugStatus.CLOSED);
-        assertThat(response.reportId()).isEqualTo(saved.getId());
+        assertThat(response.id()).isEqualTo(saved.getId());
         assertThat(closed.getResolution().getDescription()).isEqualTo("Fixed");
         assertThat(closed.getResolution().getFixedVersion()).isEqualTo("1.2.3");
         assertThat(closed.getResolution().getCommitUrl()).isEqualTo(request.commitUrl());

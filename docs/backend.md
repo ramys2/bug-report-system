@@ -178,7 +178,7 @@ sequenceDiagram
     S->>DB: load reporter and assignee emails
     S->>S: publishEvent(BugReportClosedEvent)
     S->>DB: commit
-    S-->>C: 201 {reportId, message}
+    S-->>C: 201 {id, message}
     Note over P: runs after commit
     P->>Q: send JSON, eventType BUG_REPORT_CLOSED
     Q->>L: deliver message

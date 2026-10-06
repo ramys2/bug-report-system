@@ -1913,24 +1913,24 @@ components:
       description: "A report in the list endpoints (`GET /api/reports`, `/reported`,\
         \ `/assigned`)."
       properties:
-        assignee:
+        assigneeName:
           type: string
           description: Display name of the assignee. Null if unassigned.
           example: Daniel Developer
-        author:
-          type: string
-          description: Display name of the reporter.
-          example: Rachel Reporter
         createdAt:
           type: string
           format: date-time
           description: Creation time (ISO-8601).
           example: 2026-05-14T09:30:00
-        reportId:
+        id:
           type: string
           format: uuid
           description: Report id.
           example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        reporterName:
+          type: string
+          description: Display name of the reporter.
+          example: Rachel Reporter
         severity:
           type: string
           description: Severity.
@@ -1957,9 +1957,9 @@ components:
           description: Short summary.
           example: Valid users cannot sign in
       required:
-      - author
       - createdAt
-      - reportId
+      - id
+      - reporterName
       - severity
       - status
       - title
@@ -2091,18 +2091,18 @@ components:
       type: object
       description: "Response of `POST /api/reports/{reportId}/resolution`."
       properties:
-        message:
-          type: string
-          description: Confirmation text.
-          example: Task has been closed successfully!
-        reportId:
+        id:
           type: string
           format: uuid
           description: Id of the closed report.
           example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        message:
+          type: string
+          description: Confirmation text.
+          example: Task has been closed successfully!
       required:
+      - id
       - message
-      - reportId
     CommentResponse:
       type: object
       description: A comment in `GET /api/comments?reportId=...`.
