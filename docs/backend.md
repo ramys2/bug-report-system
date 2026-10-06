@@ -137,7 +137,7 @@ Changes to a report send an email without slowing down or failing the HTTP reque
 
 | Event (`eventType`) | Published by | Recipients |
 | --- | --- | --- |
-| `ASSIGNEE_CHANGED` (`AssigneeChangedEvent`) | `BugReportService.updateAssignee` | the new assignee |
+| `ASSIGNEE_CHANGED` (`AssigneeChangedEvent`) | `BugReportService.create` (with an assignee), `updateAssignee` | the new assignee |
 | `STATUS_CHANGED` (`StatusChangedEvent`) | `BugReportService.updateStatus` | reporter and assignee |
 | `BUG_REPORT_CLOSED` (`BugReportClosedEvent`) | `BugReportService.close` | reporter and assignee |
 

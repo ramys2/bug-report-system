@@ -121,6 +121,7 @@ Any signed-in user. Returns the current user (`username` is the display name).
 | GET | `/api/reports/{reportId}` | One report in full | Signed in |
 | GET | `/api/reports/reported` | Reports filed by the caller | Signed in |
 | GET | `/api/reports/assigned` | Reports assigned to the caller (including closed) | Signed in |
+| GET | `/api/reports/status-transitions` | Statuses that can be chosen next, by current status | Signed in |
 | POST | `/api/reports` | File a report | Signed in |
 | POST | `/api/reports/{reportId}/resolution` | Close a report | Admin, reporter or assignee |
 | PATCH | `/api/reports/{reportId}/assignee` | Assign a developer | Admin, reporter or assignee |
@@ -188,7 +189,7 @@ closed. Answers 404 if the report does not exist and 400 if the id is not a UUID
 
 ### `POST /api/reports`
 
-Files a report as the signed-in user; the status starts as `OPEN`.
+Files a report as the signed-in user; the status starts as `OPEN`, or `ASSIGNED` if an assignee is given (the assignee is then notified by email).
 
 | Field | Required | Notes |
 | --- | --- | --- |
@@ -233,7 +234,7 @@ sequenceDiagram
     Ctl->>S: create(reporterId, request)
     S->>S: check reporter, project, component exist (404)
     S->>S: if assigneeId: must be a DEVELOPER (409)
-    S->>R: save(BugReport with status OPEN, createdAt = now)
+    S->>R: save(BugReport with status OPEN, or ASSIGNED if it has an assignee, createdAt = now)
     R->>D: INSERT INTO bug_report
     alt updated_at is NULL (current behavior)
         D-->>R: error: Column 'updated_at' cannot be null
@@ -278,9 +279,9 @@ Request bodies (all fields required; text fields may be empty but not `null`):
 
 | Path segment | Body |
 | --- | --- |
-| `assignee` | `{"assigneeId": "<developer id>"}`; 409 if the user is not a developer, 404 if unknown |
+| `assignee` | `{"assigneeId": "<developer id>"}`; 409 if the user is not a developer, 404 if unknown; an `OPEN` report becomes `ASSIGNED` |
 | `severity` | `{"severity": "LOW"}` |
-| `status` | `{"status": "IN_PROGRESS"}`; 409 for `CLOSED` (`Use the resolution endpoint to close a report.`) |
+| `status` | `{"status": "IN_PROGRESS"}`; 409 for `CLOSED` (`Use the resolution endpoint to close a report.`), for `ASSIGNED` (`Use the assignee endpoint to assign a report.`) and for a change the lifecycle does not allow; see `GET /api/reports/status-transitions` |
 | `project` | `{"projectId": "<id>"}`; 404 if unknown |
 | `component` | `{"componentId": "<id>"}`; 404 if unknown (not checked against the report's project) |
 | `description` | `{"description": "..."}` |
@@ -294,9 +295,10 @@ Response (200):
 { "id": "01c5b494-8826-4bc8-8044-3dd3f4aa8068", "message": "Bug report updated successfully!" }
 ```
 
-Assigning does not change the status. `updatedAt` is not refreshed by any update. Assigning
-(`AssigneeChangedEvent`) and status changes (`StatusChangedEvent`) send an email. The status
-email is sent even if the status did not change.
+Assigning changes the status only of an `OPEN` report (to `ASSIGNED`). `updatedAt` is not
+refreshed by any update. Assigning (`AssigneeChangedEvent`) and status changes
+(`StatusChangedEvent`) send an email. Setting the current status again changes nothing and sends
+no email.
 
 ## Comments
 

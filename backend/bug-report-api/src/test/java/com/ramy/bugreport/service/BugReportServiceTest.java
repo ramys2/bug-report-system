@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -41,6 +42,7 @@ import com.ramy.bugreport.dto.report.UpdateProjectRequest;
 import com.ramy.bugreport.dto.report.UpdateSeverityRequest;
 import com.ramy.bugreport.dto.report.UpdateStatusRequest;
 import com.ramy.bugreport.dto.report.UpdateStepsToReproduceRequest;
+import com.ramy.bugreport.messaging.event.AssigneeChangedEvent;
 import com.ramy.bugreport.exception.ResourceNotFoundException;
 import com.ramy.bugreport.exception.BusinessRuleConflictException;
 import com.ramy.bugreport.repository.IBugReportRepository;
@@ -93,6 +95,17 @@ class BugReportServiceTest {
                         "Application crashes", "Reporter", "Assignee", EBugStatus.OPEN, EBugSeverity.HIGH,
                         LocalDateTime.of(2026, 7, 13, 12, 5));
         verify(bugReportRepository).findAll();
+    }
+
+    @Test
+    void getStatusTransitionsListsSelectableTargetsOnly() {
+        var result = service.getStatusTransitions();
+
+        assertThat(result).containsOnly(
+                Map.entry(EBugStatus.ASSIGNED, List.of(EBugStatus.IN_PROGRESS, EBugStatus.NEEDS_INFORMATION)),
+                Map.entry(EBugStatus.IN_PROGRESS, List.of(EBugStatus.NEEDS_INFORMATION, EBugStatus.REVIEWING)),
+                Map.entry(EBugStatus.NEEDS_INFORMATION, List.of(EBugStatus.IN_PROGRESS)),
+                Map.entry(EBugStatus.REVIEWING, List.of(EBugStatus.IN_PROGRESS)));
     }
 
     @Test
@@ -226,7 +239,8 @@ class BugReportServiceTest {
         assertThat(savedReport.getExpectedBehavior()).isEqualTo(request.expectedBehavior());
         assertThat(savedReport.getActualBehavior()).isEqualTo(request.actualBehavior());
         assertThat(savedReport.getSeverity()).isEqualTo(request.severity());
-        assertThat(savedReport.getStatus()).isEqualTo(EBugStatus.OPEN);
+        assertThat(savedReport.getStatus()).isEqualTo(EBugStatus.ASSIGNED);
+        verify(eventPublisher).publishEvent(any(AssigneeChangedEvent.class));
         assertThat(savedReport.getCreatedAt()).isBetween(before, LocalDateTime.now());
         assertThat(result.id()).isEqualTo(savedId);
         assertThat(result.message()).isEqualTo("Successfully created!");
@@ -348,10 +362,27 @@ class BugReportServiceTest {
         var result = service.updateAssignee(report.getId(), request);
 
         assertThat(report.getAssigneeId()).isEqualTo(assigneeId);
+        assertThat(report.getStatus()).isEqualTo(EBugStatus.ASSIGNED);
         assertUpdateResponse(result, report);
         verify(bugReportRepository).findById(report.getId());
         verify(userAccountRepository).findById(assigneeId);
         verify(bugReportRepository).save(report);
+    }
+
+    @Test
+    void updateAssigneeKeepsStatusOfReportThatIsNotOpen() {
+        var report = report(UUID.randomUUID());
+        report.setStatus(EBugStatus.IN_PROGRESS);
+        var assigneeId = UUID.randomUUID();
+        when(bugReportRepository.findById(report.getId())).thenReturn(Optional.of(report));
+        var developer = mock(UserAccount.class);
+        when(developer.getRole()).thenReturn(EUserRole.DEVELOPER);
+        when(userAccountRepository.findById(assigneeId)).thenReturn(Optional.of(developer));
+
+        service.updateAssignee(report.getId(), new UpdateAssigneeRequest(assigneeId));
+
+        assertThat(report.getAssigneeId()).isEqualTo(assigneeId);
+        assertThat(report.getStatus()).isEqualTo(EBugStatus.IN_PROGRESS);
     }
 
     @Test
@@ -370,6 +401,7 @@ class BugReportServiceTest {
     @Test
     void updateStatusChangesStatus() {
         var report = report(UUID.randomUUID());
+        report.setStatus(EBugStatus.ASSIGNED);
         var request = new UpdateStatusRequest(EBugStatus.IN_PROGRESS);
         when(bugReportRepository.findById(report.getId())).thenReturn(Optional.of(report));
         when(userAccountRepository.findById(report.getReporterId())).thenReturn(Optional.of(mock(UserAccount.class)));
@@ -406,6 +438,19 @@ class BugReportServiceTest {
         assertThat(report.getStatus()).isEqualTo(EBugStatus.OPEN);
         assertUpdateResponse(result, report);
         verify(bugReportRepository, never()).save(any());
+        verifyNoInteractions(eventPublisher);
+    }
+
+    @Test
+    void updateStatusRejectsAssignedStatus() {
+        var report = report(UUID.randomUUID());
+        var request = new UpdateStatusRequest(EBugStatus.ASSIGNED);
+        when(bugReportRepository.findById(report.getId())).thenReturn(Optional.of(report));
+
+        assertThatThrownBy(() -> service.updateStatus(report.getId(), request))
+                .isInstanceOf(BusinessRuleConflictException.class)
+                .hasMessage("Use the assignee endpoint to assign a report.");
+        assertThat(report.getStatus()).isEqualTo(EBugStatus.OPEN);
         verifyNoInteractions(eventPublisher);
     }
 

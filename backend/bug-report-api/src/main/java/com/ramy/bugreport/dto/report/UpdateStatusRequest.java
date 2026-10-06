@@ -8,7 +8,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 /**
  * Request body of {@code PATCH /api/reports/{reportId}/status}.
  *
- * @param status the new status; required; {@code CLOSED} is rejected
+ * @param status the new status; required; {@code ASSIGNED} and {@code CLOSED} are rejected
  */
 @Schema(description = "Request body of `PATCH /api/reports/{reportId}/status`.")
 public record UpdateStatusRequest(
