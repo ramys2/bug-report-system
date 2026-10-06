@@ -532,20 +532,25 @@ tests.
 | --- | --- | --- |
 | Service unit tests (Mockito, no Spring) | 58 | Business rules of `BugReportService` (28), `UserAccountService` (9), `CommentService` (9), `ComponentService` (7) and `SoftwareProjectService` (5) |
 | Controller tests (standalone MockMvc, mocked services) | 25 | Routes, status codes and request handling of the five controllers |
-| Integration tests (`@SpringBootTest`, profile `test`) | 12 | `PersistenceIntegrationTest` (6): repositories and mapping against MariaDB; `UserRoleSecurityIntegrationTest` (6): role rules on the URLs with a real security configuration |
+| Integration tests (`@SpringBootTest`, profile `test`, classes named `*IT`) | 12 | `PersistenceIT` (6): repositories and mapping against MariaDB; `UserRoleSecurityIT` (6): role rules on the URLs with a real security configuration |
 
-The integration tests use the database `bug_report_test` on `localhost:3306`
+The unit and controller tests run with `mvn test` and need nothing. The integration tests run
+only in `mvn verify` (and `mvn install`), through the Failsafe plugin, and use the database
+`bug_report_test` on `localhost:3306`
 ([application-test.yml](backend/bug-report-api/src/test/resources/application-test.yml)), so start
-the database first. The unit and controller tests need nothing.
+the database first.
 
 ```shell
-docker compose up -d database database-test-init
 cd backend
-mvn test                                                    # all tests
-mvn test -pl bug-report-api -am -Dtest=BugReportServiceTest -Dsurefire.failIfNoSpecifiedTests=false   # one test class
+mvn test                                                    # unit and controller tests, no database needed
+
+docker compose up -d database database-test-init            # needed for the integration tests
+mvn verify                                                  # all tests
+mvn test -pl bug-report-api -am -Dtest=BugReportServiceTest -Dsurefire.failIfNoSpecifiedTests=false   # one unit test class
+mvn verify -pl bug-report-api -am -Dit.test=PersistenceIT -Dtest=NoSuchTest -Dsurefire.failIfNoSpecifiedTests=false -Dfailsafe.failIfNoSpecifiedTests=false   # one integration test class
 ```
 
-`./build-backend.sh` also runs the tests. To build without them, use
+`./build-backend.sh` runs `mvn clean install`, so it also runs the integration tests. To build without them, use
 `mvn clean install -DskipTests` in `backend/`.
 
 Notes:

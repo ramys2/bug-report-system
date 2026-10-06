@@ -35,7 +35,7 @@ import com.ramy.bugreport.repository.IUserAccountRepository;
 @SpringBootTest
 @WebAppConfiguration
 @ActiveProfiles("test")
-class UserRoleSecurityIntegrationTest {
+class UserRoleSecurityIT {
 
 	@Autowired private IBugReportRepository bugReportRepository;
     @Autowired private ICommentRepository commentRepository;
