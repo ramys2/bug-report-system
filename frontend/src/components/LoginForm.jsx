@@ -3,12 +3,13 @@ import { login } from "../api/auth";
 import "./LoginForm.css";
 import { useLocation, useNavigate } from "react-router";
 import AuthContext from "./AuthContext";
+import { showToast } from "./toast";
 
 /**
  * Email and password form.
  *
  * On submit it calls `login()` (`POST /api/auth/login`); on success it reloads the current user through `AuthContext` and navigates back to the
- * page the user originally requested (`location.state.from`) or to `/`. A failed login is only written to the browser console; nothing is shown to the user.
+ * page the user originally requested (`location.state.from`) or to `/`. A failed login shows an error toast: wrong credentials (HTTP 401) get a specific message, any other failure a generic one.
  * The Register button is a placeholder and does nothing yet. Takes no props.
  */
 function LoginForm() {
@@ -27,9 +28,10 @@ function LoginForm() {
                     .done(() => navigate(location.state?.from ?? "/", { replace: true }));
             })
             .fail((xhr) => {
-                console.log("Login failed");
-                console.log("Status:", xhr.status);
-                console.log("Response:", xhr.responseText);
+                const message = xhr.status === 401
+                    ? "Invalid email or password."
+                    : "Unable to sign in. Please try again later.";
+                showToast("danger", message, "Login failed");
             });
     }
 
