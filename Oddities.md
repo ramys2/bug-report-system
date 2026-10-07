@@ -19,7 +19,6 @@ marked in the code comments and were not confirmed by running the application.
 
 ### Security and access
 - `GET /api/reports` shows all reports to every signed-in user (no filtering by owner).
-- CORS allows only `http://localhost:5173` (hard-coded).
 - `CurrentUserAuthenticationFilter` looks the user up in the database on every request.
 - Demo passwords are hard-coded in `BugReportApplication` and are written to the application log at startup (only BCrypt hashes are stored).
 - `application.yml` contains database, Artemis and mail credentials in plain text (dev defaults).
@@ -30,7 +29,6 @@ marked in the code comments and were not confirmed by running the application.
 - The component update path segment is camelCase (`/responsibleUserId`), unlike the kebab-case report segments (`/steps-to-reproduce`).
 
 ### Messaging
-- The sender address `no-reply@bugreport.local` is hard-coded in `BugReportEventConsumer`.
 - `BugReportEventPublisher` does not catch send failures; the database change is already committed when sending fails.
 
 ### Small things

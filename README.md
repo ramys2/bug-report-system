@@ -581,6 +581,8 @@ overridden with a Spring environment variable (dots become underscores, upper ca
 | `spring.artemis.broker-url` | `tcp://artemis:61616` | Broker address |
 | `spring.artemis.user` / `password` | `artemis` / `artemis` | Broker login |
 | `spring.mail.host` / `port` | `mailpit` / `1025` | SMTP server for notification emails |
+| `app.cors.allowed-origins` | `http://localhost:5173` | Origins allowed to call the API (CORS), comma-separated |
+| `app.mail.from-address` | `no-reply@bugreport.local` | Sender address of notification emails |
 | `messaging.destinations.bug-report-event` | `bug-report-event` | Queue name for report events |
 | `server.port` | not set, so Spring Boot's default `8080` | HTTP port of the backend |
 
@@ -591,8 +593,6 @@ Values that are **hard-coded in the source** and cannot be configured:
 
 | Value | Where |
 | --- | --- |
-| Allowed CORS origin `http://localhost:5173` | `SecurityConfig` |
-| Email sender `no-reply@bugreport.local` | `BugReportEventConsumer` |
 | Backend address `http://backend:8080` for the frontend proxy | `frontend/vite.config.js` |
 | Toast display time (5 seconds) | `frontend/src/components/Toast.jsx` |
 
@@ -621,8 +621,8 @@ findings are in [Oddities.md](Oddities.md).
 - **Attachments are not implemented.** An `Attachment` domain class exists, but there is no
   table, endpoint or user interface for it.
 - **Every signed-in user sees every report** (no per-project visibility).
-- **Hard-coded development settings.** CORS allows only `http://localhost:5173`, and database,
-  broker and mail credentials are plain defaults in `application.yml`.
+- **Hard-coded development settings.** Database, broker and mail credentials are plain
+  defaults in `application.yml`.
 - **Docker images are not pinned** for MariaDB, Artemis and Mailpit.
 - **The frontend runs as a Vite development server**, not as a production build.
 - **No license file** is part of the repository.
