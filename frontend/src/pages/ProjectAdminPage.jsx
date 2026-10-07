@@ -169,7 +169,7 @@ export default function ProjectAdminPage() {
                     </div>
                     <div className="d-flex align-items-center gap-3">
                         <span className="text-secondary small">{projects.length} project{projects.length === 1 ? "" : "s"}</span>
-                        {auth.currentUser.role === "ADMIN" && (
+                        {auth.currentUser?.role === "ADMIN" && (
                             <button
                                 className="btn btn-primary"
                                 data-bs-target={`#${createModalId}`}
