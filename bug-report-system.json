@@ -163,12 +163,6 @@
           "color": "#4f78c4"
         },
         {
-          "id": "task-61537eca-f4ef-4b0d-9589-71e3394d3ffc",
-          "title": "[UX] Show a message when login fails",
-          "description": "Oddities.md > Frontend.\nA failed login is only written to the browser console; the user sees nothing. (The Register button is covered by the existing task \"Implement register functionality\".)",
-          "color": "#3a9ab5"
-        },
-        {
           "id": "task-5e312a7f-eec7-4e08-9f80-9609ec1ed16f",
           "title": "[Refactor] Add a ResolutionResponse DTO",
           "description": "Oddities.md > Backend > API design.\nBugReportResponse serializes the domain Resolution object directly, tying the API shape to the domain class.",
@@ -180,6 +174,12 @@
       "id": "column-14e7a403-192c-4f53-950b-80997c07901c",
       "name": "Done",
       "tasks": [
+        {
+          "id": "task-61537eca-f4ef-4b0d-9589-71e3394d3ffc",
+          "title": "[UX] Show a message when login fails",
+          "description": "Oddities.md > Frontend.\nA failed login is only written to the browser console; the user sees nothing. (The Register button is covered by the existing task \"Implement register functionality\".)",
+          "color": "#3a9ab5"
+        },
         {
           "id": "task-95318641-408e-4605-bd73-9b04a89daef8",
           "title": "[Refactor] Clean up the api modules",
