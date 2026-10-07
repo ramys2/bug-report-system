@@ -1,6 +1,5 @@
 import { useContext, useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
-import { Modal as BootstrapModal } from "bootstrap";
 import {
     closeReport,
     getReport,
@@ -23,14 +22,6 @@ import AuthContext from "../components/AuthContext";
 import Modal from "../components/Modal";
 import { showToast } from "../components/toast";
 
-/**
- * Element id of the modal with the "close issue" form.
- */
-const closeBugReportModalId = "close-bug-report-modal";
-/**
- * Element id of the modal that shows the resolution of a closed report.
- */
-const resolutionModalId = "resolution-modal";
 /**
  * Empty state of the "close issue" form.
  */
@@ -340,6 +331,8 @@ export default function BugReportPage() {
     const [removingCommentId, setRemovingCommentId] = useState(null);
     const [resolutionDraft, setResolutionDraft] = useState(EMPTY_RESOLUTION);
     const [isClosing, setIsClosing] = useState(false);
+    const [isCloseModalOpen, setIsCloseModalOpen] = useState(false);
+    const [isResolutionModalOpen, setIsResolutionModalOpen] = useState(false);
 
     const [developers, setDevelopers] = useState([]);
     const [projects, setProjects] = useState([]);
@@ -439,14 +432,6 @@ export default function BugReportPage() {
         setResolutionDraft((resolution) => ({ ...resolution, [field]: value }));
     }
 
-    function closeResolutionModal() {
-        const modalElement = document.getElementById(closeBugReportModalId);
-
-        if (modalElement) {
-            BootstrapModal.getOrCreateInstance(modalElement).hide();
-        }
-    }
-
     function submitResolution(event) {
         event.preventDefault();
 
@@ -468,7 +453,7 @@ export default function BugReportPage() {
         closeReport(bugReport.id, resolutionDraft)
             .done(() => {
                 setResolutionDraft(EMPTY_RESOLUTION);
-                closeResolutionModal();
+                setIsCloseModalOpen(false);
                 getReport(bugReport.id)
                     .done(setBugReport)
                     .fail(() => showToast("danger", "Issue closed, but the page could not be refreshed. Reload the page.", "Unable to refresh report"));
@@ -590,8 +575,7 @@ export default function BugReportPage() {
                                         {bugReport.resolution ? (
                                             <button
                                                 className="btn btn-outline-primary w-100"
-                                                data-bs-target={`#${resolutionModalId}`}
-                                                data-bs-toggle="modal"
+                                                onClick={() => setIsResolutionModalOpen(true)}
                                                 type="button"
                                             >
                                                 Show resolution
@@ -599,8 +583,7 @@ export default function BugReportPage() {
                                         ) : (
                                             <button
                                                 className="btn btn-danger w-100"
-                                                data-bs-target={`#${closeBugReportModalId}`}
-                                                data-bs-toggle="modal"
+                                                onClick={() => setIsCloseModalOpen(true)}
                                                 type="button"
                                             >
                                                 Close issue
@@ -723,7 +706,7 @@ export default function BugReportPage() {
                             )}
                         </section>
 
-                        <Modal id={closeBugReportModalId}>
+                        <Modal onHide={() => setIsCloseModalOpen(false)} show={isCloseModalOpen}>
                             <form onSubmit={submitResolution}>
                                 <div className="modal-header">
                                     <h2 className="modal-title fs-5">Close issue</h2>
@@ -791,7 +774,7 @@ export default function BugReportPage() {
                             </form>
                         </Modal>
 
-                        <Modal fullscreen={false} id={resolutionModalId}>
+                        <Modal fullscreen={false} onHide={() => setIsResolutionModalOpen(false)} show={isResolutionModalOpen}>
                             <div className="modal-header">
                                 <h2 className="modal-title fs-5">Resolution</h2>
                                 <button

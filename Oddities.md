@@ -48,7 +48,6 @@ marked in the code comments and were not confirmed by running the application.
 - `Toast` uses a hard-coded 5-second timeout.
 - `BugReportPage`: adding a comment does not check for blank text in the UI; the backend rejects it and only a generic error toast appears.
 - `HomePage` and `BugReportPage` load the developers and projects lists on mount even if the create form or the select fields are never used.
-- The pages use `document.getElementById` together with Bootstrap's `Modal` API to open and close modals, mixing DOM access with React state.
 
 ## Scripts and infrastructure
 
