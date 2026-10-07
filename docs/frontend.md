@@ -162,7 +162,7 @@ handles `.done`, `.fail` and `.always`._
 | `/reports/:id` | `BugReportPage` | Loads the report, its comments, the status transitions and the developer and project lists, and the components of the report's project (loaded again when the project changes; changing the project removes the report's component, shown as "None"). Fields (assignee, severity, status, project, component, description, steps, expected and actual behavior) are edited inline, each with its own `PATCH` call. Comments can be added, and removed by their author or an admin. "Close issue" opens a modal for the resolution (with a confirmation dialog). A closed report is read-only and offers "Show resolution". |
 | `/admin/projects` | `ProjectAdminPage` | Lists projects; rename and edit the description (admin or developer); create a project (admin only). |
 | `/admin/components` | `ComponentAdminPage` | Lists components; rename, edit the description, change the responsible user (found with the user search) and create components. |
-| `/admin/users` | `UserAdminPage` | Admin only. Lists all accounts, filtered and paged in the browser; changes a user's role. |
+| `/admin/users` | `UserAdminPage` | Admin only. Lists accounts one page at a time, filtered and paged by the backend; changes a user's role (not the signed-in admin's own). |
 
 The status selector on `BugReportPage` offers only the statuses returned by
 `GET /api/reports/status-transitions` for the current status. It never offers `ASSIGNED` (set by

@@ -90,6 +90,24 @@ class UserAccountControllerTest {
     }
 
     @Test
+    void getAllTreatsEmptyFilterValuesAsNoFilter() throws Exception {
+        var noFilter = new UserAccountFilter("", "", "", null);
+        when(userAccountService.getAll(noFilter, 0, 10)).thenReturn(PageResponse.of(List.of(), 0, 10, 0));
+
+        mockMvc.perform(get("/api/accounts")
+                        .param("id", "")
+                        .param("name", "")
+                        .param("email", "")
+                        .param("role", "")
+                        .param("page", "0")
+                        .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalPages").value(0));
+
+        verify(userAccountService).getAll(noFilter, 0, 10);
+    }
+
+    @Test
     void getAllRejectsUnknownRole() throws Exception {
         mockMvc.perform(get("/api/accounts").param("role", "BOSS"))
                 .andExpect(status().isBadRequest())

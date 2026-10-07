@@ -2,14 +2,22 @@ import $ from "jquery";
 import { getCsrfToken } from "./csrf";
 
 /**
- * `GET /api/accounts` (ADMIN only): lists all accounts.
+ * `GET /api/accounts` (ADMIN only): lists one page of accounts, ordered by name. Empty filters are ignored by the backend.
  *
- * @returns {JQuery.jqXHR} resolves with a list of `{ id, name, email, role }`
+ * @param {object} query
+ * @param {string} query.id text the account id must contain, ignoring case
+ * @param {string} query.name text the name must contain, ignoring case
+ * @param {string} query.email text the email address must contain, ignoring case
+ * @param {string} query.role exact role (`ADMIN`, `DEVELOPER` or `REPORTER`), or `""` for any
+ * @param {number} query.page zero-based page number
+ * @param {number} query.size accounts per page (the backend allows 1 to 100)
+ * @returns {JQuery.jqXHR} resolves with `{ items, page, size, totalElements, totalPages }`, the items being `{ id, name, email, role }`
  */
-export function getAllAccounts() {
+export function getAccounts({ id, name, email, role, page, size }) {
     return $.ajax({
         method: "GET",
         url: "/api/accounts",
+        data: { id, name, email, role, page, size },
     });
 }
 
