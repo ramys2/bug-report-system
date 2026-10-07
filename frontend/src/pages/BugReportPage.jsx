@@ -17,7 +17,9 @@ import {
 import { createComment, getComments, removeComment } from "../api/comment";
 import { formatDateTime } from "../utils/date";
 import "./BugReportPage.css";
-import { getComponentsByProject, getDevelopers, getProjects } from "../api/create-bug-report-options";
+import { getDevelopers } from "../api/account";
+import { getAllComponents } from "../api/component";
+import { getAllProjects } from "../api/project";
 import AuthContext from "../components/AuthContext";
 import Modal from "../components/Modal";
 import { showToast } from "../components/toast";
@@ -372,7 +374,7 @@ export default function BugReportPage() {
 
     function loadProjects() {
         if (projects.length === 0) {
-            getProjects()
+            getAllProjects()
                 .done(setProjects)
                 .fail(() => showToast("danger", "Failed to fetch projects.", "Unable to load projects"));
         }
@@ -385,7 +387,7 @@ export default function BugReportPage() {
 
         let isCurrentProject = true;
 
-        getComponentsByProject(projectId)
+        getAllComponents(projectId)
             .done((projectComponents) => {
                 if (isCurrentProject) {
                     setComponents(projectComponents);

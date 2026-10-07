@@ -6,7 +6,8 @@ import QuickFilters from "../components/QuickFilters";
 import { showToast } from "../components/toast";
 import "./HomePage.css";
 import { getAllReports, getAssigned, getReported } from "../api/bug-report";
-import { getDevelopers, getProjects } from "../api/create-bug-report-options";
+import { getDevelopers } from "../api/account";
+import { getAllProjects } from "../api/project";
 
 /**
  * Home page at `/`: the list of bug reports with quick filters and a "Create new" button that opens `CreateBugReportForm` in a modal.
@@ -45,7 +46,7 @@ function HomePage() {
         }
 
         if (projects.length === 0) {
-            getProjects()
+            getAllProjects()
                 .done(setProjects)
                 .fail(() => showToast("danger", "Failed to fetch projects.", "Unable to load projects"));
         }

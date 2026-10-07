@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createReport } from "../api/bug-report";
-import { getComponentsByProject } from "../api/create-bug-report-options";
+import { getAllComponents } from "../api/component";
 import { showToast } from "./toast";
 
 /**
@@ -50,7 +50,7 @@ function CreateBugReportForm({ developers, projects, onCreated }) {
 
         let isCurrentProject = true;
 
-        getComponentsByProject(formValues.projectId)
+        getAllComponents(formValues.projectId)
             .done((projectComponents) => {
                 if (isCurrentProject) {
                     setComponents(projectComponents);
