@@ -1,97 +1,12 @@
 import { useContext, useEffect, useState } from "react";
-import { Modal as BootstrapModal } from "bootstrap";
 import Modal from "../components/Modal";
 import AuthContext from "../components/AuthContext";
 import CreateProjectForm from "../components/CreateProjectForm";
+import EditableName from "../components/EditableName";
+import EditDescriptionModal from "../components/EditDescriptionModal";
 import { showToast } from "../components/toast";
 import { getAllProjects, updateProjectDescription, updateProjectName } from "../api/project";
 import "./ProjectAdminPage.css";
-
-/**
- * Element id of the modal for editing a project's description.
- */
-const descriptionModalId = "project-description-modal";
-/**
- * Element id of the modal for creating a project.
- */
-const createModalId = "create-project-modal";
-
-/**
- * Table cell that shows a project's name and lets the user rename it inline. Save calls `PATCH /api/projects/{id}/name` and is disabled for empty or unchanged names.
- *
- * @param {object} props
- * @param {{id: string, name: string}} props.project the project shown
- * @param {(projectId: string, name: string) => void} props.onNameSaved called with the new name after it was saved
- */
-function EditableName({ project, onNameSaved }) {
-    const [isEditing, setIsEditing] = useState(false);
-    const [draftName, setDraftName] = useState(project.name);
-    const [isSaving, setIsSaving] = useState(false);
-
-    function startEditing() {
-        setDraftName(project.name);
-        setIsEditing(true);
-    }
-
-    function saveName() {
-        if (isSaving) {
-            return;
-        }
-
-        setIsSaving(true);
-        updateProjectName(project.id, draftName)
-            .done(() => {
-                onNameSaved(project.id, draftName);
-                setIsEditing(false);
-            })
-            .fail(() => showToast("danger", "Unable to update the project name.", "Update failed"))
-            .always(() => setIsSaving(false));
-    }
-
-    if (!isEditing) {
-        return (
-            <div className="d-flex align-items-center gap-2">
-                <span>{project.name}</span>
-                <button
-                    aria-label={`Edit name for ${project.name}`}
-                    className="btn btn-outline-secondary btn-sm"
-                    onClick={startEditing}
-                    type="button"
-                >
-                    <i aria-hidden="true" className="bi bi-pencil" />
-                </button>
-            </div>
-        );
-    }
-
-    return (
-        <div className="d-flex align-items-center gap-2">
-            <input
-                aria-label={`Name for ${project.name}`}
-                className="form-control form-control-sm"
-                disabled={isSaving}
-                onChange={(event) => setDraftName(event.target.value)}
-                value={draftName}
-            />
-            <button
-                className="btn btn-primary btn-sm"
-                disabled={isSaving || !draftName.trim() || draftName === project.name}
-                onClick={saveName}
-                type="button"
-            >
-                {isSaving ? "Saving..." : "Save"}
-            </button>
-            <button
-                className="btn btn-outline-secondary btn-sm"
-                disabled={isSaving}
-                onClick={() => setIsEditing(false)}
-                type="button"
-            >
-                Cancel
-            </button>
-        </div>
-    );
-}
 
 /**
  * Admin page at `/admin/projects` (ADMIN or DEVELOPER): all projects in a table with inline name editing and a modal for the description.
@@ -104,8 +19,7 @@ export default function ProjectAdminPage() {
     const [projects, setProjects] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [projectForDescription, setProjectForDescription] = useState(null);
-    const [draftDescription, setDraftDescription] = useState("");
-    const [isSavingDescription, setIsSavingDescription] = useState(false);
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
 
     useEffect(() => {
         loadProjects();
@@ -124,39 +38,14 @@ export default function ProjectAdminPage() {
         )));
     }
 
-    function openDescriptionEditor(project) {
-        setProjectForDescription(project);
-        setDraftDescription(project.description || "");
-
-        const modalElement = document.getElementById(descriptionModalId);
-        BootstrapModal.getOrCreateInstance(modalElement).show();
-    }
-
-    function closeDescriptionEditor() {
-        const modalElement = document.getElementById(descriptionModalId);
-        BootstrapModal.getOrCreateInstance(modalElement).hide();
-    }
-
     function handleProjectCreated() {
         loadProjects();
-
-        const modalElement = document.getElementById(createModalId);
-        BootstrapModal.getOrCreateInstance(modalElement).hide();
+        setIsCreateOpen(false);
     }
 
-    function saveDescription() {
-        if (!projectForDescription || isSavingDescription) {
-            return;
-        }
-
-        setIsSavingDescription(true);
-        updateProjectDescription(projectForDescription.id, draftDescription)
-            .done(() => {
-                updateProject(projectForDescription.id, { description: draftDescription });
-                closeDescriptionEditor();
-            })
-            .fail(() => showToast("danger", "Unable to update the project description.", "Update failed"))
-            .always(() => setIsSavingDescription(false));
+    function handleDescriptionSaved(projectId, description) {
+        updateProject(projectId, { description });
+        setProjectForDescription(null);
     }
 
     return (
@@ -172,8 +61,7 @@ export default function ProjectAdminPage() {
                         {auth.currentUser?.role === "ADMIN" && (
                             <button
                                 className="btn btn-primary"
-                                data-bs-target={`#${createModalId}`}
-                                data-bs-toggle="modal"
+                                onClick={() => setIsCreateOpen(true)}
                                 type="button"
                             >
                                 Create new +
@@ -200,10 +88,18 @@ export default function ProjectAdminPage() {
                                 ) : projects.map((project) => (
                                     <tr key={project.id}>
                                         <td className="small text-break">{project.id}</td>
-                                        <td><EditableName onNameSaved={(id, name) => updateProject(id, { name })} project={project} /></td>
+                                        <td>
+                                            <EditableName
+                                                id={project.id}
+                                                label="project"
+                                                name={project.name}
+                                                onNameSaved={(id, name) => updateProject(id, { name })}
+                                                onSave={updateProjectName}
+                                            />
+                                        </td>
                                         <td>
                                             <div className="project-description mb-2">{project.description || "No description"}</div>
-                                            <button className="btn btn-outline-secondary btn-sm" onClick={() => openDescriptionEditor(project)} type="button">
+                                            <button className="btn btn-outline-secondary btn-sm" onClick={() => setProjectForDescription(project)} type="button">
                                                 <i aria-hidden="true" className="bi bi-pencil me-1" />Edit description
                                             </button>
                                         </td>
@@ -215,28 +111,14 @@ export default function ProjectAdminPage() {
                 </section>
             </main>
 
-            <Modal id={descriptionModalId}>
-                <div className="modal-header">
-                    <h2 className="modal-title fs-5">Edit project description</h2>
-                </div>
-                <div className="modal-body d-flex flex-column">
-                    <label className="form-label" htmlFor="project-description">Description</label>
-                    <textarea
-                        className="form-control flex-grow-1"
-                        disabled={isSavingDescription}
-                        id="project-description"
-                        onChange={(event) => setDraftDescription(event.target.value)}
-                        value={draftDescription}
-                    />
-                </div>
-                <div className="modal-footer">
-                    <button className="btn btn-outline-secondary" disabled={isSavingDescription} onClick={closeDescriptionEditor} type="button">Cancel</button>
-                    <button className="btn btn-primary" disabled={isSavingDescription} onClick={saveDescription} type="button">
-                        {isSavingDescription ? "Saving..." : "Save"}
-                    </button>
-                </div>
-            </Modal>
-            <Modal id={createModalId}>
+            <EditDescriptionModal
+                item={projectForDescription}
+                label="project"
+                onHide={() => setProjectForDescription(null)}
+                onSave={updateProjectDescription}
+                onSaved={handleDescriptionSaved}
+            />
+            <Modal onHide={() => setIsCreateOpen(false)} show={isCreateOpen}>
                 <CreateProjectForm onCreated={handleProjectCreated} />
             </Modal>
         </div>

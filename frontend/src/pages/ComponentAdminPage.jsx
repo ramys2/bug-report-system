@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { Modal as BootstrapModal } from "bootstrap";
 import Modal from "../components/Modal";
 import CreateComponentForm from "../components/CreateComponentForm";
+import EditableName from "../components/EditableName";
+import EditDescriptionModal from "../components/EditDescriptionModal";
 import { showToast } from "../components/toast";
 import {
     getAllComponents,
@@ -11,92 +12,6 @@ import {
 } from "../api/component";
 import { searchUsers } from "../api/account";
 import "./ComponentAdminPage.css";
-
-/**
- * Element id of the modal for editing a component's description.
- */
-const descriptionModalId = "component-description-modal";
-/**
- * Element id of the modal for creating a component.
- */
-const createModalId = "create-component-modal";
-
-/**
- * Table cell that shows a component's name and lets the user rename it inline. Save calls `PATCH /api/components/{id}/name` and is disabled for empty or unchanged names.
- *
- * @param {object} props
- * @param {{id: string, name: string}} props.component the component shown
- * @param {(componentId: string, name: string) => void} props.onNameSaved called with the new name after it was saved
- */
-function EditableName({ component, onNameSaved }) {
-    const [isEditing, setIsEditing] = useState(false);
-    const [draftName, setDraftName] = useState(component.name);
-    const [isSaving, setIsSaving] = useState(false);
-
-    function startEditing() {
-        setDraftName(component.name);
-        setIsEditing(true);
-    }
-
-    function saveName() {
-        if (isSaving) {
-            return;
-        }
-
-        setIsSaving(true);
-        updateComponentName(component.id, draftName)
-            .done(() => {
-                onNameSaved(component.id, draftName);
-                setIsEditing(false);
-            })
-            .fail(() => showToast("danger", "Unable to update the component name.", "Update failed"))
-            .always(() => setIsSaving(false));
-    }
-
-    if (!isEditing) {
-        return (
-            <div className="d-flex align-items-center gap-2">
-                <span>{component.name}</span>
-                <button
-                    aria-label={`Edit name for ${component.name}`}
-                    className="btn btn-outline-secondary btn-sm"
-                    onClick={startEditing}
-                    type="button"
-                >
-                    <i aria-hidden="true" className="bi bi-pencil" />
-                </button>
-            </div>
-        );
-    }
-
-    return (
-        <div className="d-flex align-items-center gap-2">
-            <input
-                aria-label={`Name for ${component.name}`}
-                className="form-control form-control-sm"
-                disabled={isSaving}
-                onChange={(event) => setDraftName(event.target.value)}
-                value={draftName}
-            />
-            <button
-                className="btn btn-primary btn-sm"
-                disabled={isSaving || !draftName.trim() || draftName === component.name}
-                onClick={saveName}
-                type="button"
-            >
-                {isSaving ? "Saving..." : "Save"}
-            </button>
-            <button
-                className="btn btn-outline-secondary btn-sm"
-                disabled={isSaving}
-                onClick={() => setIsEditing(false)}
-                type="button"
-            >
-                Cancel
-            </button>
-        </div>
-    );
-}
 
 /**
  * Table cell that shows the responsible user and lets the user pick another one by searching users by name (`GET /api/accounts/users?search=...`).
@@ -247,8 +162,7 @@ export default function ComponentAdminPage() {
     const [components, setComponents] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [componentForDescription, setComponentForDescription] = useState(null);
-    const [draftDescription, setDraftDescription] = useState("");
-    const [isSavingDescription, setIsSavingDescription] = useState(false);
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
 
     useEffect(() => {
         loadComponents();
@@ -267,39 +181,14 @@ export default function ComponentAdminPage() {
         )));
     }
 
-    function openDescriptionEditor(component) {
-        setComponentForDescription(component);
-        setDraftDescription(component.description || "");
-
-        const modalElement = document.getElementById(descriptionModalId);
-        BootstrapModal.getOrCreateInstance(modalElement).show();
-    }
-
-    function closeDescriptionEditor() {
-        const modalElement = document.getElementById(descriptionModalId);
-        BootstrapModal.getOrCreateInstance(modalElement).hide();
-    }
-
     function handleComponentCreated() {
         loadComponents();
-
-        const modalElement = document.getElementById(createModalId);
-        BootstrapModal.getOrCreateInstance(modalElement).hide();
+        setIsCreateOpen(false);
     }
 
-    function saveDescription() {
-        if (!componentForDescription || isSavingDescription) {
-            return;
-        }
-
-        setIsSavingDescription(true);
-        updateComponentDescription(componentForDescription.id, draftDescription)
-            .done(() => {
-                updateComponent(componentForDescription.id, { description: draftDescription });
-                closeDescriptionEditor();
-            })
-            .fail(() => showToast("danger", "Unable to update the component description.", "Update failed"))
-            .always(() => setIsSavingDescription(false));
+    function handleDescriptionSaved(componentId, description) {
+        updateComponent(componentId, { description });
+        setComponentForDescription(null);
     }
 
     return (
@@ -314,8 +203,7 @@ export default function ComponentAdminPage() {
                         <span className="text-secondary small">{components.length} component{components.length === 1 ? "" : "s"}</span>
                         <button
                             className="btn btn-primary"
-                            data-bs-target={`#${createModalId}`}
-                            data-bs-toggle="modal"
+                            onClick={() => setIsCreateOpen(true)}
                             type="button"
                         >
                             Create new +
@@ -342,10 +230,18 @@ export default function ComponentAdminPage() {
                                 ) : components.map((component) => (
                                     <tr key={component.id}>
                                         <td className="small text-break">{component.id}</td>
-                                        <td><EditableName component={component} onNameSaved={(id, name) => updateComponent(id, { name })} /></td>
+                                        <td>
+                                            <EditableName
+                                                id={component.id}
+                                                label="component"
+                                                name={component.name}
+                                                onNameSaved={(id, name) => updateComponent(id, { name })}
+                                                onSave={updateComponentName}
+                                            />
+                                        </td>
                                         <td>
                                             <div className="component-description mb-2">{component.description || "No description"}</div>
-                                            <button className="btn btn-outline-secondary btn-sm" onClick={() => openDescriptionEditor(component)} type="button">
+                                            <button className="btn btn-outline-secondary btn-sm" onClick={() => setComponentForDescription(component)} type="button">
                                                 <i aria-hidden="true" className="bi bi-pencil me-1" />Edit description
                                             </button>
                                         </td>
@@ -363,28 +259,14 @@ export default function ComponentAdminPage() {
                 </section>
             </main>
 
-            <Modal id={descriptionModalId}>
-                <div className="modal-header">
-                    <h2 className="modal-title fs-5">Edit component description</h2>
-                </div>
-                <div className="modal-body d-flex flex-column">
-                    <label className="form-label" htmlFor="component-description">Description</label>
-                    <textarea
-                        className="form-control flex-grow-1"
-                        disabled={isSavingDescription}
-                        id="component-description"
-                        onChange={(event) => setDraftDescription(event.target.value)}
-                        value={draftDescription}
-                    />
-                </div>
-                <div className="modal-footer">
-                    <button className="btn btn-outline-secondary" disabled={isSavingDescription} onClick={closeDescriptionEditor} type="button">Cancel</button>
-                    <button className="btn btn-primary" disabled={isSavingDescription} onClick={saveDescription} type="button">
-                        {isSavingDescription ? "Saving..." : "Save"}
-                    </button>
-                </div>
-            </Modal>
-            <Modal id={createModalId}>
+            <EditDescriptionModal
+                item={componentForDescription}
+                label="component"
+                onHide={() => setComponentForDescription(null)}
+                onSave={updateComponentDescription}
+                onSaved={handleDescriptionSaved}
+            />
+            <Modal onHide={() => setIsCreateOpen(false)} show={isCreateOpen}>
                 <CreateComponentForm onCreated={handleComponentCreated} />
             </Modal>
         </div>
