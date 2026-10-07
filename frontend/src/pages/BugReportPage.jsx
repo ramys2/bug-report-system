@@ -403,6 +403,11 @@ export default function BugReportPage() {
     }, [projectId]);
 
     function saveComment() {
+        if (!commentDraft.trim()) {
+            showToast("warning", "Comment text is required.", "Missing information");
+            return;
+        }
+
         setIsCommentSaving(true);
 
         createComment(id, { content: commentDraft })
