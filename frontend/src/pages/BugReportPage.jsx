@@ -202,6 +202,7 @@ const SEVERITY_OPTIONS = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
  * @param {(option: any) => string} props.getOptionLabel text shown for an option
  * @param {string} [props.placeholder] if given, an empty first option is shown and nothing is preselected
  * @param {boolean} [props.isEditable=true] `false` disables editing (used for closed reports)
+ * @param {() => void} [props.loadOptions] called when editing starts, for options that are fetched lazily; while it is given the edit button stays enabled even if `options` is still empty
  * @param {(reportId: string, value: string) => JQuery.jqXHR} props.updateValue api function that saves the choice
  * @param {(option: any) => void} props.onValueSaved called with the saved option
  */
@@ -215,19 +216,24 @@ function EditableSelectField({
     getOptionValue,
     getOptionLabel,
     isEditable = true,
+    loadOptions,
     updateValue,
     onValueSaved,
 }) {
     const [isEditing, setIsEditing] = useState(false);
-    const [selectedOptionValue, setSelectedOptionValue] = useState("");
+    const [chosenOptionValue, setChosenOptionValue] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
     const isCurrentlyEditing = isEditing && isEditable;
+    // Until the user picks something the current option is preselected. This is worked out on every render (not once in
+    // startEditing) because lazily loaded options may arrive after editing has started.
+    const defaultOption = options.find((option) => getOptionValue(option) === currentValue)
+        ?? (placeholder ? null : options[0]);
+    const selectedOptionValue = chosenOptionValue ?? (defaultOption ? getOptionValue(defaultOption) : "");
 
     function startEditing() {
-        const selectedOption = options.find((option) => getOptionValue(option) === currentValue)
-            ?? (placeholder ? null : options[0]);
-        setSelectedOptionValue(selectedOption ? getOptionValue(selectedOption) : "");
+        setChosenOptionValue(null);
         setIsEditing(true);
+        loadOptions?.();
     }
 
     function cancelEditing() {
@@ -264,7 +270,7 @@ function EditableSelectField({
                             aria-label={label}
                             className="form-select"
                             disabled={isSaving}
-                            onChange={(event) => setSelectedOptionValue(event.target.value)}
+                            onChange={(event) => setChosenOptionValue(event.target.value)}
                             value={selectedOptionValue}
                         >
                             {placeholder && <option disabled value="">{placeholder}</option>}
@@ -297,7 +303,7 @@ function EditableSelectField({
                     <button
                         aria-label={`Edit ${label.toLowerCase()}`}
                         className="editable-enum-display"
-                        disabled={!isEditable || options.length === 0}
+                        disabled={!isEditable || (options.length === 0 && !loadOptions)}
                         onClick={startEditing}
                         type="button"
                     >
@@ -313,8 +319,8 @@ function EditableSelectField({
 /**
  * Report detail page at `/reports/:id`.
  *
- * On load it fetches the report (`GET /api/reports/{id}`), its comments (`GET /api/comments?reportId={id}`) and the developers and projects
- * used by the select fields. The components offered are those of the report's project (`GET /api/components?projectId=...`), loaded again when the project is
+ * On load it fetches the report (`GET /api/reports/{id}`), and its comments (`GET /api/comments?reportId={id}`). The developers and projects
+ * used by the select fields are fetched when the assignee or project is first edited. The components offered are those of the report's project (`GET /api/components?projectId=...`), loaded again when the project is
  * changed; the backend then removes the report's component, so the page does the same and the component shows "None". It shows the report with in-place editing of assignee, severity, status, project, component, description,
  * steps to reproduce, expected and actual behavior, and a comment section (add: `POST /api/comments`, remove: `DELETE /api/comments/{id}`).
  *
@@ -357,18 +363,27 @@ export default function BugReportPage() {
             .done((data) => setComments(data))
             .fail(() => showToast("danger", "Unable to fetch comments!", "Unable to load comments"));
 
-        getDevelopers()
-            .done(setDevelopers)
-            .fail(() => showToast("danger", "Failed to fetch developers.", "Unable to load developers"));
-
-        getProjects()
-            .done(setProjects)
-            .fail(() => showToast("danger", "Failed to fetch projects.", "Unable to load projects"));
-
         getStatusTransitions()
             .done(setStatusTransitions)
             .fail(() => showToast("danger", "Failed to fetch status transitions.", "Unable to load statuses"));
     }, [id]);
+
+    function loadDevelopers() {
+        // Fetched when the assignee is first edited; a failed request is retried the next time.
+        if (developers.length === 0) {
+            getDevelopers()
+                .done(setDevelopers)
+                .fail(() => showToast("danger", "Failed to fetch developers.", "Unable to load developers"));
+        }
+    }
+
+    function loadProjects() {
+        if (projects.length === 0) {
+            getProjects()
+                .done(setProjects)
+                .fail(() => showToast("danger", "Failed to fetch projects.", "Unable to load projects"));
+        }
+    }
 
     useEffect(() => {
         if (!projectId) {
@@ -488,6 +503,7 @@ export default function BugReportPage() {
                                             getOptionValue={(developer) => developer.id}
                                             isEditable={!isClosed}
                                             label="Assignee"
+                                            loadOptions={loadDevelopers}
                                             onValueSaved={(developer) => setBugReport((report) => ({
                                                 ...report,
                                                 assigneeId: developer.id,
@@ -530,6 +546,7 @@ export default function BugReportPage() {
                                             getOptionValue={(project) => project.id}
                                             isEditable={!isClosed}
                                             label="Project"
+                                            loadOptions={loadProjects}
                                             onValueSaved={(project) => {
                                                 if (project.id === bugReport.projectId) {
                                                     return; // same project: the backend keeps the component
