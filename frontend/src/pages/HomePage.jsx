@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Modal as BootstrapModal } from "bootstrap";
 import BugReportList from "../components/BugReportList";
 import CreateBugReportForm from "../components/CreateBugReportForm";
 import Modal from "../components/Modal";
@@ -8,11 +7,6 @@ import { showToast } from "../components/toast";
 import "./HomePage.css";
 import { getAllReports, getAssigned, getReported } from "../api/bug-report";
 import { getDevelopers, getProjects } from "../api/create-bug-report-options";
-
-/**
- * Element id of the "create bug report" modal, used to open it (via `data-bs-target`) and to close it from code.
- */
-const createBugReportModalId = "create-bug-report-modal";
 
 /**
  * Home page at `/`: the list of bug reports with quick filters and a "Create new" button that opens `CreateBugReportForm` in a modal.
@@ -26,6 +20,7 @@ function HomePage() {
     const [isQuickFilterActive, setIsQuickFilterActive] = useState(false);
     const [developers, setDevelopers] = useState([]);
     const [projects, setProjects] = useState([]);
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
 
     function loadAllReports() {
         getAllReports()
@@ -88,11 +83,12 @@ function HomePage() {
     function onReportCreated() {
         setIsQuickFilterActive(false);
         loadAllReports();
-        const modalElement = document.getElementById(createBugReportModalId);
+        setIsCreateOpen(false);
+    }
 
-        if (modalElement) {
-            BootstrapModal.getOrCreateInstance(modalElement).hide();
-        }
+    function openCreateForm() {
+        loadCreateFormOptions();
+        setIsCreateOpen(true);
     }
 
     return (
@@ -108,15 +104,13 @@ function HomePage() {
                     <button
                         type="button"
                         className="btn btn-primary"
-                        data-bs-toggle="modal"
-                        data-bs-target={`#${createBugReportModalId}`}
-                        onClick={loadCreateFormOptions}
+                        onClick={openCreateForm}
                     >
                         Create new +
                     </button>
                 </div>
                 <BugReportList reports={bugReports} />
-                <Modal id={createBugReportModalId}>
+                <Modal onHide={() => setIsCreateOpen(false)} show={isCreateOpen}>
                     <CreateBugReportForm
                         developers={developers}
                         projects={projects}
