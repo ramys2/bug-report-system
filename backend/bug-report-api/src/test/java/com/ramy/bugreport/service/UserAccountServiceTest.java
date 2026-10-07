@@ -30,6 +30,9 @@ import com.ramy.bugreport.exception.BusinessRuleConflictException;
 import com.ramy.bugreport.exception.DuplicateEmailException;
 import com.ramy.bugreport.repository.IBugReportRepository;
 import com.ramy.bugreport.repository.IUserAccountRepository;
+import com.ramy.bugreport.repository.PageQuery;
+import com.ramy.bugreport.repository.PageResult;
+import com.ramy.bugreport.repository.UserAccountFilter;
 
 @ExtendWith(MockitoExtension.class)
 class UserAccountServiceTest {
@@ -46,17 +49,50 @@ class UserAccountServiceTest {
     }
 
     @Test
-    void getAllMapsAccountsToResponses() {
+    void getAllMapsAccountsToPageResponse() {
         var accountId = UUID.randomUUID();
         var account = org.mockito.Mockito.mock(UserAccount.class);
-        when(userAccountRepository.findAll()).thenReturn(List.of(account));
+        var noFilter = new UserAccountFilter(null, null, null, null);
+        when(userAccountRepository.findPage(noFilter, new PageQuery(1, 10)))
+                .thenReturn(new PageResult<>(List.of(account), 11));
         when(account.getId()).thenReturn(accountId);
         when(account.getName()).thenReturn("Ramy");
         when(account.getEmailAddress()).thenReturn("ramy@example.com");
         when(account.getRole()).thenReturn(EUserRole.REPORTER);
 
-        assertThat(service.getAll()).containsExactly(new UserAccountResponse(
+        var response = service.getAll(noFilter, 1, 10);
+
+        assertThat(response.items()).containsExactly(new UserAccountResponse(
                 accountId, "Ramy", "ramy@example.com", EUserRole.REPORTER));
+        assertThat(response.page()).isEqualTo(1);
+        assertThat(response.size()).isEqualTo(10);
+        assertThat(response.totalElements()).isEqualTo(11);
+        assertThat(response.totalPages()).isEqualTo(2);
+    }
+
+    @Test
+    void getAllTrimsTextFiltersAndDropsBlankOnes() {
+        var expectedFilter = new UserAccountFilter(null, "ali", null, EUserRole.ADMIN);
+        when(userAccountRepository.findPage(expectedFilter, new PageQuery(0, 10)))
+                .thenReturn(new PageResult<>(List.of(), 0));
+
+        var response = service.getAll(new UserAccountFilter("  ", " ali ", "", EUserRole.ADMIN), 0, 10);
+
+        assertThat(response.items()).isEmpty();
+        assertThat(response.totalPages()).isZero();
+        verify(userAccountRepository).findPage(expectedFilter, new PageQuery(0, 10));
+    }
+
+    @Test
+    void getAllAdjustsPageAndSizeToAllowedRange() {
+        var noFilter = new UserAccountFilter(null, null, null, null);
+        when(userAccountRepository.findPage(any(), any())).thenReturn(new PageResult<>(List.of(), 0));
+
+        service.getAll(noFilter, -3, 100000);
+        service.getAll(noFilter, 0, 0);
+
+        verify(userAccountRepository).findPage(noFilter, new PageQuery(0, UserAccountService.MAX_PAGE_SIZE));
+        verify(userAccountRepository).findPage(noFilter, new PageQuery(0, 1));
     }
 
     @Test

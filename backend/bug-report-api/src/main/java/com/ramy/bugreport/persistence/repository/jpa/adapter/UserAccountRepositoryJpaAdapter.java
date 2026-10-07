@@ -1,17 +1,24 @@
 package com.ramy.bugreport.persistence.repository.jpa.adapter;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ramy.bugreport.domain.EUserRole;
 import com.ramy.bugreport.domain.UserAccount;
+import com.ramy.bugreport.persistence.entity.UserAccountEntity;
 import com.ramy.bugreport.persistence.mapper.UserAccountMapper;
 import com.ramy.bugreport.persistence.repository.jpa.repository.UserAccountJpaRepository;
 import com.ramy.bugreport.repository.IUserAccountRepository;
+import com.ramy.bugreport.repository.PageQuery;
+import com.ramy.bugreport.repository.PageResult;
+import com.ramy.bugreport.repository.UserAccountFilter;
 
 /**
  * Implements {@link com.ramy.bugreport.repository.IUserAccountRepository} with Spring Data JPA: calls {@link com.ramy.bugreport.persistence.repository.jpa.repository.UserAccountJpaRepository} and converts between
@@ -39,6 +46,19 @@ public class UserAccountRepositoryJpaAdapter implements IUserAccountRepository {
     @Override
     public List<UserAccount> findAll() {
         return repository.findAll().stream().map(UserAccountMapper::toDomain).toList();
+    }
+
+    @Override
+    public PageResult<UserAccount> findPage(UserAccountFilter filter, PageQuery pageQuery) {
+        Page<UserAccountEntity> page = repository.findPage(
+                toLikePattern(filter.id()),
+                toLikePattern(filter.name()),
+                toLikePattern(filter.email()),
+                filter.role(),
+                PageRequest.of(pageQuery.page(), pageQuery.size()));
+        return new PageResult<>(
+                page.getContent().stream().map(UserAccountMapper::toDomain).toList(),
+                page.getTotalElements());
     }
 
     @Override
@@ -88,5 +108,21 @@ public class UserAccountRepositoryJpaAdapter implements IUserAccountRepository {
     @Transactional
     public List<UserAccount> findAllByRole(EUserRole role) {
         return repository.findAllByRole(role).stream().map(UserAccountMapper::toDomain).toList();
+    }
+
+    /**
+     * Turns the text into a lower-case LIKE pattern that finds it anywhere in a value ({@code %text%}), or returns
+     * {@code null} for no restriction. The characters {@code %} and {@code _} (LIKE wildcards) and the escape
+     * character {@code !} in the text are escaped, so a user's input is matched literally.
+     */
+    private static String toLikePattern(String text) {
+        if (text == null) {
+            return null;
+        }
+        String escaped = text.toLowerCase(Locale.ROOT)
+                .replace("!", "!!")
+                .replace("%", "!%")
+                .replace("_", "!_");
+        return "%" + escaped + "%";
     }
 }

@@ -17,6 +17,14 @@ public interface IUserAccountRepository {
     Optional<UserAccount> findById(UUID id);
     /** Returns all stored user account objects, in no guaranteed order. */
     List<UserAccount> findAll();
+    /**
+     * Returns one page of the accounts that match the filter, ordered by name and then id so that pages are stable.
+     *
+     * @param filter conditions the accounts must meet; text conditions match parts of the value, ignoring case
+     * @param pageQuery which page to read
+     * @return the accounts on that page and the total number of matching accounts
+     */
+    PageResult<UserAccount> findPage(UserAccountFilter filter, PageQuery pageQuery);
     /** Returns the accounts with the given ids. Ids that do not exist are silently skipped. */
     List<UserAccount> findAllById(Iterable<UUID> ids);
     /**
