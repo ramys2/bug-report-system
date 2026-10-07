@@ -18,7 +18,6 @@ marked in the code comments and were not confirmed by running the application.
 - `BugReport`'s builder always starts a report as `OPEN` and cannot set id, status or resolution; `BugReportMapper.toDomain` sets them afterwards.
 
 ### Security and access
-- `SecurityConfig` says comment removal is "an administrative action", but the URL rule only requires being signed in. The service then allows the ADMIN role or the comment's author.
 - `GET /api/reports` shows all reports to every signed-in user (no filtering by owner).
 - CORS allows only `http://localhost:5173` (hard-coded).
 - `CurrentUserAuthenticationFilter` looks the user up in the database on every request.
