@@ -1,4 +1,4 @@
-import $ from "jquery"
+import $ from "jquery";
 
 /**
  * Cached CSRF token value, or `null` if none is loaded.
@@ -34,7 +34,7 @@ export function getCsrfToken() {
     return {
         token: csrfToken,
         headerName: csrfHeaderName
-    }
+    };
 }
 
 /**

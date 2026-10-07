@@ -1,4 +1,4 @@
-import $ from "jquery"
+import $ from "jquery";
 import { getCsrfToken } from "./csrf";
 
 /**
@@ -12,7 +12,7 @@ export function getComments(reportId) {
         method: "GET",
         url: "/api/comments",
         data: { reportId },
-    })
+    });
 }
 
 /**
