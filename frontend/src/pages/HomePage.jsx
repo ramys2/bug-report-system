@@ -17,7 +17,7 @@ const createBugReportModalId = "create-bug-report-modal";
 /**
  * Home page at `/`: the list of bug reports with quick filters and a "Create new" button that opens `CreateBugReportForm` in a modal.
  *
- * On mount it loads all reports (`GET /api/reports`) and the developers and projects that the create form offers as choices (the form loads the components itself).
+ * On mount it loads all reports (`GET /api/reports`). The developers and projects that the create form offers as choices are loaded when "Create new" is clicked (the form loads the components itself).
  * "Reported by me" and "Assigned to me" replace the list with `GET /api/reports/reported` or `/assigned`; Reset reloads all reports.
  * After a report is created the list is reloaded and the modal is closed. Failed requests show an error toast. Takes no props.
  */
@@ -41,15 +41,20 @@ function HomePage() {
         loadAllReports();
     }, []);
 
-    useEffect(() => {
-        getDevelopers()
-            .done(setDevelopers)
-            .fail(() => showToast("danger", "Failed to fetch developers.", "Unable to load developers"));
+    function loadCreateFormOptions() {
+        // Only fetch what is still missing, so reopening the modal doesn't repeat the requests (a failed request is retried on the next click).
+        if (developers.length === 0) {
+            getDevelopers()
+                .done(setDevelopers)
+                .fail(() => showToast("danger", "Failed to fetch developers.", "Unable to load developers"));
+        }
 
-        getProjects()
-            .done(setProjects)
-            .fail(() => showToast("danger", "Failed to fetch projects.", "Unable to load projects"));
-    }, []);
+        if (projects.length === 0) {
+            getProjects()
+                .done(setProjects)
+                .fail(() => showToast("danger", "Failed to fetch projects.", "Unable to load projects"));
+        }
+    }
 
     function onReportedByMe() {
         setIsQuickFilterActive(true);
@@ -105,6 +110,7 @@ function HomePage() {
                         className="btn btn-primary"
                         data-bs-toggle="modal"
                         data-bs-target={`#${createBugReportModalId}`}
+                        onClick={loadCreateFormOptions}
                     >
                         Create new +
                     </button>
