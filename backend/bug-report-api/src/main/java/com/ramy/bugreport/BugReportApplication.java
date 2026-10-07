@@ -56,8 +56,7 @@ public class BugReportApplication {
      *
      * <p><b>Note:</b> The credentials are hard-coded and are also written to the application log at startup.
      * Only their BCrypt hashes are stored. This is acceptable for a demo but must not be used in production.
-     * The data is written to the configured database (MariaDB in {@code application.yml}); the inline comment
-     * about an "in-memory demo database" in the method body does not match the current configuration.
+     * The data is written to the configured database (MariaDB in {@code application.yml}).
      */
     @Bean
     public CommandLineRunner seedData(
@@ -77,7 +76,7 @@ public class BugReportApplication {
 
             LocalDateTime now = LocalDateTime.now();
 
-            // These accounts exist only in the in-memory demo database.
+            // Demo passwords; only their BCrypt hashes are stored in the database.
             String adminPassword = "Admin123!";
             String developerPassword = "Developer123!";
             String reporterPassword = "Reporter123!";
