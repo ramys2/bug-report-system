@@ -2,6 +2,7 @@ package com.ramy.bugreport.security;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -157,16 +158,16 @@ public class SecurityConfig {
 	}
 	
 	/**
-	 * Allows the Vite dev server ({@code http://localhost:5173}) to call the API with cookies.
-	 * Other origins are rejected; the origin is hard-coded and would need changing for a deployed frontend.
+	 * Allows the configured frontend origins to call the API with cookies. Other origins are rejected.
+	 *
+	 * @param allowedOrigins the allowed origins, from the comma-separated {@code app.cors.allowed-origins}
+	 *                       (the Vite dev server, {@code http://localhost:5173}, by default)
 	 */
 	@Bean
-	UrlBasedCorsConfigurationSource corsConfigurationSource() {
+	UrlBasedCorsConfigurationSource corsConfigurationSource(@Value("${app.cors.allowed-origins}") List<String> allowedOrigins) {
 	    CorsConfiguration configuration = new CorsConfiguration();
 
-	    configuration.setAllowedOrigins(
-	        List.of("http://localhost:5173")
-	    );
+	    configuration.setAllowedOrigins(allowedOrigins);
 
 	    configuration.setAllowedMethods(
 	    	List.of("GET", "POST", "PATCH", "DELETE", "OPTIONS")

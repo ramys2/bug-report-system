@@ -17,6 +17,11 @@ spring:
 app:
   # Filled in from the Maven project version by resource filtering.
   version: "@project.version@"
+  cors:
+    # Comma-separated list, e.g. http://localhost:5173,https://bugs.example.com
+    allowed-origins: http://localhost:5173
+  mail:
+    from-address: no-reply@bugreport.local
 
 springdoc:
   api-docs:

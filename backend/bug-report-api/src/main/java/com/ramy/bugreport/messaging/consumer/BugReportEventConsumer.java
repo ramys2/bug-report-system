@@ -5,6 +5,7 @@ import java.util.Objects;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -22,14 +23,16 @@ import tools.jackson.databind.ObjectMapper;
 public class BugReportEventConsumer {
 
 	private static final Logger logger = LoggerFactory.getLogger(BugReportEventConsumer.class);
-	private static final String FROM_ADDRESS = "no-reply@bugreport.local";
 
 	private final ObjectMapper objectMapper;
 	private final JavaMailSender mailSender;
+	private final String fromAddress;
 
-	public BugReportEventConsumer(ObjectMapper objectMapper, JavaMailSender mailSender) {
+	public BugReportEventConsumer(ObjectMapper objectMapper, JavaMailSender mailSender,
+			@Value("${app.mail.from-address}") String fromAddress) {
 		this.objectMapper = objectMapper;
 		this.mailSender = mailSender;
+		this.fromAddress = fromAddress;
 	}
 
 	/**
@@ -72,10 +75,10 @@ public class BugReportEventConsumer {
 		};
 	}
 
-	/** Creates a plain-text email from the fixed sender address; {@code null} recipients are dropped. */
+	/** Creates a plain-text email from the configured sender address; {@code null} recipients are dropped. */
 	private SimpleMailMessage mailMessage(String subject, String text, String... recipients) {
 		var message = new SimpleMailMessage();
-		message.setFrom(FROM_ADDRESS);
+		message.setFrom(fromAddress);
 		message.setSubject(subject);
 		message.setText(text);
 		message.setTo(Arrays.stream(recipients)

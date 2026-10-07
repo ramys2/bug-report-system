@@ -105,9 +105,9 @@ Implemented in [SecurityConfig](../backend/bug-report-api/src/main/java/com/ramy
   database on each request, so a role change applies immediately. If the account no longer exists,
   the security context is cleared and the request continues as anonymous (so it answers 401).
 - **CSRF.** Spring's default protection stays on; the token is exposed by `GET /api/csrf`.
-- **CORS.** Only the origin `http://localhost:5173` (the Vite dev server) is allowed, with
+- **CORS.** Only the origins listed in `app.cors.allowed-origins` (comma-separated; default `http://localhost:5173`, the Vite dev server) are allowed, with
   credentials, the methods `GET`, `POST`, `PATCH`, `DELETE`, `OPTIONS` and the headers
-  `Content-Type` and `X-CSRF-TOKEN`. The origin is hard-coded.
+  `Content-Type` and `X-CSRF-TOKEN`.
 - **URL rules.** Roles per URL are listed in the
   [API overview](../README.md#rest-api); everything else is `denyAll`.
 - **Errors.** `ApiAuthenticationEntryPoint` answers 401 `{"message":"Authentication is required."}`
@@ -147,7 +147,7 @@ Changes to a report send an email without slowing down or failing the HTTP reque
   `messaging.destinations.bug-report-event` (`bug-report-event`). If the transaction rolls back,
   nothing is sent.
 - `BugReportEventConsumer` is a `@JmsListener` on that queue. It builds a plain-text email from
-  `no-reply@bugreport.local` and sends it through `JavaMailSender` (to Mailpit in the development
+  the address in `app.mail.from-address` (default `no-reply@bugreport.local`) and sends it through `JavaMailSender` (to Mailpit in the development
   setup). Events with no recipient address are skipped.
 
 Verified behavior: with Mailpit stopped, the API request still succeeds and the backend only
