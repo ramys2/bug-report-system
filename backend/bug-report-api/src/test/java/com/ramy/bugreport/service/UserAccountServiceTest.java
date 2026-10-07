@@ -96,15 +96,12 @@ class UserAccountServiceTest {
     }
 
     @Test
-    void getDevelopersReturnsOnlyDeveloperAccounts() {
+    void getDevelopersReadsAccountsWithDeveloperRole() {
         var developerId = UUID.randomUUID();
         var developer = org.mockito.Mockito.mock(UserAccount.class);
-        var reporter = org.mockito.Mockito.mock(UserAccount.class);
-        when(userAccountRepository.findAll()).thenReturn(List.of(developer, reporter));
+        when(userAccountRepository.findByRole(EUserRole.DEVELOPER)).thenReturn(List.of(developer));
         when(developer.getId()).thenReturn(developerId);
         when(developer.getName()).thenReturn("Ada Lovelace");
-        when(developer.getRole()).thenReturn(EUserRole.DEVELOPER);
-        when(reporter.getRole()).thenReturn(EUserRole.REPORTER);
 
         assertThat(service.getDevelopers()).containsExactly(new DeveloperResponse(developerId, "Ada Lovelace"));
     }

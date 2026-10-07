@@ -51,6 +51,12 @@ public interface IUserAccountRepository {
     /** Returns accounts whose name contains {@code name}, ignoring case. */
     List<UserAccount> findByNameContainingIgnoreCase(String name);
 
-    /** Locks matching accounts until the calling transaction completes. */
+    /** Returns the accounts with the given role, without locking them. Use this for plain reads. */
+    List<UserAccount> findByRole(EUserRole role);
+
+    /**
+     * Returns the accounts with the given role and locks them until the calling transaction completes, so that
+     * concurrent changes such as demoting admins are serialized. Use {@link #findByRole} for plain reads.
+     */
     List<UserAccount> findAllByRole(EUserRole role);
 }

@@ -86,11 +86,10 @@ public class UserAccountService {
                 result.totalElements());
     }
 
-    /** Returns the accounts with the {@code DEVELOPER} role. Filtering happens in memory after loading all accounts. */
+    /** Returns the accounts with the {@code DEVELOPER} role. */
     public List<DeveloperResponse> getDevelopers() {
-        return userAccountRepository.findAll()
+        return userAccountRepository.findByRole(EUserRole.DEVELOPER)
                 .stream()
-                .filter(userAccount -> userAccount.getRole() == EUserRole.DEVELOPER)
                 .map(DeveloperResponse::from)
                 .toList();
     }

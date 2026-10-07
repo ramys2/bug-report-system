@@ -45,9 +45,12 @@ public interface UserAccountJpaRepository extends JpaRepository<UserAccountEntit
             @Param("role") EUserRole role,
             Pageable pageable);
 
+    /** Accounts with the given role, read without a lock. Spring Data treats {@code findBy} and {@code findAllBy} the same. */
+    List<UserAccountEntity> findByRole(EUserRole role);
+
     /**
      * Accounts with the given role, read with a pessimistic write lock (held until the surrounding transaction ends),
-     * which lets callers serialize concurrent changes such as demoting admins.
+     * which lets callers serialize concurrent changes such as demoting admins. For plain reads use {@link #findByRole}.
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     List<UserAccountEntity> findAllByRole(EUserRole role);

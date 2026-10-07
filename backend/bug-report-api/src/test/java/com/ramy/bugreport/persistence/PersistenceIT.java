@@ -130,6 +130,15 @@ class PersistenceIT {
     }
 
     @Test
+    void accountsAreFoundByRoleWithAndWithoutLock() {
+        assertThat(users.findByRole(EUserRole.DEVELOPER))
+                .extracting(UserAccount::getId).containsExactly(developer.getId());
+        assertThat(users.findByRole(EUserRole.ADMIN)).isEmpty();
+        assertThat(users.findAllByRole(EUserRole.REPORTER))
+                .extracting(UserAccount::getId).containsExactly(reporter.getId());
+    }
+
+    @Test
     void accountFilterTreatsLikeWildcardsAsPlainText() {
         users.save(new UserAccount("100% Done", "done@example.com", "hash", EUserRole.REPORTER));
         users.save(new UserAccount("Under_score", "under@example.com", "hash", EUserRole.REPORTER));

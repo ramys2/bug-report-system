@@ -105,6 +105,11 @@ public class UserAccountRepositoryJpaAdapter implements IUserAccountRepository {
     }
 
     @Override
+    public List<UserAccount> findByRole(EUserRole role) {
+        return repository.findByRole(role).stream().map(UserAccountMapper::toDomain).toList();
+    }
+
+    @Override
     @Transactional
     public List<UserAccount> findAllByRole(EUserRole role) {
         return repository.findAllByRole(role).stream().map(UserAccountMapper::toDomain).toList();

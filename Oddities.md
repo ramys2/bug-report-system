@@ -14,7 +14,6 @@ marked in the code comments and were not confirmed by running the application.
 ## Backend
 
 ### Behavior and business rules
-- `getDevelopers` loads all accounts and filters them in memory.
 - The `archived_at` column exists on `user_account`, `software_project` and `component`, but no entity, mapper or query uses it. Archiving does not exist in the code.
 - `BugReport`'s builder always starts a report as `OPEN` and cannot set id, status or resolution; `BugReportMapper.toDomain` sets them afterwards.
 
@@ -38,7 +37,7 @@ marked in the code comments and were not confirmed by running the application.
 ### Small things
 - The comment "These accounts exist only in the in-memory demo database" in `BugReportApplication` does not match the configuration: both the application and the tests use MariaDB.
 - `Attachment` exists only in the domain module (no entity, repository or endpoint); its demo seeding code is commented out.
-- `findAllByRole` in `UserAccountRepositoryJpaAdapter` is a normal transaction while the rest of the class is read-only, which is needed for its pessimistic lock.
+- `findAllByRole` in `UserAccountRepositoryJpaAdapter` is a normal transaction while the rest of the class is read-only, which is needed for its pessimistic lock. `findByRole` runs the same query without a lock, and the two names look alike (Spring Data treats `findBy` and `findAllBy` the same), so use `findByRole` for plain reads and `findAllByRole` only where the lock is wanted (`updateRole`).
 - No JPA associations are mapped except `BugReportEntity.resolution`; the other relations are plain UUID columns with foreign keys only in `V1__Base.sql`.
 
 ## Frontend
