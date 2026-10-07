@@ -5,7 +5,7 @@ import AuthContext from "./AuthContext";
 /**
  * Route guard for pages that need a signed-in user; renders the nested routes via `<Outlet />`.
  *
- * While the session is still being checked it renders nothing; if nobody is signed in it redirects to `/login` and remembers
+ * While the session is still being checked it renders a loading spinner; if nobody is signed in it redirects to `/login` and remembers
  * the requested location in the router state, so `LoginForm` can send the user back afterwards.
  */
 function ProtectedRoute() {
@@ -13,7 +13,13 @@ function ProtectedRoute() {
     const location = useLocation();
 
     if (auth.currentUser === undefined) {
-        return null;
+        return (
+            <div className="d-flex justify-content-center mt-5">
+                <output className="spinner-border">
+                    <span className="visually-hidden">Loading...</span>
+                </output>
+            </div>
+        );
     }
 
     if (auth.currentUser === null) {

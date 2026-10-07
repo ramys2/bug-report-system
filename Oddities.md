@@ -43,7 +43,6 @@ marked in the code comments and were not confirmed by running the application.
 - `api/create-bug-report-options.js` duplicates `getAllProjects`.
 - A failed login is only written to the browser console; the user sees nothing.
 - The "Register" button on the login form does nothing.
-- `ProtectedRoute` renders nothing while the session check is running.
 - `Modal` relies on Bootstrap's own JavaScript instead of React state.
 - `Toast` uses a hard-coded 5-second timeout.
 - `HomePage` and `BugReportPage` load the developers and projects lists on mount even if the create form or the select fields are never used.
