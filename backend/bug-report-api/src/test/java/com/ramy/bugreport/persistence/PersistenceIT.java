@@ -48,6 +48,8 @@ import com.ramy.bugreport.repository.IComponentRepository;
 import com.ramy.bugreport.repository.IResolutionRepository;
 import com.ramy.bugreport.repository.ISoftwareProjectRepository;
 import com.ramy.bugreport.repository.IUserAccountRepository;
+import com.ramy.bugreport.repository.PageQuery;
+import com.ramy.bugreport.repository.UserAccountFilter;
 import com.ramy.bugreport.service.BugReportService;
 import com.ramy.bugreport.service.ComponentService;
 import com.ramy.bugreport.service.SoftwareProjectService;
@@ -86,6 +88,71 @@ class PersistenceIT {
         developer = users.save(new UserAccount("Developer", "developer@example.com", "hash", EUserRole.DEVELOPER));
         project = projects.save(new SoftwareProject("Project", "Project description"));
         component = components.save(new Component("API", "Component description", developer.getId(), project.getId()));
+    }
+
+    @Test
+    void accountPagesAreOrderedByNameAndReportTheTotal() {
+        // setUp saved "Reporter" and "Developer"; together with these, five accounts exist.
+        users.save(new UserAccount("Alice", "alice@example.com", "hash", EUserRole.ADMIN));
+        users.save(new UserAccount("Bob", "bob@example.com", "hash", EUserRole.REPORTER));
+        users.save(new UserAccount("Carol", "carol@example.com", "hash", EUserRole.REPORTER));
+
+        var firstPage = users.findPage(noAccountFilter(), new PageQuery(0, 2));
+        var lastPage = users.findPage(noAccountFilter(), new PageQuery(2, 2));
+        var beyondLastPage = users.findPage(noAccountFilter(), new PageQuery(3, 2));
+
+        assertThat(firstPage.items()).extracting(UserAccount::getName).containsExactly("Alice", "Bob");
+        assertThat(lastPage.items()).extracting(UserAccount::getName).containsExactly("Reporter");
+        assertThat(beyondLastPage.items()).isEmpty();
+        assertThat(firstPage.totalElements()).isEqualTo(5);
+        assertThat(beyondLastPage.totalElements()).isEqualTo(5);
+    }
+
+    @Test
+    void accountPagesCanBeFilteredByEveryField() {
+        var bob = users.save(new UserAccount("Bob", "bob@work.test", "hash", EUserRole.REPORTER));
+
+        assertThat(users.findPage(new UserAccountFilter(null, "DEV", null, null), new PageQuery(0, 10)).items())
+                .extracting(UserAccount::getId).containsExactly(developer.getId());
+        assertThat(users.findPage(new UserAccountFilter(null, null, "WORK.test", null), new PageQuery(0, 10)).items())
+                .extracting(UserAccount::getId).containsExactly(bob.getId());
+        assertThat(users.findPage(new UserAccountFilter(null, null, null, EUserRole.REPORTER), new PageQuery(0, 10)).items())
+                .extracting(UserAccount::getId).containsExactlyInAnyOrder(reporter.getId(), bob.getId());
+        // The id is a UUID column, matched as text: here with a part taken from the middle of the id.
+        var idPart = bob.getId().toString().substring(9, 18).toUpperCase();
+        assertThat(users.findPage(new UserAccountFilter(idPart, null, null, null), new PageQuery(0, 10)).items())
+                .extracting(UserAccount::getId).contains(bob.getId());
+        // Conditions are combined with AND: Bob is a reporter, but his name does not contain "Rep".
+        var combined = new UserAccountFilter(null, "Rep", null, EUserRole.REPORTER);
+        var result = users.findPage(combined, new PageQuery(0, 10));
+        assertThat(result.items()).extracting(UserAccount::getId).containsExactly(reporter.getId());
+        assertThat(result.totalElements()).isEqualTo(1);
+    }
+
+    @Test
+    void accountsAreFoundByRoleWithAndWithoutLock() {
+        assertThat(users.findByRole(EUserRole.DEVELOPER))
+                .extracting(UserAccount::getId).containsExactly(developer.getId());
+        assertThat(users.findByRole(EUserRole.ADMIN)).isEmpty();
+        assertThat(users.findAllByRole(EUserRole.REPORTER))
+                .extracting(UserAccount::getId).containsExactly(reporter.getId());
+    }
+
+    @Test
+    void accountFilterTreatsLikeWildcardsAsPlainText() {
+        users.save(new UserAccount("100% Done", "done@example.com", "hash", EUserRole.REPORTER));
+        users.save(new UserAccount("Under_score", "under@example.com", "hash", EUserRole.REPORTER));
+
+        assertThat(users.findPage(new UserAccountFilter(null, "%", null, null), new PageQuery(0, 10)).items())
+                .extracting(UserAccount::getName).containsExactly("100% Done");
+        assertThat(users.findPage(new UserAccountFilter(null, "_", null, null), new PageQuery(0, 10)).items())
+                .extracting(UserAccount::getName).containsExactly("Under_score");
+        assertThat(users.findPage(new UserAccountFilter(null, "!", null, null), new PageQuery(0, 10)).items())
+                .isEmpty();
+    }
+
+    private UserAccountFilter noAccountFilter() {
+        return new UserAccountFilter(null, null, null, null);
     }
 
     @Test

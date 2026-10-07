@@ -17,6 +17,14 @@ public interface IUserAccountRepository {
     Optional<UserAccount> findById(UUID id);
     /** Returns all stored user account objects, in no guaranteed order. */
     List<UserAccount> findAll();
+    /**
+     * Returns one page of the accounts that match the filter, ordered by name and then id so that pages are stable.
+     *
+     * @param filter conditions the accounts must meet; text conditions match parts of the value, ignoring case
+     * @param pageQuery which page to read
+     * @return the accounts on that page and the total number of matching accounts
+     */
+    PageResult<UserAccount> findPage(UserAccountFilter filter, PageQuery pageQuery);
     /** Returns the accounts with the given ids. Ids that do not exist are silently skipped. */
     List<UserAccount> findAllById(Iterable<UUID> ids);
     /**
@@ -43,6 +51,12 @@ public interface IUserAccountRepository {
     /** Returns accounts whose name contains {@code name}, ignoring case. */
     List<UserAccount> findByNameContainingIgnoreCase(String name);
 
-    /** Locks matching accounts until the calling transaction completes. */
+    /** Returns the accounts with the given role, without locking them. Use this for plain reads. */
+    List<UserAccount> findByRole(EUserRole role);
+
+    /**
+     * Returns the accounts with the given role and locks them until the calling transaction completes, so that
+     * concurrent changes such as demoting admins are serialized. Use {@link #findByRole} for plain reads.
+     */
     List<UserAccount> findAllByRole(EUserRole role);
 }

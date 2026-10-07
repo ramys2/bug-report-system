@@ -413,7 +413,7 @@ component.
 | Method | Path | Purpose | Access |
 | --- | --- | --- | --- |
 | POST | `/api/accounts` | Register a new account (role `REPORTER`) | Public |
-| GET | `/api/accounts` | All accounts | Admin |
+| GET | `/api/accounts` | One page of accounts, with optional filters | Admin |
 | GET | `/api/accounts/developers` | Users with the `DEVELOPER` role | Signed in |
 | GET | `/api/accounts/users?search=` | Users whose name contains the text | Admin or developer |
 | PATCH | `/api/accounts/{userId}/role` | Change a role | Admin (not for their own account) |
@@ -430,14 +430,31 @@ registration that differs only in case answers 409
 `An account with this email address already exists.` Success: 201 with
 `{"id": "...", "message": "Successfully created!"}`.
 
-### `GET /api/accounts`
+### `GET /api/accounts?name=ali&role=ADMIN&page=0&size=10`
 
-`name` is the display name; the login name is `email`.
+Returns one page of accounts, ordered by name. All query parameters are optional:
+
+| Parameter | Meaning |
+| --- | --- |
+| `id`, `name`, `email` | Text the value must contain, ignoring case. Blank values are ignored. |
+| `role` | Exact role (`ADMIN`, `DEVELOPER` or `REPORTER`); any other value answers 400. |
+| `page` | Zero-based page number, default `0`. A negative number is treated as `0`. |
+| `size` | Accounts per page, default `10`. Values outside 1 to 100 are adjusted to that range. |
+
+Filters are combined with AND. `name` is the display name; the login name is `email`.
+`totalElements` counts the matches on all pages, `totalPages` is `0` when nothing matches, and a
+`page` past the last one returns an empty `items` list.
 
 ```json
-[
-  { "id": "a00638ee-4890-4ea6-8def-9ea2f2f4e827", "name": "Alice Admin", "email": "admin@bugreport.local", "role": "ADMIN" }
-]
+{
+  "items": [
+    { "id": "a00638ee-4890-4ea6-8def-9ea2f2f4e827", "name": "Alice Admin", "email": "admin@bugreport.local", "role": "ADMIN" }
+  ],
+  "page": 0,
+  "size": 10,
+  "totalElements": 1,
+  "totalPages": 1
+}
 ```
 
 ### `GET /api/accounts/developers`

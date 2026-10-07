@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
-import { getAllAccounts, updateAccountRole } from "../api/account";
+import { useContext, useEffect, useState } from "react";
+import { getAccounts, updateAccountRole } from "../api/account";
+import AuthContext from "../components/AuthContext";
 import { showToast } from "../components/toast";
 import "./UserAdminPage.css";
 
@@ -8,17 +9,48 @@ import "./UserAdminPage.css";
  */
 const ROLE_OPTIONS = ["ADMIN", "DEVELOPER", "REPORTER"];
 /**
- * Number of users shown per page.
+ * Number of users requested per page.
  */
 const PAGE_SIZE = 10;
+/**
+ * How long the filters must stay unchanged before the users are requested again, so that typing does not send one request per key press.
+ */
+const FILTER_DELAY_MS = 300;
+const NO_FILTERS = { id: "", name: "", email: "", role: "" };
+
+/**
+ * Page numbers to show in the pagination bar: the first, the last and the ones next to the current page.
+ * A `null` entry stands for a gap ("…") between two numbers that are not neighbours.
+ *
+ * @param {number} currentPage the current page, counted from 1
+ * @param {number} totalPages number of pages, at least 1
+ * @returns {Array<number|null>} e.g. `[1, null, 5, 6, 7, null, 20]` for page 6 of 20
+ */
+function getVisiblePages(currentPage, totalPages) {
+    const pages = [];
+
+    for (let pageNumber = 1; pageNumber <= totalPages; pageNumber++) {
+        const isEdge = pageNumber === 1 || pageNumber === totalPages;
+        const isNearCurrent = Math.abs(pageNumber - currentPage) <= 1;
+
+        if (isEdge || isNearCurrent) {
+            if (pages.length > 0 && pageNumber - pages.at(-1) > 1) {
+                pages.push(null);
+            }
+            pages.push(pageNumber);
+        }
+    }
+
+    return pages;
+}
 
 /**
  * Table cell that shows a user's role and lets an admin change it inline (edit, choose a role, Save or Cancel).
- * Save calls `PATCH /api/accounts/{id}/role`; on success `onRoleSaved` is called, on failure an error toast is shown (the backend refuses e.g. removing the last admin or changing your own role).
+ * Save calls `PATCH /api/accounts/{id}/role`; on success `onRoleSaved` is called, on failure an error toast is shown (the backend refuses e.g. removing the last admin).
  *
  * @param {object} props
  * @param {{id: string, name: string, email: string, role: string}} props.user the account shown
- * @param {(userId: string, role: string) => void} props.onRoleSaved called with the new role after it was saved
+ * @param {() => void} props.onRoleSaved called after the role was saved
  */
 function EditableRole({ user, onRoleSaved }) {
     const [isEditing, setIsEditing] = useState(false);
@@ -35,7 +67,7 @@ function EditableRole({ user, onRoleSaved }) {
 
         updateAccountRole(user.id, draftRole)
             .done(() => {
-                onRoleSaved(user.id, draftRole);
+                onRoleSaved();
                 setIsEditing(false);
             })
             .fail(() => showToast("danger", "Unable to update the user's role.", "Update failed"))
@@ -93,53 +125,80 @@ function EditableRole({ user, onRoleSaved }) {
 /**
  * Admin page at `/admin/users` (ADMIN only): all accounts in a table with role editing.
  *
- * Loads every account once (`GET /api/accounts`); filtering by id, name, email and role and paging (10 per page) are done in the browser.
+ * Filtering by id, name, email and role and paging (10 per page) are done by the backend (`GET /api/accounts`);
+ * the page requests one page again whenever the filters or the page number change. The text filters are applied
+ * after a short pause in typing. The signed-in admin's own row is shown without the edit button, because the backend refuses
+ * to change your own role.
  * Takes no props.
  */
 export default function UserAdminPage() {
-    const [users, setUsers] = useState([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [filters, setFilters] = useState({ id: "", name: "", email: "", role: "" });
+    const { currentUser } = useContext(AuthContext);
+    // `filters` follow the inputs on every key press; `appliedFilters` are the ones last sent to the backend.
+    const [filters, setFilters] = useState(NO_FILTERS);
+    const [appliedFilters, setAppliedFilters] = useState(NO_FILTERS);
+    // 1-based for the pagination bar; the backend counts pages from 0.
     const [page, setPage] = useState(1);
+    // The last response: `{ items, page, size, totalElements, totalPages }`.
+    const [result, setResult] = useState({ items: [], totalElements: 0, totalPages: 0 });
+    const [isLoading, setIsLoading] = useState(true);
+    // Raised after a role was saved, to load the current page again.
+    const [reloadCount, setReloadCount] = useState(0);
+
+    // Waits until typing pauses, then applies the filters and goes back to the first page.
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setAppliedFilters(filters);
+            setPage(1);
+        }, FILTER_DELAY_MS);
+
+        return () => clearTimeout(timer);
+    }, [filters]);
 
     useEffect(() => {
-        getAllAccounts()
-            .done(setUsers)
-            .fail(() => showToast("danger", "Unable to fetch user accounts.", "Unable to load users"))
-            .always(() => setIsLoading(false));
-    }, []);
+        // Set by the cleanup below when a newer request replaced this one, so a slow old response cannot overwrite the new one.
+        let isOutdated = false;
 
-    const filteredUsers = useMemo(() => {
-        const normalizedFilters = Object.fromEntries(
-            Object.entries(filters).map(([key, value]) => [key, value.trim().toLowerCase()]),
-        );
+        getAccounts({ ...appliedFilters, page: page - 1, size: PAGE_SIZE })
+            .done((data) => {
+                if (isOutdated) {
+                    return;
+                }
+                if (data.totalPages > 0 && page > data.totalPages) {
+                    // The page no longer exists (e.g. its last user got another role while a role filter is active).
+                    setPage(data.totalPages);
+                    return;
+                }
+                setResult(data);
+            })
+            .fail(() => {
+                if (!isOutdated) {
+                    showToast("danger", "Unable to fetch user accounts.", "Unable to load users");
+                }
+            })
+            .always(() => {
+                if (!isOutdated) {
+                    setIsLoading(false);
+                }
+            });
 
-        return users.filter((user) => (
-            user.id.toLowerCase().includes(normalizedFilters.id)
-            && user.name.toLowerCase().includes(normalizedFilters.name)
-            && user.email.toLowerCase().includes(normalizedFilters.email)
-            && (!normalizedFilters.role || user.role.toLowerCase() === normalizedFilters.role)
-        ));
-    }, [filters, users]);
+        return () => {
+            isOutdated = true;
+        };
+    }, [appliedFilters, page, reloadCount]);
 
-    const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
-    const currentPage = Math.min(page, totalPages);
-    const visibleUsers = filteredUsers.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+    const totalPages = Math.max(1, result.totalPages);
 
     function updateFilter(name, value) {
         setFilters((currentFilters) => ({ ...currentFilters, [name]: value }));
-        setPage(1);
     }
 
     function clearFilters() {
-        setFilters({ id: "", name: "", email: "", role: "" });
-        setPage(1);
+        setFilters(NO_FILTERS);
     }
 
-    function handleRoleSaved(userId, role) {
-        setUsers((currentUsers) => currentUsers.map((user) => (
-            user.id === userId ? { ...user, role } : user
-        )));
+    function handleRoleSaved() {
+        // The changed user may no longer match an active role filter, so load the page again instead of patching the row.
+        setReloadCount((count) => count + 1);
     }
 
     return (
@@ -150,7 +209,7 @@ export default function UserAdminPage() {
                         <h1 className="h3 mb-1">User administration</h1>
                         <p className="text-secondary mb-0">Manage user roles and find accounts.</p>
                     </div>
-                    <span className="text-secondary small">{filteredUsers.length} user{filteredUsers.length === 1 ? "" : "s"}</span>
+                    <span className="text-secondary small">{result.totalElements} user{result.totalElements === 1 ? "" : "s"}</span>
                 </div>
 
                 <section className="border rounded-4 p-3 mb-3">
@@ -194,14 +253,20 @@ export default function UserAdminPage() {
                             <tbody>
                                 {isLoading ? (
                                     <tr><td className="text-secondary" colSpan="4">Loading users...</td></tr>
-                                ) : visibleUsers.length === 0 ? (
+                                ) : result.items.length === 0 ? (
                                     <tr><td className="text-secondary" colSpan="4">No users match these filters.</td></tr>
-                                ) : visibleUsers.map((user) => (
+                                ) : result.items.map((user) => (
                                     <tr key={user.id}>
                                         <td className="small text-break">{user.id}</td>
                                         <td>{user.name}</td>
                                         <td>{user.email}</td>
-                                        <td><EditableRole onRoleSaved={handleRoleSaved} user={user} /></td>
+                                        <td>
+                                            {user.id === currentUser?.id ? (
+                                                <span className="text-secondary" title="You cannot change your own role.">{user.role} (you)</span>
+                                            ) : (
+                                                <EditableRole onRoleSaved={handleRoleSaved} user={user} />
+                                            )}
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -210,16 +275,22 @@ export default function UserAdminPage() {
 
                     <nav aria-label="User pages" className="border-top p-3">
                         <ul className="pagination justify-content-center mb-0">
-                            <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
-                                <button className="page-link" disabled={currentPage === 1} onClick={() => setPage(currentPage - 1)} type="button">Previous</button>
+                            <li className={`page-item ${page === 1 ? "disabled" : ""}`}>
+                                <button className="page-link" disabled={page === 1} onClick={() => setPage(page - 1)} type="button">Previous</button>
                             </li>
-                            {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
-                                <li className={`page-item ${pageNumber === currentPage ? "active" : ""}`} key={pageNumber}>
-                                    <button aria-current={pageNumber === currentPage ? "page" : undefined} className="page-link" onClick={() => setPage(pageNumber)} type="button">{pageNumber}</button>
-                                </li>
+                            {getVisiblePages(page, totalPages).map((pageNumber, index) => (
+                                pageNumber === null ? (
+                                    <li className="page-item disabled" key={`gap-${index}`}>
+                                        <span className="page-link">…</span>
+                                    </li>
+                                ) : (
+                                    <li className={`page-item ${pageNumber === page ? "active" : ""}`} key={pageNumber}>
+                                        <button aria-current={pageNumber === page ? "page" : undefined} className="page-link" onClick={() => setPage(pageNumber)} type="button">{pageNumber}</button>
+                                    </li>
+                                )
                             ))}
-                            <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
-                                <button className="page-link" disabled={currentPage === totalPages} onClick={() => setPage(currentPage + 1)} type="button">Next</button>
+                            <li className={`page-item ${page === totalPages ? "disabled" : ""}`}>
+                                <button className="page-link" disabled={page === totalPages} onClick={() => setPage(page + 1)} type="button">Next</button>
                             </li>
                         </ul>
                     </nav>

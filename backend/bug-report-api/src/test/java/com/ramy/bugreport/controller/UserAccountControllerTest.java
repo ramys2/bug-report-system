@@ -21,6 +21,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import com.ramy.bugreport.domain.EUserRole;
+import com.ramy.bugreport.dto.PageResponse;
 import com.ramy.bugreport.dto.account.CreateUserAccountRequest;
 import com.ramy.bugreport.dto.account.CreateUserAccountResponse;
 import com.ramy.bugreport.dto.account.DeveloperResponse;
@@ -29,6 +30,7 @@ import com.ramy.bugreport.dto.account.UpdateUserAccountResponse;
 import com.ramy.bugreport.dto.account.UserAccountResponse;
 import com.ramy.bugreport.dto.account.UserAccountBriefResponse;
 import com.ramy.bugreport.exception.ApiExceptionHandler;
+import com.ramy.bugreport.repository.UserAccountFilter;
 import com.ramy.bugreport.service.UserAccountService;
 
 @ExtendWith(MockitoExtension.class)
@@ -47,19 +49,69 @@ class UserAccountControllerTest {
     }
 
     @Test
-    void getAllUsesAccountsRoute() throws Exception {
+    void getAllUsesDefaultPagingAndNoFilters() throws Exception {
         var accountId = UUID.randomUUID();
-        when(userAccountService.getAll()).thenReturn(List.of(new UserAccountResponse(
-                accountId, "Ramy", "ramy@example.com", EUserRole.REPORTER)));
+        var noFilter = new UserAccountFilter(null, null, null, null);
+        when(userAccountService.getAll(noFilter, 0, 10)).thenReturn(PageResponse.of(
+                List.of(new UserAccountResponse(accountId, "Ramy", "ramy@example.com", EUserRole.REPORTER)),
+                0, 10, 1));
 
         mockMvc.perform(get("/api/accounts"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(accountId.toString()))
-                .andExpect(jsonPath("$[0].name").value("Ramy"))
-                .andExpect(jsonPath("$[0].email").value("ramy@example.com"))
-                .andExpect(jsonPath("$[0].role").value("REPORTER"));
+                .andExpect(jsonPath("$.items[0].id").value(accountId.toString()))
+                .andExpect(jsonPath("$.items[0].name").value("Ramy"))
+                .andExpect(jsonPath("$.items[0].email").value("ramy@example.com"))
+                .andExpect(jsonPath("$.items[0].role").value("REPORTER"))
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(10))
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.totalPages").value(1));
 
-        verify(userAccountService).getAll();
+        verify(userAccountService).getAll(noFilter, 0, 10);
+    }
+
+    @Test
+    void getAllPassesFiltersAndPagingToService() throws Exception {
+        var filter = new UserAccountFilter("3f2a", "ali", "example.com", EUserRole.DEVELOPER);
+        when(userAccountService.getAll(filter, 2, 5)).thenReturn(PageResponse.of(List.of(), 2, 5, 11));
+
+        mockMvc.perform(get("/api/accounts")
+                        .param("id", "3f2a")
+                        .param("name", "ali")
+                        .param("email", "example.com")
+                        .param("role", "DEVELOPER")
+                        .param("page", "2")
+                        .param("size", "5"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items").isEmpty())
+                .andExpect(jsonPath("$.totalPages").value(3));
+
+        verify(userAccountService).getAll(filter, 2, 5);
+    }
+
+    @Test
+    void getAllTreatsEmptyFilterValuesAsNoFilter() throws Exception {
+        var noFilter = new UserAccountFilter("", "", "", null);
+        when(userAccountService.getAll(noFilter, 0, 10)).thenReturn(PageResponse.of(List.of(), 0, 10, 0));
+
+        mockMvc.perform(get("/api/accounts")
+                        .param("id", "")
+                        .param("name", "")
+                        .param("email", "")
+                        .param("role", "")
+                        .param("page", "0")
+                        .param("size", "10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalPages").value(0));
+
+        verify(userAccountService).getAll(noFilter, 0, 10);
+    }
+
+    @Test
+    void getAllRejectsUnknownRole() throws Exception {
+        mockMvc.perform(get("/api/accounts").param("role", "BOSS"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Request contains invalid values."));
     }
 
     @Test

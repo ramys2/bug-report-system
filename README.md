@@ -287,7 +287,7 @@ or 409. URLs that are not explicitly allowed answer 403.
 | POST | `/api/auth/logout` | Sign out | Signed in |
 | GET | `/api/auth/me` | Current user | Signed in |
 | POST | `/api/accounts` | Register (role `REPORTER`) | Public |
-| GET | `/api/accounts` | List all accounts | Admin |
+| GET | `/api/accounts` | List accounts (paged, filterable) | Admin |
 | GET | `/api/accounts/developers` | List developers | Signed in |
 | GET | `/api/accounts/users?search=` | Search users by name | Admin, developer |
 | PATCH | `/api/accounts/{userId}/role` | Change a user's role | Admin |

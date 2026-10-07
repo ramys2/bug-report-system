@@ -23,6 +23,7 @@ import com.ramy.bugreport.dto.component.UpdateComponentResponsibleUserRequest;
 import com.ramy.bugreport.dto.project.CreateSoftwareProjectRequest;
 import com.ramy.bugreport.dto.project.UpdateSoftwareProjectDescriptionRequest;
 import com.ramy.bugreport.dto.project.UpdateSoftwareProjectNameRequest;
+import com.ramy.bugreport.repository.UserAccountFilter;
 import com.ramy.bugreport.service.ComponentService;
 import com.ramy.bugreport.service.SoftwareProjectService;
 import com.ramy.bugreport.service.UserAccountService;
@@ -93,7 +94,7 @@ class ServiceAuthorizationIT {
     /** Methods that need the ADMIN role. */
     private List<ThrowingCallable> adminOnlyCalls() {
         return List.of(
-                () -> userAccountService.getAll(),
+                () -> userAccountService.getAll(new UserAccountFilter(null, null, null, null), 0, 10),
                 () -> projectService.create(new CreateSoftwareProjectRequest("Project", null)));
     }
 

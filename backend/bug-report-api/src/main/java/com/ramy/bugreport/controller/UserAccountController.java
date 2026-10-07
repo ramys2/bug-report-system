@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.ramy.bugreport.domain.EUserRole;
+import com.ramy.bugreport.dto.PageResponse;
 import com.ramy.bugreport.dto.account.CreateUserAccountRequest;
 import com.ramy.bugreport.dto.account.CreateUserAccountResponse;
 import com.ramy.bugreport.dto.account.DeveloperResponse;
@@ -21,6 +23,7 @@ import com.ramy.bugreport.dto.account.UpdateRoleRequest;
 import com.ramy.bugreport.dto.account.UpdateUserAccountResponse;
 import com.ramy.bugreport.dto.account.UserAccountResponse;
 import com.ramy.bugreport.dto.account.UserAccountBriefResponse;
+import com.ramy.bugreport.repository.UserAccountFilter;
 import com.ramy.bugreport.service.UserAccountService;
 
 import jakarta.validation.Valid;
@@ -63,19 +66,33 @@ public class UserAccountController {
     */
 
     /**
-     * {@code GET /api/accounts}: lists all accounts.
+     * {@code GET /api/accounts}: lists one page of the accounts, ordered by name, optionally filtered.
      *
      * <p>Access: ADMIN role.
      *
-     * @return 200 with a list of {@code {id, name, email, role}}
+     * @param id optional text the account id must contain, ignoring case
+     * @param name optional text the name must contain, ignoring case
+     * @param email optional text the email address must contain, ignoring case
+     * @param role optional exact role
+     * @param page zero-based page number, default 0
+     * @param size accounts per page, default 10; values outside 1..100 are adjusted to that range
+     * @return 200 with {@code {items, page, size, totalElements, totalPages}}, the items being {@code {id, name, email, role}}
      */
-    @Operation(summary = "List all accounts", description = "Access: ADMIN role.")
-    @ApiResponse(responseCode = "200", description = "All accounts.")
+    @Operation(summary = "List accounts", description = "Returns one page of the accounts, ordered by name. All filters are optional and combined with AND; the text filters match parts of the value, ignoring case. Access: ADMIN role.")
+    @ApiResponse(responseCode = "200", description = "One page of accounts.")
+    @BadRequestResponse
     @UnauthorizedResponse
     @ForbiddenResponse
     @GetMapping
-    public List<UserAccountResponse> getAll() {
-        return userAccountService.getAll();
+    public PageResponse<UserAccountResponse> getAll(
+            @Parameter(description = "Text the account id must contain, ignoring case.", example = "3f2a") @RequestParam(required = false) String id,
+            @Parameter(description = "Text the name must contain, ignoring case.", example = "ali") @RequestParam(required = false) String name,
+            @Parameter(description = "Text the email address must contain, ignoring case.", example = "example.com") @RequestParam(required = false) String email,
+            @Parameter(description = "Exact role.", example = "DEVELOPER") @RequestParam(required = false) EUserRole role,
+            @Parameter(description = "Zero-based page number.", example = "0") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Accounts per page; values outside 1..100 are adjusted to that range.", example = "10") @RequestParam(defaultValue = "10") int size
+    ) {
+        return userAccountService.getAll(new UserAccountFilter(id, name, email, role), page, size);
     }
 
     /**

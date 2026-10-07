@@ -14,7 +14,6 @@ marked in the code comments and were not confirmed by running the application.
 ## Backend
 
 ### Behavior and business rules
-- `getDevelopers` loads all accounts and filters them in memory.
 - The `archived_at` column exists on `user_account`, `software_project` and `component`, but no entity, mapper or query uses it. Archiving does not exist in the code.
 - `BugReport`'s builder always starts a report as `OPEN` and cannot set id, status or resolution; `BugReportMapper.toDomain` sets them afterwards.
 
@@ -38,7 +37,7 @@ marked in the code comments and were not confirmed by running the application.
 ### Small things
 - The comment "These accounts exist only in the in-memory demo database" in `BugReportApplication` does not match the configuration: both the application and the tests use MariaDB.
 - `Attachment` exists only in the domain module (no entity, repository or endpoint); its demo seeding code is commented out.
-- `findAllByRole` in `UserAccountRepositoryJpaAdapter` is a normal transaction while the rest of the class is read-only, which is needed for its pessimistic lock.
+- `findAllByRole` in `UserAccountRepositoryJpaAdapter` is a normal transaction while the rest of the class is read-only, which is needed for its pessimistic lock. `findByRole` runs the same query without a lock, and the two names look alike (Spring Data treats `findBy` and `findAllBy` the same), so use `findByRole` for plain reads and `findAllByRole` only where the lock is wanted (`updateRole`).
 - No JPA associations are mapped except `BugReportEntity.resolution`; the other relations are plain UUID columns with foreign keys only in `V1__Base.sql`.
 
 ## Frontend
@@ -54,7 +53,6 @@ marked in the code comments and were not confirmed by running the application.
 - `BugReportPage`: adding a comment does not check for blank text in the UI; the backend rejects it and only a generic error toast appears.
 - The admin pages `ProjectAdminPage` and `ComponentAdminPage` duplicate the inline `EditableName` component and the description-modal logic.
 - `ProjectAdminPage` reads `auth.currentUser.role` without a null check; this is only safe because `ProtectedRoute` guards the page.
-- `UserAdminPage` lets an admin start editing their own role, although the backend refuses it (only a generic toast is shown). It also loads all users and filters and pages them in the browser.
 - The description modals on the admin pages have no close (X) button in the header.
 - `HomePage` and `BugReportPage` load the developers and projects lists on mount even if the create form or the select fields are never used.
 - The pages use `document.getElementById` together with Bootstrap's `Modal` API to open and close modals, mixing DOM access with React state.

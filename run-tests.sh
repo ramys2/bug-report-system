@@ -12,8 +12,6 @@ set -e
 
 cd backend
 
-mvn test
-
 docker compose run --rm database-test-init
 
 mvn verify

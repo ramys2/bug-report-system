@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import com.ramy.bugreport.domain.EUserRole;
 import com.ramy.bugreport.domain.UserAccount;
+import com.ramy.bugreport.dto.PageResponse;
 import com.ramy.bugreport.dto.account.CreateUserAccountRequest;
 import com.ramy.bugreport.dto.account.CreateUserAccountResponse;
 import com.ramy.bugreport.dto.account.DeveloperResponse;
@@ -23,12 +24,18 @@ import com.ramy.bugreport.exception.DuplicateEmailException;
 import com.ramy.bugreport.exception.ResourceNotFoundException;
 import com.ramy.bugreport.repository.IBugReportRepository;
 import com.ramy.bugreport.repository.IUserAccountRepository;
+import com.ramy.bugreport.repository.PageQuery;
+import com.ramy.bugreport.repository.PageResult;
+import com.ramy.bugreport.repository.UserAccountFilter;
 
 import jakarta.transaction.Transactional;
 
 /** Business logic for user accounts: listing, searching, registration and role changes. */
 @Service
 public class UserAccountService {
+    /** Largest page size a client can get from {@link #getAll}. */
+    static final int MAX_PAGE_SIZE = 100;
+
     private final IUserAccountRepository userAccountRepository;
     private final IBugReportRepository bugReportRepository;
     private final PasswordEncoder passwordEncoder;
@@ -51,20 +58,38 @@ public class UserAccountService {
     * ============================================
     */
 
-    /** Returns all accounts. Requires the ADMIN role. */
+    /**
+     * Returns one page of the accounts that match the filter, ordered by name. Requires the ADMIN role.
+     *
+     * <p>Text conditions are trimmed and ignored when blank. A negative page is treated as 0 and the size is
+     * limited to 1..{@value #MAX_PAGE_SIZE}, so a client cannot request an unbounded amount of data.
+     *
+     * @param filter conditions for id, name, email and role; text conditions match parts of the value, ignoring case
+     * @param page zero-based page number
+     * @param size number of accounts per page
+     */
     @PreAuthorize("hasRole('ADMIN')")
-    public List<UserAccountResponse> getAll() {
-        return userAccountRepository.findAll()
-                .stream()
-                .map(UserAccountResponse::from)
-                .toList();
+    public PageResponse<UserAccountResponse> getAll(UserAccountFilter filter, int page, int size) {
+        var normalizedFilter = new UserAccountFilter(
+                blankToNull(filter.id()),
+                blankToNull(filter.name()),
+                blankToNull(filter.email()),
+                filter.role());
+        var pageQuery = new PageQuery(Math.max(page, 0), Math.clamp(size, 1, MAX_PAGE_SIZE));
+
+        PageResult<UserAccount> result = userAccountRepository.findPage(normalizedFilter, pageQuery);
+
+        return PageResponse.of(
+                result.items().stream().map(UserAccountResponse::from).toList(),
+                pageQuery.page(),
+                pageQuery.size(),
+                result.totalElements());
     }
 
-    /** Returns the accounts with the {@code DEVELOPER} role. Filtering happens in memory after loading all accounts. */
+    /** Returns the accounts with the {@code DEVELOPER} role. */
     public List<DeveloperResponse> getDevelopers() {
-        return userAccountRepository.findAll()
+        return userAccountRepository.findByRole(EUserRole.DEVELOPER)
                 .stream()
-                .filter(userAccount -> userAccount.getRole() == EUserRole.DEVELOPER)
                 .map(DeveloperResponse::from)
                 .toList();
     }
@@ -163,6 +188,14 @@ public class UserAccountService {
         account.setRole(request.role());
         userAccountRepository.save(account);
         return new UpdateUserAccountResponse(userId, "User role updated successfully!");
+    }
+
+    /** Trims the text; returns {@code null} if it is {@code null} or blank, meaning "no condition". */
+    private String blankToNull(String text) {
+        if (text == null || text.isBlank()) {
+            return null;
+        }
+        return text.trim();
     }
 
     /** Trims the email and lower-cases it, so that lookups are not case-sensitive. */
