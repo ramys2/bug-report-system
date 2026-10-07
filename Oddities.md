@@ -39,8 +39,6 @@ marked in the code comments and were not confirmed by running the application.
 ## Frontend
 
 - jQuery (`$.ajax`) is used for all requests although `fetch` is available.
-- The api files differ in style (quoted `"url"` keys, missing semicolons in some).
-- `api/create-bug-report-options.js` duplicates `getAllProjects`.
 - A failed login is only written to the browser console; the user sees nothing.
 - The "Register" button on the login form does nothing.
 - `Modal` relies on Bootstrap's own JavaScript instead of React state.

@@ -36,6 +36,18 @@ export function searchUsers(search) {
 }
 
 /**
+ * `GET /api/accounts/developers`: users that can be chosen as assignee.
+ *
+ * @returns {JQuery.jqXHR} resolves with a list of `{ id, name }`
+ */
+export function getDevelopers() {
+    return $.ajax({
+        method: "GET",
+        url: "/api/accounts/developers",
+    });
+}
+
+/**
  * `PATCH /api/accounts/{userId}/role` (ADMIN only): changes a user's role. Sends the cached CSRF token (see csrf.js), which `login()` and `AuthProvider` load once the user is signed in.
  *
  * @param {string} userId id of the account

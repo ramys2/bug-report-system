@@ -31,7 +31,7 @@ frontend/
 
 | Folder | Files |
 | --- | --- |
-| `api/` | `auth.js`, `csrf.js`, `bug-report.js`, `comment.js`, `project.js`, `component.js`, `account.js`, `create-bug-report-options.js` |
+| `api/` | `auth.js`, `csrf.js`, `bug-report.js`, `comment.js`, `project.js`, `component.js`, `account.js` |
 | `components/` | `AuthContext`, `AuthProvider`, `ProtectedRoute`, `DeveloperRoute`, `AdminRoute`, `Navbar`, `Toast` (+ `toast.js`), `Modal`, `LoginForm`, `BugReportList`, `BugReportRow`, `QuickFilters`, `CreateBugReportForm`, `CreateProjectForm`, `CreateComponentForm` |
 | `pages/` | `LoginPage`, `HomePage`, `BugReportPage`, `ProjectAdminPage`, `ComponentAdminPage`, `UserAdminPage` |
 
@@ -149,9 +149,8 @@ handles `.done`, `.fail` and `.always`._
   send it as a header; JSON bodies use `contentType: "application/json"`.
 - Failures are shown to the user with `showToast(severity, message, summary)` (a `Toast` at the
   top of the app listens for a window event `app:toast` and hides each toast after 5 seconds).
-- `create-bug-report-options.js` provides the developers, projects and the components of one
-  project (`getComponentsByProject`) used in select fields (projects and components reduced to
-  `{id, name}`).
+- Select fields use `getDevelopers()` (`account.js`), `getAllProjects()` and
+  `getAllComponents(projectId)`, which returns only the components of one project when given an id.
 
 ## Pages
 

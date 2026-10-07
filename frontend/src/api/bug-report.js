@@ -1,4 +1,4 @@
-import $ from "jquery"
+import $ from "jquery";
 import { getCsrfToken } from "./csrf";
 
 /**
@@ -61,7 +61,7 @@ export function getAllReports() {
     return $.ajax({
         method: "GET",
         url: "/api/reports",
-    })
+    });
 }
 
 /**
@@ -74,7 +74,7 @@ export function getStatusTransitions() {
     return $.ajax({
         method: "GET",
         url: "/api/reports/status-transitions",
-    })
+    });
 }
 
 /**
@@ -85,8 +85,8 @@ export function getStatusTransitions() {
 export function getReported() {
     return $.ajax({
         method: "GET",
-        "url": "/api/reports/reported"
-    })
+        url: "/api/reports/reported"
+    });
 }
 
 /**
@@ -97,8 +97,8 @@ export function getReported() {
 export function getAssigned() {
     return $.ajax({
         method: "GET",
-        "url": "/api/reports/assigned"
-    })
+        url: "/api/reports/assigned"
+    });
 }
 
 /**
@@ -151,8 +151,8 @@ export function closeReport(reportId, resolution) {
 export function getReport(reportId) {
     return $.ajax({
         method: "GET",
-        url:`/api/reports/${reportId}`
-    })
+        url: `/api/reports/${reportId}`
+    });
 }
 
 /**

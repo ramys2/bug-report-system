@@ -2,14 +2,16 @@ import $ from "jquery";
 import { getCsrfToken } from "./csrf";
 
 /**
- * `GET /api/components`: lists all components.
+ * `GET /api/components`: lists all components, or only those of one project.
  *
+ * @param {string} [projectId] if given, only the components of this project are returned
  * @returns {JQuery.jqXHR} resolves with a list of `{ id, name, description, responsibleUserName, projectId }`; `projectId` is `null` for components created before they belonged to projects
  */
-export function getAllComponents() {
+export function getAllComponents(projectId) {
     return $.ajax({
         method: "GET",
         url: "/api/components",
+        data: { projectId },
     });
 }
 
