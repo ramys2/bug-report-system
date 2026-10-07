@@ -123,7 +123,7 @@ public class SecurityConfig {
 					.requestMatchers(HttpMethod.POST, "/api/comments")
 					.authenticated()
 
-					// Comment removal is an administrative action.
+					// Any signed-in user may call comment removal; CommentService then allows only ADMIN or the comment's author.
 					.requestMatchers(HttpMethod.DELETE, "/api/comments/*")
 					.authenticated()
 

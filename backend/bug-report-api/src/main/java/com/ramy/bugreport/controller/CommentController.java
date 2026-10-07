@@ -104,8 +104,7 @@ public class CommentController {
     /**
      * {@code DELETE /api/comments/{commentId}}: deletes a comment.
      *
-     * <p>Access: signed-in user; the service further requires the ADMIN role or being the comment's author
-     * (so the "administrative action" comment in {@code SecurityConfig} is stricter than what is implemented).
+     * <p>Access: signed-in user; the service further requires the ADMIN role or being the comment's author.
      *
      * @param commentId id of the comment
      * @return 204 with no body
