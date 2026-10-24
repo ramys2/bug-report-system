@@ -15,7 +15,6 @@ marked in the code comments and were not confirmed by running the application.
 
 ### Behavior and business rules
 - The `archived_at` column exists on `user_account`, `software_project` and `component`, but no entity, mapper or query uses it. Archiving does not exist in the code.
-- `BugReport`'s builder always starts a report as `OPEN` and cannot set id, status or resolution; `BugReportMapper.toDomain` sets them afterwards.
 
 ### Security and access
 - `GET /api/reports` shows all reports to every signed-in user (no filtering by owner).

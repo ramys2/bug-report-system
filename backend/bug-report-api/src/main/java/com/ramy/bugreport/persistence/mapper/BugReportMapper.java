@@ -35,15 +35,17 @@ public final class BugReportMapper {
     }
 
     /**
-     * Rebuilds a domain report from an entity. The builder always starts a report as {@code OPEN},
-     * so the stored id, status and resolution are set afterwards on the built object.
+     * Rebuilds a domain report with all stored values supplied through the builder.
      */
     public static BugReport toDomain(BugReportEntity entity) {
         if (entity == null) {
             return null;
         }
-        BugReport report = BugReport.builder(entity.getReporterId(), entity.getProjectId(),
+        return BugReport.builder(entity.getReporterId(), entity.getProjectId(),
                         entity.getComponentId(), entity.getTitle(), entity.getSeverity())
+                .id(entity.getId())
+                .status(entity.getStatus())
+                .resolution(ResolutionMapper.toDomain(entity.getResolution()))
                 .assigneeId(entity.getAssigneeId())
                 .description(entity.getDescription())
                 .stepsToReproduce(entity.getStepsToReproduce())
@@ -52,9 +54,5 @@ public final class BugReportMapper {
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();
-        report.setId(entity.getId());
-        report.setStatus(entity.getStatus());
-        report.setResolution(ResolutionMapper.toDomain(entity.getResolution()));
-        return report;
     }
 }

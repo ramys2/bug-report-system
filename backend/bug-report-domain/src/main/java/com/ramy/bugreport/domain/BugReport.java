@@ -61,7 +61,7 @@ public class BugReport {
     private EBugSeverity severity;
 
     /**
-     * Current workflow state. Always {@link EBugStatus#OPEN} on newly built reports.
+     * Current workflow state. Defaults to {@link EBugStatus#OPEN} when built.
      */
     private EBugStatus status;
 
@@ -77,10 +77,10 @@ public class BugReport {
     private Resolution resolution;
 
     /**
-     * Copies the builder's values. The status is always set to {@link EBugStatus#OPEN};
-     * the builder cannot set a status, the id or a resolution.
+     * Copies all of the builder's values, including persisted state when rebuilding a report.
      */
     private BugReport(Builder builder) {
+        id = builder.id;
         reporterId = builder.reporterId;
         assigneeId = builder.assigneeId;
         projectId = builder.projectId;
@@ -91,13 +91,15 @@ public class BugReport {
         expectedBehavior = builder.expectedBehavior;
         actualBehavior = builder.actualBehavior;
         severity = builder.severity;
-        status = EBugStatus.OPEN;
+        status = builder.status;
         createdAt = builder.createdAt;
         updatedAt = builder.updatedAt;
+        resolution = builder.resolution;
     }
 
     /**
-     * Starts building a new report with its required fields.
+     * Starts building a report with its required fields. For new reports, the id and resolution
+     * default to {@code null} and the status defaults to {@link EBugStatus#OPEN}.
      *
      * @param reporterId id of the reporting user
      * @param projectId id of the project
@@ -171,7 +173,7 @@ public class BugReport {
         return resolution;
     }
 
-    // The setters below perform no validation; they are used to update a report and to rebuild it from the database.
+    // The setters below perform no validation; they are used to update a report.
     public void setAssigneeId(UUID assigneeId) {
         this.assigneeId = assigneeId;
     }
@@ -234,14 +236,17 @@ public class BugReport {
 
     /**
      * Builder for {@link BugReport}. Required fields are passed to {@link BugReport#builder};
-     * all other fields are optional and default to {@code null}.
+     * all other fields are optional and default to {@code null}, except status which defaults
+     * to {@link EBugStatus#OPEN}. Stored values can be supplied to rebuild an existing report.
      */
     public static final class Builder {
+        private UUID id;
         private final UUID reporterId;
         private final UUID projectId;
         private final UUID componentId;
         private final String title;
         private final EBugSeverity severity;
+        private EBugStatus status = EBugStatus.OPEN;
         private UUID assigneeId;
         private String description;
         private String stepsToReproduce;
@@ -249,6 +254,7 @@ public class BugReport {
         private String actualBehavior;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
+        private Resolution resolution;
 
         private Builder(UUID reporterId, UUID projectId, UUID componentId, String title, EBugSeverity severity) {
             this.reporterId = Objects.requireNonNull(reporterId, "reporterId is required");
@@ -256,6 +262,26 @@ public class BugReport {
             this.componentId = componentId;
             this.title = Objects.requireNonNull(title, "title is required");
             this.severity = Objects.requireNonNull(severity, "severity is required");
+        }
+
+        public Builder id(UUID id) {
+            this.id = id;
+            return this;
+        }
+
+        /**
+         * Sets the status explicitly, for example when restoring a stored report.
+         *
+         * @throws NullPointerException if {@code status} is {@code null}
+         */
+        public Builder status(EBugStatus status) {
+            this.status = Objects.requireNonNull(status, "status is required");
+            return this;
+        }
+
+        public Builder resolution(Resolution resolution) {
+            this.resolution = resolution;
+            return this;
         }
 
         public Builder assigneeId(UUID assigneeId) {
@@ -294,7 +320,8 @@ public class BugReport {
         }
 
         /**
-         * Creates the report with status {@link EBugStatus#OPEN}.
+         * Creates the report with the supplied values, using {@link EBugStatus#OPEN}
+         * if no status was supplied.
          */
         public BugReport build() {
             return new BugReport(this);
