@@ -27,7 +27,7 @@ marked in the code comments and were not confirmed by running the application.
 - `BugReportResponse` serializes the domain `Resolution` object directly, tying the API shape to the domain class.
 
 ### Messaging
-- `BugReportEventPublisher` does not catch send failures; the database change is already committed when sending fails.
+- `BugReportEventPublisher` catches JMS send failures and makes up to three attempts, one second apart. Each outcome is logged to `logs/bug-report-publisher.log` (directory configurable with `PUBLISHER_LOG_PATH`), with rotation at 10 MB or daily, seven days of history and a 100 MB archive cap. Serialization failures are logged without retrying. The database change is already committed; exhausted retries lose the notification, pending retries do not survive a restart, and uncertain send results can cause duplicate notifications.
 
 ### Small things
 - `Attachment` exists only in the domain module (no entity, repository or endpoint); its demo seeding code is commented out.
