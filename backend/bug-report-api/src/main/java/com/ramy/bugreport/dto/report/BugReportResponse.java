@@ -7,7 +7,6 @@ import com.ramy.bugreport.domain.BugReport;
 import com.ramy.bugreport.domain.Component;
 import com.ramy.bugreport.domain.EBugSeverity;
 import com.ramy.bugreport.domain.EBugStatus;
-import com.ramy.bugreport.domain.Resolution;
 import com.ramy.bugreport.domain.SoftwareProject;
 import com.ramy.bugreport.domain.UserAccount;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -32,7 +31,7 @@ import com.ramy.bugreport.openapi.ApiExamples;
  * @param status workflow status
  * @param createdAt creation time (ISO-8601)
  * @param updatedAt last modification time (ISO-8601)
- * @param resolution the domain {@link com.ramy.bugreport.domain.Resolution}, serialized directly; null until the report is closed
+ * @param resolution resolution details; null until the report is closed
  */
 @Schema(description = "Full detail of one report, returned by `GET /api/reports/{reportId}`.")
 public record BugReportResponse(
@@ -70,8 +69,8 @@ public record BugReportResponse(
         LocalDateTime createdAt,
         @Schema(description = "Last modification time (ISO-8601).", example = ApiExamples.DATE_TIME, requiredMode = Schema.RequiredMode.REQUIRED)
         LocalDateTime updatedAt,
-        @Schema(description = "The domain Resolution, serialized directly. Null until the report is closed.")
-        Resolution resolution
+        @Schema(description = "Resolution details. Null until the report is closed.")
+        ResolutionResponse resolution
 ) {
 
     public static BugReportResponse from(
@@ -99,7 +98,7 @@ public record BugReportResponse(
             report.getStatus(),
             report.getCreatedAt(),
             report.getUpdatedAt(),
-            report.getResolution()
+            report.getResolution() == null ? null : ResolutionResponse.from(report.getResolution())
         );
     }
 

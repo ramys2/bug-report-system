@@ -34,6 +34,7 @@ import com.ramy.bugreport.dto.report.CloseBugReportRequest;
 import com.ramy.bugreport.dto.report.CloseBugReportResponse;
 import com.ramy.bugreport.dto.report.CreateBugReportRequest;
 import com.ramy.bugreport.dto.report.CreateBugReportResponse;
+import com.ramy.bugreport.dto.report.ResolutionResponse;
 import com.ramy.bugreport.dto.report.UpdateActualBehaviorRequest;
 import com.ramy.bugreport.dto.report.UpdateAssigneeRequest;
 import com.ramy.bugreport.dto.report.UpdateBugReportResponse;
@@ -112,9 +113,29 @@ class BugReportControllerTest {
                 .andExpect(jsonPath("$.projectName").value("Bug Report"))
                 .andExpect(jsonPath("$.componentId").value(COMPONENT_ID.toString()))
                 .andExpect(jsonPath("$.componentName").value("Backend API"))
+                .andExpect(jsonPath("$.resolution").value(nullValue()))
                 .andExpect(jsonPath("$.reporterId").doesNotExist());
 
         verify(reportService).getReport(reportId);
+    }
+
+    @Test
+    void getReportPreservesResolutionJsonFields() throws Exception {
+        var reportId = UUID.randomUUID();
+        var resolutionId = UUID.randomUUID();
+        var resolution = new ResolutionResponse(resolutionId, "Fixed the crash",
+                LocalDateTime.of(2026, 7, 13, 12, 5), "0.1.1",
+                "https://example.invalid/commits/7a21c9d");
+        when(reportService.getReport(reportId)).thenReturn(reportResponse(reportId, null, resolution));
+
+        mockMvc.perform(get("/api/reports/{reportId}", reportId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.resolution.length()").value(5))
+                .andExpect(jsonPath("$.resolution.id").value(resolutionId.toString()))
+                .andExpect(jsonPath("$.resolution.description").value("Fixed the crash"))
+                .andExpect(jsonPath("$.resolution.resolvedAt").value("2026-07-13T12:05:00"))
+                .andExpect(jsonPath("$.resolution.fixedVersion").value("0.1.1"))
+                .andExpect(jsonPath("$.resolution.commitUrl").value("https://example.invalid/commits/7a21c9d"));
     }
 
     @Test
@@ -353,6 +374,10 @@ class BugReportControllerTest {
     }
 
     private static BugReportResponse reportResponse(UUID reportId, String assigneeName) {
+        return reportResponse(reportId, assigneeName, null);
+    }
+
+    private static BugReportResponse reportResponse(UUID reportId, String assigneeName, ResolutionResponse resolution) {
         return new BugReportResponse(
                 reportId,
                 "Joe Reporter",
@@ -368,10 +393,10 @@ class BugReportControllerTest {
                 null,
                 null,
                 EBugSeverity.HIGH,
-                EBugStatus.OPEN,
+                resolution == null ? EBugStatus.OPEN : EBugStatus.CLOSED,
                 null,
                 null,
-                null);
+                resolution);
     }
 
     private static BugReportBriefResponse briefResponse(UUID reportId) {

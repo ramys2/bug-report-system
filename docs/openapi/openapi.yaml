@@ -2080,9 +2080,8 @@ components:
           description: Display name of the reporter.
           example: Rachel Reporter
         resolution:
-          $ref: "#/components/schemas/Resolution"
-          description: "The domain Resolution, serialized directly. Null until the\
-            \ report is closed."
+          $ref: "#/components/schemas/ResolutionResponse"
+          description: Resolution details. Null until the report is closed.
         severity:
           type: string
           description: Severity.
@@ -2526,21 +2525,32 @@ components:
       - size
       - totalElements
       - totalPages
-    Resolution:
+    ResolutionResponse:
       type: object
+      description: Resolution details included in a report response.
       properties:
         commitUrl:
           type: string
+          description: URL of the fixing commit. May be null.
+          example: https://example.invalid/commits/7a21c9d
         description:
           type: string
+          description: What was done to fix the bug.
+          example: Handle an absent optional avatar before constructing the user response.
         fixedVersion:
           type: string
+          description: Version containing the fix. May be null.
+          example: 0.1.1
         id:
           type: string
           format: uuid
+          description: Resolution id.
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
         resolvedAt:
           type: string
           format: date-time
+          description: When the bug was resolved (ISO-8601).
+          example: 2026-05-14T09:30:00
     SoftwareProjectResponse:
       type: object
       description: A project in `GET /api/projects`.
