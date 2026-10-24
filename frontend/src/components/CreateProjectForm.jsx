@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { createProject } from "../api/project";
 import { showToast } from "./toast";
 
@@ -16,6 +17,7 @@ const initialFormValues = { name: "", description: "" };
  * @param {() => void} props.onCreated called after the project was created
  */
 export default function CreateProjectForm({ onCreated, onHide }) {
+    const { t, i18n } = useTranslation();
     const [formValues, setFormValues] = useState(initialFormValues);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -28,7 +30,7 @@ export default function CreateProjectForm({ onCreated, onHide }) {
         event.preventDefault();
 
         if (!formValues.name.trim()) {
-            showToast("warning", "Please enter a project name.", "Missing information");
+            showToast("warning", t("admin.project.nameRequired"), t("common.missingInformation"));
             return;
         }
 
@@ -38,19 +40,19 @@ export default function CreateProjectForm({ onCreated, onHide }) {
                 setFormValues(initialFormValues);
                 onCreated();
             })
-            .fail(() => showToast("danger", "Failed to create the project. Please try again.", "Project not created"))
+            .fail(() => showToast("danger", i18n.t("errors.createProject"), i18n.t("errors.createProjectTitle")))
             .always(() => setIsSubmitting(false));
     }
 
     return (
         <form className="d-flex flex-column h-100" onSubmit={handleSubmit}>
             <div className="modal-header">
-                <h1 className="modal-title fs-5">Create new project</h1>
-                <button aria-label="Close" className="btn-close" onClick={onHide} type="button" />
+                <h1 className="modal-title fs-5">{t("admin.project.createHeading")}</h1>
+                <button aria-label={t("common.close")} className="btn-close" onClick={onHide} type="button" />
             </div>
             <div className="modal-body overflow-auto">
                 <div className="mb-3">
-                    <label className="form-label" htmlFor="new-project-name">Name *</label>
+                    <label className="form-label" htmlFor="new-project-name">{t("common.name")} *</label>
                     <input
                         className="form-control"
                         id="new-project-name"
@@ -61,7 +63,7 @@ export default function CreateProjectForm({ onCreated, onHide }) {
                     />
                 </div>
                 <div>
-                    <label className="form-label" htmlFor="new-project-description">Description</label>
+                    <label className="form-label" htmlFor="new-project-description">{t("reports.description")}</label>
                     <textarea
                         className="form-control"
                         id="new-project-description"
@@ -73,9 +75,9 @@ export default function CreateProjectForm({ onCreated, onHide }) {
                 </div>
             </div>
             <div className="modal-footer">
-                <button className="btn btn-secondary" onClick={onHide} type="button">Cancel</button>
+                <button className="btn btn-secondary" onClick={onHide} type="button">{t("common.cancel")}</button>
                 <button className="btn btn-primary" disabled={isSubmitting} type="submit">
-                    {isSubmitting ? "Creating..." : "Create project"}
+                    {isSubmitting ? t("common.creating") : t("admin.project.create")}
                 </button>
             </div>
         </form>

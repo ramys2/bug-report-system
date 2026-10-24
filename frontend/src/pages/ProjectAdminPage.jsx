@@ -1,4 +1,5 @@
-import { useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import Modal from "../components/Modal";
 import AuthContext from "../components/AuthContext";
 import CreateProjectForm from "../components/CreateProjectForm";
@@ -15,22 +16,23 @@ import "./ProjectAdminPage.css";
  * The "Create new" button (`POST /api/projects` through `CreateProjectForm`) is only shown to admins, matching the backend rule. Takes no props.
  */
 export default function ProjectAdminPage() {
+    const { t, i18n } = useTranslation();
     const auth = useContext(AuthContext);
     const [projects, setProjects] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [projectForDescription, setProjectForDescription] = useState(null);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-    useEffect(() => {
-        loadProjects();
-    }, []);
-
-    function loadProjects() {
+    const loadProjects = useCallback(() => {
         return getAllProjects()
             .done(setProjects)
-            .fail(() => showToast("danger", "Unable to fetch projects.", "Unable to load projects"))
+            .fail(() => showToast("danger", i18n.t("errors.loadProjects"), i18n.t("errors.loadProjectsTitle")))
             .always(() => setIsLoading(false));
-    }
+    }, [i18n]);
+
+    useEffect(() => {
+        loadProjects();
+    }, [loadProjects]);
 
     function updateProject(projectId, changes) {
         setProjects((currentProjects) => currentProjects.map((project) => (
@@ -53,18 +55,18 @@ export default function ProjectAdminPage() {
             <main className="container d-flex flex-column flex-grow-1 py-4 text-start overflow-hidden">
                 <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
                     <div>
-                        <h1 className="h3 mb-1">Project administration</h1>
-                        <p className="text-secondary mb-0">Manage software project details.</p>
+                        <h1 className="h3 mb-1">{t("admin.project.heading")}</h1>
+                        <p className="text-secondary mb-0">{t("admin.project.description")}</p>
                     </div>
                     <div className="d-flex align-items-center gap-3">
-                        <span className="text-secondary small">{projects.length} project{projects.length === 1 ? "" : "s"}</span>
+                        <span className="text-secondary small">{t("admin.project.count", { count: projects.length })}</span>
                         {auth.currentUser?.role === "ADMIN" && (
                             <button
                                 className="btn btn-primary"
                                 onClick={() => setIsCreateOpen(true)}
                                 type="button"
                             >
-                                Create new +
+                                {t("reports.createNew")}
                             </button>
                         )}
                     </div>
@@ -75,16 +77,16 @@ export default function ProjectAdminPage() {
                         <table className="table table-hover align-middle mb-0">
                             <thead className="table-light sticky-top">
                                 <tr>
-                                    <th scope="col">ID</th>
-                                    <th scope="col">Name</th>
-                                    <th scope="col">Description</th>
+                                    <th scope="col">{t("common.id")}</th>
+                                    <th scope="col">{t("common.name")}</th>
+                                    <th scope="col">{t("reports.description")}</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {isLoading ? (
-                                    <tr><td className="text-secondary" colSpan="3">Loading projects...</td></tr>
+                                    <tr><td className="text-secondary" colSpan="3">{t("admin.project.loading")}</td></tr>
                                 ) : projects.length === 0 ? (
-                                    <tr><td className="text-secondary" colSpan="3">No projects found.</td></tr>
+                                    <tr><td className="text-secondary" colSpan="3">{t("admin.project.empty")}</td></tr>
                                 ) : projects.map((project) => (
                                     <tr key={project.id}>
                                         <td className="small text-break">{project.id}</td>
@@ -98,9 +100,9 @@ export default function ProjectAdminPage() {
                                             />
                                         </td>
                                         <td>
-                                            <div className="project-description mb-2">{project.description || "No description"}</div>
+                                            <div className="project-description mb-2">{project.description || t("common.noDescription")}</div>
                                             <button className="btn btn-outline-secondary btn-sm" onClick={() => setProjectForDescription(project)} type="button">
-                                                <i aria-hidden="true" className="bi bi-pencil me-1" />Edit description
+                                                <i aria-hidden="true" className="bi bi-pencil me-1" />{t("common.editDescription")}
                                             </button>
                                         </td>
                                     </tr>
@@ -118,7 +120,7 @@ export default function ProjectAdminPage() {
                 onSave={updateProjectDescription}
                 onSaved={handleDescriptionSaved}
             />
-            <Modal label="Create new project" onHide={() => setIsCreateOpen(false)} show={isCreateOpen}>
+            <Modal label={t("admin.project.createHeading")} onHide={() => setIsCreateOpen(false)} show={isCreateOpen}>
                 <CreateProjectForm onCreated={handleProjectCreated} onHide={() => setIsCreateOpen(false)} />
             </Modal>
         </div>

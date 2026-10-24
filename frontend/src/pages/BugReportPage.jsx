@@ -1,4 +1,5 @@
 import { useContext, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, useParams } from "react-router";
 import {
     closeReport,
@@ -37,7 +38,7 @@ const EMPTY_RESOLUTION = {
  * Choice that stands for "no component" in the component select. `EditableSelectField` does not allow an empty option value,
  * so this has an id of its own, which `updateComponentOrRemove` turns into `null` for the backend.
  */
-const NO_COMPONENT = { id: "none", name: "None" };
+const NO_COMPONENT = { id: "none" };
 
 /**
  * Saves the component choice with `PATCH /api/reports/{id}/component`; the `NO_COMPONENT` choice removes the component (`null`).
@@ -47,10 +48,10 @@ function updateComponentOrRemove(reportId, componentId) {
 }
 
 /**
- * Text shown for a value; empty or missing values become "Not provided".
+ * Text shown for a value; empty or missing values use the translated fallback.
  */
-function displayValue(value) {
-    return value || "Not provided";
+function displayValue(value, fallback) {
+    return value || fallback;
 }
 
 /**
@@ -61,10 +62,12 @@ function displayValue(value) {
  * @param {string|null} [props.value] shown through `displayValue`
  */
 function ReportDetail({ label, value }) {
+    const { t } = useTranslation();
+
     return (
         <div className="col-12 col-sm-6">
             <dt className="small text-secondary fw-semibold">{label}</dt>
-            <dd className="mb-0">{displayValue(value)}</dd>
+            <dd className="mb-0">{displayValue(value, t("common.notProvided"))}</dd>
         </div>
     );
 }
@@ -74,7 +77,7 @@ function ReportDetail({ label, value }) {
  * Save calls `updateValue(reportId, text)` (one of the `PATCH /api/reports/{id}/...` functions); on success `onValueSaved` is called, on failure an error toast is shown.
  *
  * @param {object} props
- * @param {string} props.title heading, also used in the error message
+ * @param {string} props.titleKey translation key for the heading and error message field
  * @param {string} props.reportId id of the report being edited
  * @param {string|null} props.value current text
  * @param {boolean} [props.isEditable=true] `false` hides the edit button (used for closed reports)
@@ -82,13 +85,15 @@ function ReportDetail({ label, value }) {
  * @param {(value: string) => void} props.onValueSaved called with the saved text
  */
 function EditableReportSection({
-    title,
+    titleKey,
     reportId,
     value,
     isEditable = true,
     updateValue,
     onValueSaved,
 }) {
+    const { t, i18n } = useTranslation();
+    const title = t(titleKey);
     const [isEditing, setIsEditing] = useState(false);
     const [draftValue, setDraftValue] = useState("");
     const [isSaving, setIsSaving] = useState(false);
@@ -111,7 +116,7 @@ function EditableReportSection({
                 onValueSaved(draftValue);
                 setIsEditing(false);
             })
-            .fail(() => showToast("danger", `Unable to update ${title.toLowerCase()}!`, "Update failed"))
+            .fail(() => showToast("danger", i18n.t("errors.updateField", { field: i18n.t(titleKey) }), i18n.t("errors.updateFailed")))
             .always(() => setIsSaving(false));
     }
 
@@ -121,7 +126,7 @@ function EditableReportSection({
                 <h2 className="h5 mb-0">{title}</h2>
                 {!isCurrentlyEditing && isEditable && (
                     <button
-                        aria-label={`Edit ${title.toLowerCase()}`}
+                        aria-label={t("common.editField", { field: title })}
                         className="btn btn-outline-secondary btn-sm"
                         onClick={startEditing}
                         type="button"
@@ -147,7 +152,7 @@ function EditableReportSection({
                             onClick={saveValue}
                             type="button"
                         >
-                            {isSaving ? "Saving..." : "Save"}
+                            {isSaving ? t("common.saving") : t("common.save")}
                         </button>
                         <button
                             className="btn btn-outline-secondary btn-sm"
@@ -155,12 +160,12 @@ function EditableReportSection({
                             onClick={cancelEditing}
                             type="button"
                         >
-                            Cancel
+                            {t("common.cancel")}
                         </button>
                     </div>
                 </div>
             ) : (
-                <div className="mb-0 text-break text-pre-wrap">{displayValue(value)}</div>
+                <div className="mb-0 text-break text-pre-wrap">{displayValue(value, t("common.notProvided"))}</div>
             )}
         </section>
     );
@@ -186,7 +191,7 @@ const SEVERITY_OPTIONS = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
  * `currentValue` with each option's value (not the displayed label, because labels such as names can be duplicated).
  *
  * @param {object} props
- * @param {string} props.label
+ * @param {string} props.labelKey translation key for the field label
  * @param {string} props.reportId id of the report being edited
  * @param {string|null} props.value currently displayed label
  * @param {string|null} props.currentValue option value (e.g. an id) of the current choice; null if nothing is chosen
@@ -200,7 +205,7 @@ const SEVERITY_OPTIONS = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
  * @param {(option: any) => void} props.onValueSaved called with the saved option
  */
 function EditableSelectField({
-    label,
+    labelKey,
     reportId,
     value,
     currentValue,
@@ -213,6 +218,8 @@ function EditableSelectField({
     updateValue,
     onValueSaved,
 }) {
+    const { t, i18n } = useTranslation();
+    const label = t(labelKey);
     const [isEditing, setIsEditing] = useState(false);
     const [chosenOptionValue, setChosenOptionValue] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
@@ -249,7 +256,7 @@ function EditableSelectField({
                 onValueSaved(selectedOption);
                 setIsEditing(false);
             })
-            .fail(() => showToast("danger", `Unable to update ${label.toLowerCase()}!`, "Update failed"))
+            .fail(() => showToast("danger", i18n.t("errors.updateField", { field: i18n.t(labelKey) }), i18n.t("errors.updateFailed")))
             .always(() => setIsSaving(false));
     }
 
@@ -280,7 +287,7 @@ function EditableSelectField({
                                 onClick={saveValue}
                                 type="button"
                             >
-                                {isSaving ? "Saving..." : "Save"}
+                                {isSaving ? t("common.saving") : t("common.save")}
                             </button>
                             <button
                                 className="btn btn-outline-secondary btn-sm"
@@ -288,19 +295,19 @@ function EditableSelectField({
                                 onClick={cancelEditing}
                                 type="button"
                             >
-                                Cancel
+                                {t("common.cancel")}
                             </button>
                         </div>
                     </div>
                 ) : (
                     <button
-                        aria-label={`Edit ${label.toLowerCase()}`}
+                        aria-label={t("common.editField", { field: label })}
                         className="editable-enum-display"
                         disabled={!isEditable || (options.length === 0 && !loadOptions)}
                         onClick={startEditing}
                         type="button"
                     >
-                        <span>{displayValue(value)}</span>
+                        <span>{displayValue(value, t("common.notProvided"))}</span>
                         <i aria-hidden="true" className="bi bi-pencil" />
                     </button>
                 )}
@@ -322,6 +329,7 @@ function EditableSelectField({
  * decided in the UI (own comments or ADMIN); the backend checks it again. Takes no props; the id comes from the URL.
  */
 export default function BugReportPage() {
+    const { t, i18n } = useTranslation();
     const { id } = useParams();
     const { currentUser } = useContext(AuthContext);
     const [bugReport, setBugReport] = useState(null);
@@ -351,24 +359,24 @@ export default function BugReportPage() {
             })
             .fail(() => {
                 setLoadError(true);
-                showToast("danger", "Unable to fetch bug report!", "Unable to load report");
+                showToast("danger", i18n.t("errors.loadReport"), i18n.t("errors.loadReportTitle"));
             });
 
         getComments(id)
             .done((data) => setComments(data))
-            .fail(() => showToast("danger", "Unable to fetch comments!", "Unable to load comments"));
+            .fail(() => showToast("danger", i18n.t("errors.loadComments"), i18n.t("errors.loadCommentsTitle")));
 
         getStatusTransitions()
             .done(setStatusTransitions)
-            .fail(() => showToast("danger", "Failed to fetch status transitions.", "Unable to load statuses"));
-    }, [id]);
+            .fail(() => showToast("danger", i18n.t("errors.loadStatuses"), i18n.t("errors.loadStatusesTitle")));
+    }, [id, i18n]);
 
     function loadDevelopers() {
         // Fetched when the assignee is first edited; a failed request is retried the next time.
         if (developers.length === 0) {
             getDevelopers()
                 .done(setDevelopers)
-                .fail(() => showToast("danger", "Failed to fetch developers.", "Unable to load developers"));
+                .fail(() => showToast("danger", i18n.t("errors.loadDevelopers"), i18n.t("errors.loadDevelopersTitle")));
         }
     }
 
@@ -376,7 +384,7 @@ export default function BugReportPage() {
         if (projects.length === 0) {
             getAllProjects()
                 .done(setProjects)
-                .fail(() => showToast("danger", "Failed to fetch projects.", "Unable to load projects"));
+                .fail(() => showToast("danger", i18n.t("errors.loadProjects"), i18n.t("errors.loadProjectsTitle")));
         }
     }
 
@@ -395,18 +403,18 @@ export default function BugReportPage() {
             })
             .fail(() => {
                 if (isCurrentProject) {
-                    showToast("danger", "Failed to fetch components.", "Unable to load components");
+                    showToast("danger", i18n.t("errors.loadComponents"), i18n.t("errors.loadComponentsTitle"));
                 }
             });
 
         return () => {
             isCurrentProject = false;
         };
-    }, [projectId]);
+    }, [projectId, i18n]);
 
     function saveComment() {
         if (!commentDraft.trim()) {
-            showToast("warning", "Comment text is required.", "Missing information");
+            showToast("warning", t("reports.commentRequired"), t("common.missingInformation"));
             return;
         }
 
@@ -418,7 +426,7 @@ export default function BugReportPage() {
                 setCommentDraft("");
                 setIsCommentEditing(false);
             })
-            .fail(() => showToast("danger", "Unable to save comment!", "Comment not saved"))
+            .fail(() => showToast("danger", i18n.t("errors.saveComment"), i18n.t("errors.saveCommentTitle")))
             .always(() => setIsCommentSaving(false));
     }
 
@@ -431,7 +439,7 @@ export default function BugReportPage() {
                     existingComments.filter((comment) => comment.id !== commentId)
                 ));
             })
-            .fail(() => showToast("danger", "Unable to remove comment!", "Comment not removed"))
+            .fail(() => showToast("danger", i18n.t("errors.removeComment"), i18n.t("errors.removeCommentTitle")))
             .always(() => setRemovingCommentId(null));
     }
 
@@ -443,12 +451,12 @@ export default function BugReportPage() {
         event.preventDefault();
 
         if (!resolutionDraft.description.trim()) {
-            showToast("warning", "Resolution description is required.", "Missing information");
+            showToast("warning", t("reports.resolutionRequired"), t("common.missingInformation"));
             return;
         }
 
         const isConfirmed = window.confirm(
-            "Are you sure you want to close this issue? It cannot be reopened.",
+            t("reports.confirmClose"),
         );
 
         if (!isConfirmed) {
@@ -463,9 +471,9 @@ export default function BugReportPage() {
                 setIsCloseModalOpen(false);
                 getReport(bugReport.id)
                     .done(setBugReport)
-                    .fail(() => showToast("danger", "Issue closed, but the page could not be refreshed. Reload the page.", "Unable to refresh report"));
+                    .fail(() => showToast("danger", i18n.t("errors.refreshClosedReport"), i18n.t("errors.refreshReportTitle")));
             })
-            .fail(() => showToast("danger", "Unable to close issue!", "Issue not closed"))
+            .fail(() => showToast("danger", i18n.t("errors.closeReport"), i18n.t("errors.closeReportTitle")))
             .always(() => setIsClosing(false));
     }
 
@@ -474,27 +482,27 @@ export default function BugReportPage() {
             <main className="container flex-grow-1 py-4 text-start">
                 {loadError ? (
                     <div className="text-center py-5">
-                        <p className="text-secondary">Unable to load this bug report.</p>
+                        <p className="text-secondary">{t("reports.loadFailed")}</p>
                         <Link to="/" className="btn btn-primary">
-                            Back to home
+                            {t("common.backToHome")}
                         </Link>
                     </div>
                 ) : bugReport === null ? (
-                    <p className="text-secondary mb-0">Loading bug report...</p>
+                    <p className="text-secondary mb-0">{t("reports.loading")}</p>
                 ) : (
                     <>
                         <div className="row g-4 mb-4">
                             <div className="col-12 col-lg-5">
                                 <section className="border rounded-4 p-3 h-100">
-                                    <h1 className="h3 mb-1">{displayValue(bugReport.title)}</h1>
-                                    <p className="text-secondary small mb-4">ID: {bugReport.id}</p>
+                                    <h1 className="h3 mb-1">{displayValue(bugReport.title, t("common.notProvided"))}</h1>
+                                    <p className="text-secondary small mb-4">{t("common.idValue", { id: bugReport.id })}</p>
                                     <dl className="row g-3 mb-0">
-                                        <ReportDetail label="Reporter" value={bugReport.reporterName} />
+                                        <ReportDetail label={t("reports.reporter")} value={bugReport.reporterName} />
                                         <EditableSelectField
                                             getOptionLabel={(developer) => developer.name}
                                             getOptionValue={(developer) => developer.id}
                                             isEditable={!isClosed}
-                                            label="Assignee"
+                                            labelKey="reports.assignee"
                                             loadOptions={loadDevelopers}
                                             onValueSaved={(developer) => setBugReport((report) => ({
                                                 ...report,
@@ -503,41 +511,41 @@ export default function BugReportPage() {
                                                 status: report.status === "OPEN" ? "ASSIGNED" : report.status,
                                             }))}
                                             options={developers}
-                                            placeholder="Select an assignee"
+                                            placeholder={t("reports.selectAssignee")}
                                             reportId={bugReport.id}
                                             updateValue={updateAssignee}
                                             currentValue={bugReport.assigneeId}
                                             value={bugReport.assigneeName}
                                         />
                                         <EditableSelectField
-                                            getOptionLabel={(severity) => severity}
+                                            getOptionLabel={(severity) => t(`reports.severities.${severity}`, { defaultValue: severity })}
                                             getOptionValue={(severity) => severity}
                                             isEditable={!isClosed}
-                                            label="Severity"
+                                            labelKey="reports.severity"
                                             onValueSaved={(severity) => setBugReport((report) => ({ ...report, severity }))}
                                             options={SEVERITY_OPTIONS}
                                             reportId={bugReport.id}
                                             updateValue={updateSeverity}
                                             currentValue={bugReport.severity}
-                                            value={bugReport.severity}
+                                            value={t(`reports.severities.${bugReport.severity}`, { defaultValue: bugReport.severity })}
                                         />
                                         <EditableSelectField
-                                            getOptionLabel={(status) => status}
+                                            getOptionLabel={(status) => t(`reports.statuses.${status}`, { defaultValue: status })}
                                             getOptionValue={(status) => status}
                                             isEditable={!isClosed}
-                                            label="Status"
+                                            labelKey="reports.status"
                                             onValueSaved={(status) => setBugReport((report) => ({ ...report, status }))}
                                             options={statusOptions(statusTransitions, bugReport.status)}
                                             reportId={bugReport.id}
                                             updateValue={updateStatus}
                                             currentValue={bugReport.status}
-                                            value={bugReport.status}
+                                            value={t(`reports.statuses.${bugReport.status}`, { defaultValue: bugReport.status })}
                                         />
                                         <EditableSelectField
                                             getOptionLabel={(project) => project.name}
                                             getOptionValue={(project) => project.id}
                                             isEditable={!isClosed}
-                                            label="Project"
+                                            labelKey="reports.project"
                                             loadOptions={loadProjects}
                                             onValueSaved={(project) => {
                                                 if (project.id === bugReport.projectId) {
@@ -560,10 +568,10 @@ export default function BugReportPage() {
                                             value={bugReport.projectName}
                                         />
                                         <EditableSelectField
-                                            getOptionLabel={(component) => component.name}
+                                            getOptionLabel={(component) => component === NO_COMPONENT ? t("common.none") : component.name}
                                             getOptionValue={(component) => component.id}
                                             isEditable={!isClosed}
-                                            label="Component"
+                                            labelKey="reports.component"
                                             onValueSaved={(component) => setBugReport((report) => ({
                                                 ...report,
                                                 componentId: component === NO_COMPONENT ? null : component.id,
@@ -573,10 +581,10 @@ export default function BugReportPage() {
                                             reportId={bugReport.id}
                                             updateValue={updateComponentOrRemove}
                                             currentValue={bugReport.componentId ?? NO_COMPONENT.id}
-                                            value={bugReport.componentName ?? NO_COMPONENT.name}
+                                            value={bugReport.componentName ?? t("common.none")}
                                         />
-                                        <ReportDetail label="Created at" value={formatDateTime(bugReport.createdAt)} />
-                                        <ReportDetail label="Updated at" value={formatDateTime(bugReport.updatedAt)} />
+                                        <ReportDetail label={t("reports.createdAt")} value={formatDateTime(bugReport.createdAt)} />
+                                        <ReportDetail label={t("reports.updatedAt")} value={formatDateTime(bugReport.updatedAt)} />
                                     </dl>
                                     <div className="border-top mt-4 pt-3">
                                         {bugReport.resolution ? (
@@ -585,7 +593,7 @@ export default function BugReportPage() {
                                                 onClick={() => setIsResolutionModalOpen(true)}
                                                 type="button"
                                             >
-                                                Show resolution
+                                                {t("reports.showResolution")}
                                             </button>
                                         ) : (
                                             <button
@@ -593,7 +601,7 @@ export default function BugReportPage() {
                                                 onClick={() => setIsCloseModalOpen(true)}
                                                 type="button"
                                             >
-                                                Close issue
+                                                {t("reports.closeIssue")}
                                             </button>
                                         )}
                                     </div>
@@ -607,7 +615,7 @@ export default function BugReportPage() {
                                         description,
                                     }))}
                                     reportId={bugReport.id}
-                                    title="Description"
+                                    titleKey="reports.description"
                                     updateValue={updateDescription}
                                     value={bugReport.description}
                                 />
@@ -623,7 +631,7 @@ export default function BugReportPage() {
                                         stepsToReproduce,
                                     }))}
                                     reportId={bugReport.id}
-                                    title="Steps to reproduce"
+                                    titleKey="reports.stepsToReproduce"
                                     updateValue={updateStepsToReproduce}
                                     value={bugReport.stepsToReproduce}
                                 />
@@ -636,7 +644,7 @@ export default function BugReportPage() {
                                         expectedBehavior,
                                     }))}
                                     reportId={bugReport.id}
-                                    title="Expected behavior"
+                                    titleKey="reports.expectedBehavior"
                                     updateValue={updateExpectedBehavior}
                                     value={bugReport.expectedBehavior}
                                 />
@@ -649,7 +657,7 @@ export default function BugReportPage() {
                                         actualBehavior,
                                     }))}
                                     reportId={bugReport.id}
-                                    title="Actual behavior"
+                                    titleKey="reports.actualBehavior"
                                     updateValue={updateActualBehavior}
                                     value={bugReport.actualBehavior}
                                 />
@@ -657,9 +665,9 @@ export default function BugReportPage() {
                         </div>
 
                         <section className="border-top pt-4 mt-4">
-                            <h2 className="h4 mb-3">Comments</h2>
+                            <h2 className="h4 mb-3">{t("reports.comments")}</h2>
                             {comments.length === 0 ? (
-                                <p className="text-secondary">No comments yet.</p>
+                                <p className="text-secondary">{t("reports.noComments")}</p>
                             ) : (
                                 <div className="d-flex flex-column gap-3">
                                     {comments.map((comment) => (
@@ -677,12 +685,12 @@ export default function BugReportPage() {
                             {!isClosed && (
                                 <div className="mt-3">
                                     <textarea
-                                        aria-label="New comment"
+                                        aria-label={t("reports.newComment")}
                                         className="form-control"
                                         disabled={isCommentSaving}
                                         onChange={(event) => setCommentDraft(event.target.value)}
                                         onFocus={() => setIsCommentEditing(true)}
-                                        placeholder="Write a comment..."
+                                        placeholder={t("reports.commentPlaceholder")}
                                         rows="4"
                                         value={commentDraft}
                                     />
@@ -694,7 +702,7 @@ export default function BugReportPage() {
                                                 onClick={saveComment}
                                                 type="button"
                                             >
-                                                {isCommentSaving ? "Saving..." : "Save"}
+                                                {isCommentSaving ? t("common.saving") : t("common.save")}
                                             </button>
                                             <button
                                                 className="btn btn-outline-secondary btn-sm"
@@ -705,7 +713,7 @@ export default function BugReportPage() {
                                                 }}
                                                 type="button"
                                             >
-                                                Cancel
+                                                {t("common.cancel")}
                                             </button>
                                         </div>
                                     )}
@@ -713,12 +721,12 @@ export default function BugReportPage() {
                             )}
                         </section>
 
-                        <Modal label="Close issue" onHide={() => setIsCloseModalOpen(false)} show={isCloseModalOpen}>
+                        <Modal label={t("reports.closeIssue")} onHide={() => setIsCloseModalOpen(false)} show={isCloseModalOpen}>
                             <form onSubmit={submitResolution}>
                                 <div className="modal-header">
-                                    <h2 className="modal-title fs-5">Close issue</h2>
+                                    <h2 className="modal-title fs-5">{t("reports.closeIssue")}</h2>
                                     <button
-                                        aria-label="Close"
+                                        aria-label={t("common.close")}
                                         className="btn-close"
                                         onClick={() => setIsCloseModalOpen(false)}
                                         disabled={isClosing}
@@ -728,7 +736,7 @@ export default function BugReportPage() {
                                 <div className="modal-body overflow-auto">
                                     <div className="mb-3">
                                         <label className="form-label" htmlFor="resolution-description">
-                                            Resolution description
+                                            {t("reports.resolutionDescription")}
                                         </label>
                                         <textarea
                                             className="form-control"
@@ -742,7 +750,7 @@ export default function BugReportPage() {
                                     </div>
                                     <div className="mb-3">
                                         <label className="form-label" htmlFor="fixed-version">
-                                            Fixed version
+                                            {t("reports.fixedVersion")}
                                         </label>
                                         <input
                                             className="form-control"
@@ -754,7 +762,7 @@ export default function BugReportPage() {
                                     </div>
                                     <div>
                                         <label className="form-label" htmlFor="commit-url">
-                                            Commit URL
+                                            {t("reports.commitUrl")}
                                         </label>
                                         <input
                                             className="form-control"
@@ -772,20 +780,20 @@ export default function BugReportPage() {
                                         disabled={isClosing}
                                         type="button"
                                     >
-                                        Cancel
+                                        {t("common.cancel")}
                                     </button>
                                     <button className="btn btn-danger" disabled={isClosing} type="submit">
-                                        {isClosing ? "Closing..." : "Close issue"}
+                                        {isClosing ? t("reports.closing") : t("reports.closeIssue")}
                                     </button>
                                 </div>
                             </form>
                         </Modal>
 
-                        <Modal label="Resolution" fullscreen={false} onHide={() => setIsResolutionModalOpen(false)} show={isResolutionModalOpen}>
+                        <Modal label={t("reports.resolution")} fullscreen={false} onHide={() => setIsResolutionModalOpen(false)} show={isResolutionModalOpen}>
                             <div className="modal-header">
-                                <h2 className="modal-title fs-5">Resolution</h2>
+                                <h2 className="modal-title fs-5">{t("reports.resolution")}</h2>
                                 <button
-                                    aria-label="Close"
+                                    aria-label={t("common.close")}
                                     className="btn-close"
                                     onClick={() => setIsResolutionModalOpen(false)}
                                     type="button"
@@ -794,22 +802,22 @@ export default function BugReportPage() {
                             <div className="modal-body">
                                 <dl className="row g-3 mb-0">
                                     <ReportDetail
-                                        label="Description"
+                                        label={t("reports.description")}
                                         value={bugReport.resolution?.description}
                                     />
                                     <ReportDetail
-                                        label="Fixed version"
+                                        label={t("reports.fixedVersion")}
                                         value={bugReport.resolution?.fixedVersion}
                                     />
                                     <ReportDetail
-                                        label="Commit URL"
+                                        label={t("reports.commitUrl")}
                                         value={bugReport.resolution?.commitUrl}
                                     />
                                 </dl>
                             </div>
                             <div className="modal-footer">
                                 <button className="btn btn-secondary" onClick={() => setIsResolutionModalOpen(false)} type="button">
-                                    Close
+                                    {t("common.close")}
                                 </button>
                             </div>
                         </Modal>
@@ -831,13 +839,15 @@ export default function BugReportPage() {
  * @param {(commentId: string) => void} props.onRemove called with the comment id when the button is clicked
  */
 function CommentCard({ canRemove, comment, isCurrentUser, isRemoving, onRemove }) {
+    const { t } = useTranslation();
+
     return (
         <div className="row">
             <div className={`col-12 col-md-6 ${isCurrentUser ? "ms-md-auto" : ""}`}>
                 <article className={`comment-card border rounded-4 p-3 ${isCurrentUser ? "comment-card-current-user" : ""}`}>
                     <div className="d-flex justify-content-between gap-3 mb-2">
                         <h3 className="h6 mb-0">
-                            {displayValue(comment.authorName)}
+                            {displayValue(comment.authorName, t("common.notProvided"))}
                         </h3>
                         <div className="comment-card-actions d-flex flex-column align-items-end">
                             <time className="small text-secondary text-nowrap" dateTime={comment.createdAt}>
@@ -845,7 +855,7 @@ function CommentCard({ canRemove, comment, isCurrentUser, isRemoving, onRemove }
                             </time>
                             {canRemove && (
                                 <button
-                                    aria-label="Remove comment"
+                                    aria-label={t("reports.removeComment")}
                                     className="comment-card-remove btn btn-danger btn-sm"
                                     disabled={isRemoving}
                                     onClick={() => onRemove(comment.id)}

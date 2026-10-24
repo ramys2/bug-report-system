@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import Modal from "../components/Modal";
 import CreateComponentForm from "../components/CreateComponentForm";
 import EditableName from "../components/EditableName";
@@ -22,6 +23,7 @@ import "./ComponentAdminPage.css";
  * @param {(componentId: string, userName: string) => void} props.onResponsibleUserSaved called with the new user's name after it was saved
  */
 function EditableResponsibleUser({ component, onResponsibleUserSaved }) {
+    const { t, i18n } = useTranslation();
     const [isEditing, setIsEditing] = useState(false);
     const [search, setSearch] = useState("");
     const [users, setUsers] = useState([]);
@@ -46,7 +48,7 @@ function EditableResponsibleUser({ component, onResponsibleUserSaved }) {
             .fail(() => {
                 if (isCurrentSearch) {
                     setUsers([]);
-                    showToast("danger", "Unable to search for users.", "Search failed");
+                    showToast("danger", i18n.t("errors.searchUsers"), i18n.t("errors.searchFailed"));
                 }
             })
             .always(() => {
@@ -58,7 +60,7 @@ function EditableResponsibleUser({ component, onResponsibleUserSaved }) {
         return () => {
             isCurrentSearch = false;
         };
-    }, [isEditing, search]);
+    }, [isEditing, search, i18n]);
 
     function startEditing() {
         setSearch("");
@@ -91,19 +93,19 @@ function EditableResponsibleUser({ component, onResponsibleUserSaved }) {
                 setSearch("");
                 setUsers([]);
             })
-            .fail(() => showToast("danger", "Unable to update the responsible user.", "Update failed"))
+            .fail(() => showToast("danger", i18n.t("errors.updateResponsibleUser"), i18n.t("errors.updateFailed")))
             .always(() => setIsSaving(false));
     }
 
     if (!isEditing) {
         return (
             <button
-                aria-label={`Edit responsible user for ${component.name}`}
+                aria-label={t("admin.component.editResponsibleUser", { name: component.name })}
                 className="btn btn-outline-secondary btn-sm"
                 onClick={startEditing}
                 type="button"
             >
-                <span>{component.responsibleUserName || "Unassigned"}</span>
+                <span>{component.responsibleUserName || t("reports.unassigned")}</span>
                 <i aria-hidden="true" className="bi bi-pencil ms-2" />
             </button>
         );
@@ -113,12 +115,12 @@ function EditableResponsibleUser({ component, onResponsibleUserSaved }) {
         <div className="position-relative">
             <div className="d-flex align-items-center gap-2">
                 <input
-                    aria-label={`Search responsible user for ${component.name}`}
+                    aria-label={t("admin.component.searchResponsibleUser", { name: component.name })}
                     autoFocus
                     className="form-control form-control-sm"
                     disabled={isSaving}
                     onChange={(event) => changeSearch(event.target.value)}
-                    placeholder={component.responsibleUserName || "Search users"}
+                    placeholder={component.responsibleUserName || t("admin.user.searchUsers")}
                     value={search}
                 />
                 <button
@@ -127,15 +129,15 @@ function EditableResponsibleUser({ component, onResponsibleUserSaved }) {
                     onClick={() => setIsEditing(false)}
                     type="button"
                 >
-                    Cancel
+                    {t("common.cancel")}
                 </button>
             </div>
             {search.trim() && (
                 <div className="responsible-user-options border rounded bg-white mt-1">
                     {isSearching ? (
-                        <p className="text-secondary small m-2">Searching...</p>
+                        <p className="text-secondary small m-2">{t("common.searching")}</p>
                     ) : users.length === 0 ? (
-                        <p className="text-secondary small m-2">No matching users.</p>
+                        <p className="text-secondary small m-2">{t("admin.user.noMatchingUsers")}</p>
                     ) : users.map((user) => (
                         <button
                             className="btn btn-light d-block text-start w-100 rounded-0"
@@ -144,7 +146,7 @@ function EditableResponsibleUser({ component, onResponsibleUserSaved }) {
                             onClick={() => saveResponsibleUser(user)}
                             type="button"
                         >
-                            {isSaving ? "Saving..." : user.name}
+                            {isSaving ? t("common.saving") : user.name}
                         </button>
                     ))}
                 </div>
@@ -159,21 +161,22 @@ function EditableResponsibleUser({ component, onResponsibleUserSaved }) {
  * Components are loaded with `GET /api/components`; changes use the `PATCH /api/components/{id}/...` endpoints and "Create new" opens `CreateComponentForm`. Takes no props.
  */
 export default function ComponentAdminPage() {
+    const { t, i18n } = useTranslation();
     const [components, setComponents] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [componentForDescription, setComponentForDescription] = useState(null);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-    useEffect(() => {
-        loadComponents();
-    }, []);
-
-    function loadComponents() {
+    const loadComponents = useCallback(() => {
         return getAllComponents()
             .done(setComponents)
-            .fail(() => showToast("danger", "Unable to fetch components.", "Unable to load components"))
+            .fail(() => showToast("danger", i18n.t("errors.loadComponents"), i18n.t("errors.loadComponentsTitle")))
             .always(() => setIsLoading(false));
-    }
+    }, [i18n]);
+
+    useEffect(() => {
+        loadComponents();
+    }, [loadComponents]);
 
     function updateComponent(componentId, changes) {
         setComponents((currentComponents) => currentComponents.map((component) => (
@@ -196,17 +199,17 @@ export default function ComponentAdminPage() {
             <main className="container d-flex flex-column flex-grow-1 py-4 text-start overflow-hidden">
                 <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
                     <div>
-                        <h1 className="h3 mb-1">Component administration</h1>
-                        <p className="text-secondary mb-0">Manage component details and responsible users.</p>
+                        <h1 className="h3 mb-1">{t("admin.component.heading")}</h1>
+                        <p className="text-secondary mb-0">{t("admin.component.description")}</p>
                     </div>
                     <div className="d-flex align-items-center gap-3">
-                        <span className="text-secondary small">{components.length} component{components.length === 1 ? "" : "s"}</span>
+                        <span className="text-secondary small">{t("admin.component.count", { count: components.length })}</span>
                         <button
                             className="btn btn-primary"
                             onClick={() => setIsCreateOpen(true)}
                             type="button"
                         >
-                            Create new +
+                            {t("reports.createNew")}
                         </button>
                     </div>
                 </div>
@@ -216,17 +219,17 @@ export default function ComponentAdminPage() {
                         <table className="table table-hover align-middle mb-0">
                             <thead className="table-light sticky-top">
                                 <tr>
-                                    <th scope="col">ID</th>
-                                    <th scope="col">Name</th>
-                                    <th scope="col">Description</th>
-                                    <th scope="col">Responsible user</th>
+                                    <th scope="col">{t("common.id")}</th>
+                                    <th scope="col">{t("common.name")}</th>
+                                    <th scope="col">{t("reports.description")}</th>
+                                    <th scope="col">{t("admin.component.responsibleUser")}</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {isLoading ? (
-                                    <tr><td className="text-secondary" colSpan="4">Loading components...</td></tr>
+                                    <tr><td className="text-secondary" colSpan="4">{t("admin.component.loading")}</td></tr>
                                 ) : components.length === 0 ? (
-                                    <tr><td className="text-secondary" colSpan="4">No components found.</td></tr>
+                                    <tr><td className="text-secondary" colSpan="4">{t("admin.component.empty")}</td></tr>
                                 ) : components.map((component) => (
                                     <tr key={component.id}>
                                         <td className="small text-break">{component.id}</td>
@@ -240,9 +243,9 @@ export default function ComponentAdminPage() {
                                             />
                                         </td>
                                         <td>
-                                            <div className="component-description mb-2">{component.description || "No description"}</div>
+                                            <div className="component-description mb-2">{component.description || t("common.noDescription")}</div>
                                             <button className="btn btn-outline-secondary btn-sm" onClick={() => setComponentForDescription(component)} type="button">
-                                                <i aria-hidden="true" className="bi bi-pencil me-1" />Edit description
+                                                <i aria-hidden="true" className="bi bi-pencil me-1" />{t("common.editDescription")}
                                             </button>
                                         </td>
                                         <td>
@@ -266,7 +269,7 @@ export default function ComponentAdminPage() {
                 onSave={updateComponentDescription}
                 onSaved={handleDescriptionSaved}
             />
-            <Modal label="Create new component" onHide={() => setIsCreateOpen(false)} show={isCreateOpen}>
+            <Modal label={t("admin.component.createHeading")} onHide={() => setIsCreateOpen(false)} show={isCreateOpen}>
                 <CreateComponentForm onCreated={handleComponentCreated} onHide={() => setIsCreateOpen(false)} />
             </Modal>
         </div>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { showToast } from "./toast";
 
 /**
@@ -7,11 +8,12 @@ import { showToast } from "./toast";
  * @param {object} props
  * @param {string} props.id id of the renamed item, passed to `onSave`
  * @param {string} props.name current name
- * @param {string} props.label what is being renamed, e.g. "project"; used in labels and the error toast
+ * @param {"project"|"component"} props.label item type used to choose the error translation
  * @param {(id: string, name: string) => import("jquery").jqXHR} props.onSave sends the new name to the backend, e.g. `updateProjectName`
  * @param {(id: string, name: string) => void} props.onNameSaved called with the new name after it was saved
  */
 export default function EditableName({ id, name, label, onSave, onNameSaved }) {
+    const { t, i18n } = useTranslation();
     const [isEditing, setIsEditing] = useState(false);
     const [draftName, setDraftName] = useState(name);
     const [isSaving, setIsSaving] = useState(false);
@@ -32,7 +34,7 @@ export default function EditableName({ id, name, label, onSave, onNameSaved }) {
                 onNameSaved(id, draftName);
                 setIsEditing(false);
             })
-            .fail(() => showToast("danger", `Unable to update the ${label} name.`, "Update failed"))
+            .fail(() => showToast("danger", i18n.t(`admin.${label}.updateNameError`), i18n.t("errors.updateFailed")))
             .always(() => setIsSaving(false));
     }
 
@@ -41,7 +43,7 @@ export default function EditableName({ id, name, label, onSave, onNameSaved }) {
             <div className="d-flex align-items-center gap-2">
                 <span>{name}</span>
                 <button
-                    aria-label={`Edit name for ${name}`}
+                    aria-label={t("common.editNameFor", { name })}
                     className="btn btn-outline-secondary btn-sm"
                     onClick={startEditing}
                     type="button"
@@ -55,7 +57,7 @@ export default function EditableName({ id, name, label, onSave, onNameSaved }) {
     return (
         <div className="d-flex align-items-center gap-2">
             <input
-                aria-label={`Name for ${name}`}
+                aria-label={t("common.nameFor", { name })}
                 className="form-control form-control-sm"
                 disabled={isSaving}
                 onChange={(event) => setDraftName(event.target.value)}
@@ -67,7 +69,7 @@ export default function EditableName({ id, name, label, onSave, onNameSaved }) {
                 onClick={saveName}
                 type="button"
             >
-                {isSaving ? "Saving..." : "Save"}
+                {isSaving ? t("common.saving") : t("common.save")}
             </button>
             <button
                 className="btn btn-outline-secondary btn-sm"
@@ -75,7 +77,7 @@ export default function EditableName({ id, name, label, onSave, onNameSaved }) {
                 onClick={() => setIsEditing(false)}
                 type="button"
             >
-                Cancel
+                {t("common.cancel")}
             </button>
         </div>
     );

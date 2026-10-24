@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { createComponent } from "../api/component";
 import { searchUsers } from "../api/account";
 import { getAllProjects } from "../api/project";
@@ -14,7 +15,7 @@ const initialFormValues = { name: "", projectId: "", description: "" };
  *
  * The projects to choose from are loaded once when the form is mounted (`GET /api/projects`). The responsible user is picked by searching users by name
  * (`GET /api/accounts/users?search=...`); results of outdated searches are ignored.
- * Name and project are required; the responsible user is optional. If the backend answers 404 (the user no longer exists), its message is shown in the error toast.
+ * Name and project are required; the responsible user is optional. A 404 shows a localized message about a missing related item; other failures show a generic localized creation error.
  * On success the form is cleared and `onCreated` is called.
  *
  * @param {object} props
@@ -22,6 +23,7 @@ const initialFormValues = { name: "", projectId: "", description: "" };
  * @param {() => void} props.onCreated called after the component was created
  */
 export default function CreateComponentForm({ onCreated, onHide }) {
+    const { t, i18n } = useTranslation();
     const [formValues, setFormValues] = useState(initialFormValues);
     const [projects, setProjects] = useState([]);
     const [responsibleUser, setResponsibleUser] = useState(null);
@@ -33,8 +35,8 @@ export default function CreateComponentForm({ onCreated, onHide }) {
     useEffect(() => {
         getAllProjects()
             .done(setProjects)
-            .fail(() => showToast("danger", "Unable to fetch projects.", "Unable to load projects"));
-    }, []);
+            .fail(() => showToast("danger", i18n.t("errors.loadProjects"), i18n.t("errors.loadProjectsTitle")));
+    }, [i18n]);
 
     useEffect(() => {
         const normalizedSearch = search.trim();
@@ -54,7 +56,7 @@ export default function CreateComponentForm({ onCreated, onHide }) {
             .fail(() => {
                 if (isCurrentSearch) {
                     setUsers([]);
-                    showToast("danger", "Unable to search for users.", "Search failed");
+                    showToast("danger", i18n.t("errors.searchUsers"), i18n.t("errors.searchFailed"));
                 }
             })
             .always(() => {
@@ -66,7 +68,7 @@ export default function CreateComponentForm({ onCreated, onHide }) {
         return () => {
             isCurrentSearch = false;
         };
-    }, [search]);
+    }, [search, i18n]);
 
     function handleChange(event) {
         const { name, value } = event.target;
@@ -96,7 +98,7 @@ export default function CreateComponentForm({ onCreated, onHide }) {
         event.preventDefault();
 
         if (!formValues.name.trim() || !formValues.projectId) {
-            showToast("warning", "Please enter a component name and choose a project.", "Missing information");
+            showToast("warning", t("admin.component.requiredFields"), t("common.missingInformation"));
             return;
         }
 
@@ -112,10 +114,10 @@ export default function CreateComponentForm({ onCreated, onHide }) {
                 onCreated();
             })
             .fail((jqXHR) => {
-                const message = jqXHR.status === 404 && jqXHR.responseJSON?.message
-                    ? jqXHR.responseJSON.message
-                    : "Failed to create the component. Please try again.";
-                showToast("danger", message, "Component not created");
+                const message = jqXHR.status === 404
+                    ? i18n.t("errors.createComponentNotFound")
+                    : i18n.t("errors.createComponent");
+                showToast("danger", message, i18n.t("errors.createComponentTitle"));
             })
             .always(() => setIsSubmitting(false));
     }
@@ -123,12 +125,12 @@ export default function CreateComponentForm({ onCreated, onHide }) {
     return (
         <form className="d-flex flex-column h-100" onSubmit={handleSubmit}>
             <div className="modal-header">
-                <h1 className="modal-title fs-5">Create new component</h1>
-                <button aria-label="Close" className="btn-close" onClick={onHide} type="button" />
+                <h1 className="modal-title fs-5">{t("admin.component.createHeading")}</h1>
+                <button aria-label={t("common.close")} className="btn-close" onClick={onHide} type="button" />
             </div>
             <div className="modal-body overflow-auto">
                 <div className="mb-3">
-                    <label className="form-label" htmlFor="new-component-name">Name *</label>
+                    <label className="form-label" htmlFor="new-component-name">{t("common.name")} *</label>
                     <input
                         className="form-control"
                         id="new-component-name"
@@ -139,7 +141,7 @@ export default function CreateComponentForm({ onCreated, onHide }) {
                     />
                 </div>
                 <div className="mb-3">
-                    <label className="form-label" htmlFor="new-component-project">Project *</label>
+                    <label className="form-label" htmlFor="new-component-project">{t("reports.project")} *</label>
                     <select
                         className="form-select"
                         id="new-component-project"
@@ -148,7 +150,7 @@ export default function CreateComponentForm({ onCreated, onHide }) {
                         required
                         value={formValues.projectId}
                     >
-                        <option value="">Select a project</option>
+                        <option value="">{t("reports.selectProject")}</option>
                         {projects.map((project) => (
                             <option key={project.id} value={project.id}>
                                 {project.name}
@@ -157,7 +159,7 @@ export default function CreateComponentForm({ onCreated, onHide }) {
                     </select>
                 </div>
                 <div className="mb-3">
-                    <label className="form-label" htmlFor="new-component-description">Description</label>
+                    <label className="form-label" htmlFor="new-component-description">{t("reports.description")}</label>
                     <textarea
                         className="form-control"
                         id="new-component-description"
@@ -168,11 +170,11 @@ export default function CreateComponentForm({ onCreated, onHide }) {
                     />
                 </div>
                 <div>
-                    <label className="form-label" htmlFor="new-component-responsible-user">Responsible user</label>
+                    <label className="form-label" htmlFor="new-component-responsible-user">{t("admin.component.responsibleUser")}</label>
                     {responsibleUser ? (
                         <div className="d-flex align-items-center gap-2">
                             <span>{responsibleUser.name}</span>
-                            <button className="btn btn-outline-secondary btn-sm" onClick={() => setResponsibleUser(null)} type="button">Change</button>
+                            <button className="btn btn-outline-secondary btn-sm" onClick={() => setResponsibleUser(null)} type="button">{t("common.change")}</button>
                         </div>
                     ) : (
                         <>
@@ -181,15 +183,15 @@ export default function CreateComponentForm({ onCreated, onHide }) {
                                 disabled={isSubmitting}
                                 id="new-component-responsible-user"
                                 onChange={(event) => changeSearch(event.target.value)}
-                                placeholder="Search users"
+                                placeholder={t("admin.user.searchUsers")}
                                 value={search}
                             />
                             {search.trim() && (
                                 <div className="border rounded bg-white mt-1">
                                     {isSearching ? (
-                                        <p className="text-secondary small m-2">Searching...</p>
+                                        <p className="text-secondary small m-2">{t("common.searching")}</p>
                                     ) : users.length === 0 ? (
-                                        <p className="text-secondary small m-2">No matching users.</p>
+                                        <p className="text-secondary small m-2">{t("admin.user.noMatchingUsers")}</p>
                                     ) : users.map((user) => (
                                         <button
                                             className="btn btn-light d-block text-start w-100 rounded-0"
@@ -208,9 +210,9 @@ export default function CreateComponentForm({ onCreated, onHide }) {
                 </div>
             </div>
             <div className="modal-footer">
-                <button className="btn btn-secondary" onClick={onHide} type="button">Cancel</button>
+                <button className="btn btn-secondary" onClick={onHide} type="button">{t("common.cancel")}</button>
                 <button className="btn btn-primary" disabled={isSubmitting} type="submit">
-                    {isSubmitting ? "Creating..." : "Create component"}
+                    {isSubmitting ? t("common.creating") : t("admin.component.create")}
                 </button>
             </div>
         </form>

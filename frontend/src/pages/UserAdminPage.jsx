@@ -1,4 +1,5 @@
 import { useContext, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { getAccounts, updateAccountRole } from "../api/account";
 import AuthContext from "../components/AuthContext";
 import { showToast } from "../components/toast";
@@ -53,6 +54,7 @@ function getVisiblePages(currentPage, totalPages) {
  * @param {() => void} props.onRoleSaved called after the role was saved
  */
 function EditableRole({ user, onRoleSaved }) {
+    const { t, i18n } = useTranslation();
     const [isEditing, setIsEditing] = useState(false);
     const [draftRole, setDraftRole] = useState(user.role);
     const [isSaving, setIsSaving] = useState(false);
@@ -70,19 +72,19 @@ function EditableRole({ user, onRoleSaved }) {
                 onRoleSaved();
                 setIsEditing(false);
             })
-            .fail(() => showToast("danger", "Unable to update the user's role.", "Update failed"))
+            .fail(() => showToast("danger", i18n.t("errors.updateRole"), i18n.t("errors.updateFailed")))
             .always(() => setIsSaving(false));
     }
 
     if (!isEditing) {
         return (
             <button
-                aria-label={`Edit role for ${user.name}`}
+                aria-label={t("admin.user.editRole", { name: user.name })}
                 className="btn btn-outline-secondary btn-sm"
                 onClick={startEditing}
                 type="button"
             >
-                <span>{user.role}</span>
+                <span>{t(`admin.roles.${user.role}`, { defaultValue: user.role })}</span>
                 <i aria-hidden="true" className="bi bi-pencil ms-2" />
             </button>
         );
@@ -91,14 +93,14 @@ function EditableRole({ user, onRoleSaved }) {
     return (
         <div className="d-flex align-items-center gap-2">
             <select
-                aria-label={`Role for ${user.name}`}
+                aria-label={t("admin.user.roleFor", { name: user.name })}
                 className="form-select form-select-sm"
                 disabled={isSaving}
                 onChange={(event) => setDraftRole(event.target.value)}
                 value={draftRole}
             >
                 {ROLE_OPTIONS.map((role) => (
-                    <option key={role} value={role}>{role}</option>
+                    <option key={role} value={role}>{t(`admin.roles.${role}`)}</option>
                 ))}
             </select>
             <button
@@ -107,16 +109,16 @@ function EditableRole({ user, onRoleSaved }) {
                 onClick={saveRole}
                 type="button"
             >
-                {isSaving ? "Saving..." : "Save"}
+                {isSaving ? t("common.saving") : t("common.save")}
             </button>
             <button
-                aria-label={`Cancel role change for ${user.name}`}
+                aria-label={t("admin.user.cancelRoleChange", { name: user.name })}
                 className="btn btn-outline-secondary btn-sm"
                 disabled={isSaving}
                 onClick={() => setIsEditing(false)}
                 type="button"
             >
-                Cancel
+                {t("common.cancel")}
             </button>
         </div>
     );
@@ -132,6 +134,7 @@ function EditableRole({ user, onRoleSaved }) {
  * Takes no props.
  */
 export default function UserAdminPage() {
+    const { t, i18n } = useTranslation();
     const { currentUser } = useContext(AuthContext);
     // `filters` follow the inputs on every key press; `appliedFilters` are the ones last sent to the backend.
     const [filters, setFilters] = useState(NO_FILTERS);
@@ -172,7 +175,7 @@ export default function UserAdminPage() {
             })
             .fail(() => {
                 if (!isOutdated) {
-                    showToast("danger", "Unable to fetch user accounts.", "Unable to load users");
+                    showToast("danger", i18n.t("errors.loadUsers"), i18n.t("errors.loadUsersTitle"));
                 }
             })
             .always(() => {
@@ -184,7 +187,7 @@ export default function UserAdminPage() {
         return () => {
             isOutdated = true;
         };
-    }, [appliedFilters, page, reloadCount]);
+    }, [appliedFilters, page, reloadCount, i18n]);
 
     const totalPages = Math.max(1, result.totalPages);
 
@@ -206,35 +209,35 @@ export default function UserAdminPage() {
             <main className="container d-flex flex-column flex-grow-1 py-4 text-start overflow-hidden">
                 <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
                     <div>
-                        <h1 className="h3 mb-1">User administration</h1>
-                        <p className="text-secondary mb-0">Manage user roles and find accounts.</p>
+                        <h1 className="h3 mb-1">{t("admin.user.heading")}</h1>
+                        <p className="text-secondary mb-0">{t("admin.user.description")}</p>
                     </div>
-                    <span className="text-secondary small">{result.totalElements} user{result.totalElements === 1 ? "" : "s"}</span>
+                    <span className="text-secondary small">{t("admin.user.count", { count: result.totalElements })}</span>
                 </div>
 
                 <section className="border rounded-4 p-3 mb-3">
                     <div className="row g-3 align-items-end">
                         <div className="col-12 col-md-6 col-xl-3">
-                            <label className="form-label" htmlFor="user-id-filter">ID</label>
+                            <label className="form-label" htmlFor="user-id-filter">{t("common.id")}</label>
                             <input className="form-control" id="user-id-filter" onChange={(event) => updateFilter("id", event.target.value)} value={filters.id} />
                         </div>
                         <div className="col-12 col-md-6 col-xl-3">
-                            <label className="form-label" htmlFor="name-filter">Name</label>
+                            <label className="form-label" htmlFor="name-filter">{t("admin.user.name")}</label>
                             <input className="form-control" id="name-filter" onChange={(event) => updateFilter("name", event.target.value)} value={filters.name} />
                         </div>
                         <div className="col-12 col-md-6 col-xl-3">
-                            <label className="form-label" htmlFor="email-filter">Email</label>
+                            <label className="form-label" htmlFor="email-filter">{t("auth.email")}</label>
                             <input className="form-control" id="email-filter" onChange={(event) => updateFilter("email", event.target.value)} value={filters.email} />
                         </div>
                         <div className="col-12 col-md-6 col-xl-2">
-                            <label className="form-label" htmlFor="role-filter">Role</label>
+                            <label className="form-label" htmlFor="role-filter">{t("admin.user.role")}</label>
                             <select className="form-select" id="role-filter" onChange={(event) => updateFilter("role", event.target.value)} value={filters.role}>
-                                <option value="">All roles</option>
-                                {ROLE_OPTIONS.map((role) => <option key={role} value={role}>{role}</option>)}
+                                <option value="">{t("admin.user.allRoles")}</option>
+                                {ROLE_OPTIONS.map((role) => <option key={role} value={role}>{t(`admin.roles.${role}`)}</option>)}
                             </select>
                         </div>
                         <div className="col-12 col-xl-1">
-                            <button className="btn btn-outline-secondary w-100" onClick={clearFilters} type="button">Clear</button>
+                            <button className="btn btn-outline-secondary w-100" onClick={clearFilters} type="button">{t("common.clear")}</button>
                         </div>
                     </div>
                 </section>
@@ -244,17 +247,17 @@ export default function UserAdminPage() {
                         <table className="table table-hover align-middle mb-0">
                             <thead className="table-light sticky-top">
                                 <tr>
-                                    <th scope="col">ID</th>
-                                    <th scope="col">Name</th>
-                                    <th scope="col">Email</th>
-                                    <th scope="col">Role</th>
+                                    <th scope="col">{t("common.id")}</th>
+                                    <th scope="col">{t("admin.user.name")}</th>
+                                    <th scope="col">{t("auth.email")}</th>
+                                    <th scope="col">{t("admin.user.role")}</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {isLoading ? (
-                                    <tr><td className="text-secondary" colSpan="4">Loading users...</td></tr>
+                                    <tr><td className="text-secondary" colSpan="4">{t("admin.user.loading")}</td></tr>
                                 ) : result.items.length === 0 ? (
-                                    <tr><td className="text-secondary" colSpan="4">No users match these filters.</td></tr>
+                                    <tr><td className="text-secondary" colSpan="4">{t("admin.user.empty")}</td></tr>
                                 ) : result.items.map((user) => (
                                     <tr key={user.id}>
                                         <td className="small text-break">{user.id}</td>
@@ -262,7 +265,9 @@ export default function UserAdminPage() {
                                         <td>{user.email}</td>
                                         <td>
                                             {user.id === currentUser?.id ? (
-                                                <span className="text-secondary" title="You cannot change your own role.">{user.role} (you)</span>
+                                                <span className="text-secondary" title={t("admin.user.ownRoleHint")}>
+                                                    {t("admin.user.ownRole", { role: t(`admin.roles.${user.role}`, { defaultValue: user.role }) })}
+                                                </span>
                                             ) : (
                                                 <EditableRole onRoleSaved={handleRoleSaved} user={user} />
                                             )}
@@ -273,10 +278,10 @@ export default function UserAdminPage() {
                         </table>
                     </div>
 
-                    <nav aria-label="User pages" className="border-top p-3">
+                    <nav aria-label={t("admin.user.pages")} className="border-top p-3">
                         <ul className="pagination justify-content-center mb-0">
                             <li className={`page-item ${page === 1 ? "disabled" : ""}`}>
-                                <button className="page-link" disabled={page === 1} onClick={() => setPage(page - 1)} type="button">Previous</button>
+                                <button className="page-link" disabled={page === 1} onClick={() => setPage(page - 1)} type="button">{t("common.previous")}</button>
                             </li>
                             {getVisiblePages(page, totalPages).map((pageNumber, index) => (
                                 pageNumber === null ? (
@@ -290,7 +295,7 @@ export default function UserAdminPage() {
                                 )
                             ))}
                             <li className={`page-item ${page === totalPages ? "disabled" : ""}`}>
-                                <button className="page-link" disabled={page === totalPages} onClick={() => setPage(page + 1)} type="button">Next</button>
+                                <button className="page-link" disabled={page === totalPages} onClick={() => setPage(page + 1)} type="button">{t("common.next")}</button>
                             </li>
                         </ul>
                     </nav>
