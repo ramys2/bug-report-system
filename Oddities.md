@@ -18,7 +18,7 @@ marked in the code comments and were not confirmed by running the application.
 
 ### Security and access
 - `GET /api/reports` shows all reports to every signed-in user (no filtering by owner).
-- `CurrentUserAuthenticationFilter` looks the user up in the database on every request.
+- **Accepted for now:** `CurrentUserAuthenticationFilter` looks the signed-in user up in the database on every request so role changes apply on the next request. The extra lookup is an acceptable tradeoff for this semester project; caching is deferred unless measurements show a performance problem.
 - Demo passwords are hard-coded in `BugReportApplication` and are written to the application log at startup (only BCrypt hashes are stored).
 - `application.yml` contains database, Artemis and mail credentials in plain text (dev defaults).
 - `ApiExceptionHandler` handles only a fixed list of exceptions. Unexpected errors, 405 and unsupported media type errors fall back to Spring's default handling (not checked).
