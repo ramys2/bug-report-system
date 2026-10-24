@@ -32,13 +32,15 @@ class PublisherLoggingTest {
 
             var publisherLogger = context.getLogger(BugReportEventPublisher.class);
             publisherLogger.info("Publisher test entry");
+            context.getLogger(BugReportPublishingConfig.class).error("Publisher rejection entry");
             context.getLogger("com.ramy.bugreport.service.BugReportService").info("Other application entry");
 
-            assertThat(publisherLogger.isAdditive()).isFalse();
+            assertThat(context.getLogger("com.ramy.bugreport.messaging.publisher").isAdditive()).isFalse();
             assertThat(context.getStatusManager().getCopyOfStatusList())
                     .noneMatch(status -> status.getEffectiveLevel() == Status.ERROR);
             assertThat(Files.readString(logDirectory.resolve("bug-report-publisher.log")))
                     .contains("Publisher test entry")
+                    .contains("Publisher rejection entry")
                     .doesNotContain("Other application entry");
         } finally {
             context.stop();

@@ -37,3 +37,9 @@ springdoc:
 messaging:
   destinations:
     bug-report-event: bug-report-event
+  publisher:
+    core-pool-size: 1
+    # Extra workers are created once the queue is full; must be at least core-pool-size.
+    max-pool-size: 1
+    # Zero disables queueing, so tasks need an available worker immediately.
+    queue-capacity: 100

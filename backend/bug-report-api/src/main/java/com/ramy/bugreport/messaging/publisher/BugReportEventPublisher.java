@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jms.JmsException;
 import org.springframework.jms.core.JmsTemplate;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -46,11 +47,13 @@ public class BugReportEventPublisher {
      * <p>Runs only after the transaction that published the event has committed, so no message is sent for changes
      * that were rolled back. Makes up to three send attempts with a one-second pause between failures.
      * Failures are logged without propagating them; the already committed change is not undone.
-     * Retries run on the calling thread and are not preserved across application restarts.
+     * Sending and retries run on the dedicated publisher executor, not the request thread.
+     * Pending notifications are held in memory and are not preserved across application restarts.
      *
      * @param event the event published through Spring's {@code ApplicationEventPublisher}
      */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @Async("bugReportPublisherExecutor")
     public void onBugReportEvent(IBugReportEvent event) {
         String eventType = event.getClass().getSimpleName();
         String payload;

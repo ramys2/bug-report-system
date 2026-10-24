@@ -19,7 +19,7 @@
     </appender>
 
     <!-- Prevent publisher entries from also reaching the application console log. -->
-    <logger name="com.ramy.bugreport.messaging.publisher.BugReportEventPublisher" level="INFO" additivity="false">
+    <logger name="com.ramy.bugreport.messaging.publisher" level="INFO" additivity="false">
         <appender-ref ref="PUBLISHER_FILE"/>
     </logger>
 
