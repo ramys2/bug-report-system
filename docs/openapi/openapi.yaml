@@ -33,17 +33,76 @@ tags:
 paths:
   /api/accounts:
     get:
-      description: "Access: ADMIN role."
+      description: "Returns one page of the accounts, ordered by name. All filters\
+        \ are optional and combined with AND; the text filters match parts of the\
+        \ value, ignoring case. Access: ADMIN role."
       operationId: getAll_3
+      parameters:
+      - description: "Text the account id must contain, ignoring case."
+        example: 3f2a
+        in: query
+        name: id
+        required: false
+        schema:
+          type: string
+      - description: "Text the name must contain, ignoring case."
+        example: ali
+        in: query
+        name: name
+        required: false
+        schema:
+          type: string
+      - description: "Text the email address must contain, ignoring case."
+        example: example.com
+        in: query
+        name: email
+        required: false
+        schema:
+          type: string
+      - description: Exact role.
+        example: DEVELOPER
+        in: query
+        name: role
+        required: false
+        schema:
+          type: string
+          enum:
+          - REPORTER
+          - DEVELOPER
+          - ADMIN
+      - description: Zero-based page number.
+        example: 0
+        in: query
+        name: page
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - description: Accounts per page; values outside 1..100 are adjusted to that
+          range.
+        example: 10
+        in: query
+        name: size
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 10
       responses:
         "200":
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/UserAccountResponse"
-          description: All accounts.
+                $ref: "#/components/schemas/PageResponseUserAccountResponse"
+          description: One page of accounts.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Validation failed, the JSON is malformed, or a path or query\
+            \ value (for example an id) is malformed."
         "401":
           content:
             application/json:
@@ -56,7 +115,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ApiErrorResponse"
           description: "The role or ownership check failed, or the CSRF token is missing."
-      summary: List all accounts
+      summary: List accounts
       tags:
       - Accounts
     post:
@@ -707,10 +766,10 @@ paths:
       summary: Rename a component
       tags:
       - Components
-  /api/components/{componentId}/responsibleUserId:
+  /api/components/{componentId}/responsible-user-id:
     patch:
-      description: "Access: ADMIN or DEVELOPER role. Note the camelCase path segment.\
-        \ Fails with 404 if the component or the user does not exist."
+      description: "Access: ADMIN or DEVELOPER role. Fails with 404 if the component\
+        \ or the user does not exist."
       operationId: updateResponsibleUserId
       parameters:
       - description: Id of the component.
@@ -2432,6 +2491,41 @@ components:
       required:
       - id
       - name
+    PageResponseUserAccountResponse:
+      type: object
+      description: One page of a list.
+      properties:
+        items:
+          type: array
+          description: The items on this page.
+          items:
+            $ref: "#/components/schemas/UserAccountResponse"
+        page:
+          type: integer
+          format: int32
+          description: Zero-based number of this page.
+          example: 0
+        size:
+          type: integer
+          format: int32
+          description: Requested number of items per page.
+          example: 10
+        totalElements:
+          type: integer
+          format: int64
+          description: Number of items on all pages together.
+          example: 37
+        totalPages:
+          type: integer
+          format: int32
+          description: Number of pages; 0 if there are no items.
+          example: 4
+      required:
+      - items
+      - page
+      - size
+      - totalElements
+      - totalPages
     Resolution:
       type: object
       properties:
@@ -2553,7 +2647,7 @@ components:
       - message
     UpdateComponentResponsibleUserRequest:
       type: object
-      description: "Request body of `PATCH /api/components/{componentId}/responsibleUserId`."
+      description: "Request body of `PATCH /api/components/{componentId}/responsible-user-id`."
       properties:
         responsibleUserId:
           type: string

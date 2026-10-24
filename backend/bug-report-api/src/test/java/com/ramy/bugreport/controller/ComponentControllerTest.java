@@ -134,7 +134,7 @@ class ComponentControllerTest {
                         .content("{\"description\":\"Handles the UI\"}"))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(patch("/api/components/{componentId}/responsibleUserId", componentId)
+        mockMvc.perform(patch("/api/components/{componentId}/responsible-user-id", componentId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"responsibleUserId\":\"%s\"}".formatted(responsibleUserId)))
                 .andExpect(status().isOk());

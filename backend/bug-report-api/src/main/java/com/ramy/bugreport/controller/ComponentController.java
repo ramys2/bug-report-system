@@ -172,7 +172,7 @@ public class ComponentController {
     }
 
     /**
-     * {@code PATCH /api/components/{componentId}/responsibleUserId}: Changes the responsible user (note the camelCase path segment).
+     * {@code PATCH /api/components/{componentId}/responsible-user-id}: Changes the responsible user.
      *
      * <p>Access: ADMIN or DEVELOPER role.
      *
@@ -181,14 +181,14 @@ public class ComponentController {
      * @return 200 with {@code {id, message}}
      * @throws com.ramy.bugreport.exception.ResourceNotFoundException 404 if the component or the user does not exist
      */
-    @Operation(summary = "Change the responsible user", description = "Access: ADMIN or DEVELOPER role. Note the camelCase path segment. Fails with 404 if the component or the user does not exist.")
+    @Operation(summary = "Change the responsible user", description = "Access: ADMIN or DEVELOPER role. Fails with 404 if the component or the user does not exist.")
     @ApiResponse(responseCode = "200", description = "Responsible user changed.")
     @BadRequestResponse
     @UnauthorizedResponse
     @ForbiddenResponse
     @NotFoundResponse
     @ConflictResponse
-    @PatchMapping("/{componentId}/responsibleUserId")
+    @PatchMapping("/{componentId}/responsible-user-id")
     public ResponseEntity<UpdateComponentResponse> updateResponsibleUserId(
             @Parameter(description = "Id of the component.", example = ApiExamples.UUID) @PathVariable UUID componentId,
             @Valid @RequestBody UpdateComponentResponsibleUserRequest request

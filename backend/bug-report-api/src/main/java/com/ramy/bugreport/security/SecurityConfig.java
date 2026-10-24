@@ -107,7 +107,7 @@ public class SecurityConfig {
 					.requestMatchers(HttpMethod.PATCH,
 							"/api/components/*/name",
 							"/api/components/*/description",
-							"/api/components/*/responsibleUserId")
+							"/api/components/*/responsible-user-id")
 					.hasAnyRole("ADMIN", "DEVELOPER")
 
 					// All signed-in users can create, update, and resolve bug reports.

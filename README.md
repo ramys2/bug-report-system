@@ -299,7 +299,7 @@ or 409. URLs that are not explicitly allowed answer 403.
 | POST | `/api/components` | Create a component | Admin, developer |
 | PATCH | `/api/components/{componentId}/name` | Rename a component | Admin, developer |
 | PATCH | `/api/components/{componentId}/description` | Change a component's description | Admin, developer |
-| PATCH | `/api/components/{componentId}/responsibleUserId` | Change the responsible user | Admin, developer |
+| PATCH | `/api/components/{componentId}/responsible-user-id` | Change the responsible user | Admin, developer |
 | GET | `/api/reports` | List all reports (brief) | Signed in |
 | GET | `/api/reports/{reportId}` | Get one report in full | Signed in |
 | GET | `/api/reports/reported` | Reports filed by me | Signed in |
