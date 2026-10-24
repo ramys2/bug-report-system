@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router";
 import "./Navbar.css";
 import { useContext } from "react";
 import { useTranslation } from "react-i18next";
+import { Blobatar } from "@blobatar/react";
 import AuthContext from "./AuthContext";
 import LanguageSwitcher from "./LanguageSwitcher";
 
@@ -62,7 +63,13 @@ function Navbar() {
                     <span
                         className="d-flex align-items-center gap-2 text-break link-secondary link-underline-opacity-0 link-underline-opacity-100-hover"
                     >
-                        <i aria-hidden="true" className="bi bi-person-circle fs-4" />
+                        <Blobatar
+                            name={auth.currentUser.id}
+                            size={28}
+                            alt=""
+                            aria-hidden="true"
+                            className="flex-shrink-0"
+                        />
                         {auth.currentUser.name}
                     </span>
                     <LanguageSwitcher />

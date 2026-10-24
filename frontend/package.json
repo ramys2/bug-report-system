@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@blobatar/react": "^2.7.0",
+    "blobatar": "^2.7.0",
     "bootstrap": "^5.3.8",
     "bootstrap-icons": "^1.13.1",
     "i18next": "^26.5.10",
