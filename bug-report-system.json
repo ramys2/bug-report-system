@@ -133,12 +133,6 @@
           "color": "#4a9270"
         },
         {
-          "id": "task-280e7f0c-cbb7-4749-8388-acdae6c100ef",
-          "title": "Implement UI translation",
-          "description": "",
-          "color": "#4a9270"
-        },
-        {
           "id": "task-cb25dc1f-f1f1-4f50-b4ca-99f909b9665b",
           "title": "Implement logging",
           "description": "",
@@ -150,6 +144,12 @@
       "id": "column-14e7a403-192c-4f53-950b-80997c07901c",
       "name": "Done",
       "tasks": [
+        {
+          "id": "task-280e7f0c-cbb7-4749-8388-acdae6c100ef",
+          "title": "Implement UI translation",
+          "description": "",
+          "color": "#4a9270"
+        },
         {
           "id": "task-5e312a7f-eec7-4e08-9f80-9609ec1ed16f",
           "title": "[Refactor] Add a ResolutionResponse DTO",
