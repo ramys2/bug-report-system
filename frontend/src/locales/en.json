@@ -1,0 +1,15 @@
+{
+    "navbar": {
+        "brand": "Bug Report",
+        "home": "Home",
+        "users": "Users",
+        "components": "Components",
+        "projects": "Projects",
+        "logout": "Log out"
+    },
+    "common": {
+        "language": "Language",
+        "english": "English",
+        "czech": "Czech"
+    }
+}

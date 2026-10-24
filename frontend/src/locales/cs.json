@@ -1,0 +1,15 @@
+{
+    "navbar": {
+        "brand": "Bug Report",
+        "home": "Domů",
+        "users": "Uživatelé",
+        "components": "Komponenty",
+        "projects": "Projekty",
+        "logout": "Odhlásit se"
+    },
+    "common": {
+        "language": "Jazyk",
+        "english": "Angličtina",
+        "czech": "Čeština"
+    }
+}
