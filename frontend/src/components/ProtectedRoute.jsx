@@ -1,4 +1,5 @@
 import { useContext } from "react";
+import { useTranslation } from "react-i18next";
 import { Navigate, Outlet, useLocation } from "react-router";
 import AuthContext from "./AuthContext";
 
@@ -9,6 +10,7 @@ import AuthContext from "./AuthContext";
  * the requested location in the router state, so `LoginForm` can send the user back afterwards.
  */
 function ProtectedRoute() {
+    const { t } = useTranslation();
     const auth = useContext(AuthContext);
     const location = useLocation();
 
@@ -16,7 +18,7 @@ function ProtectedRoute() {
         return (
             <div className="d-flex justify-content-center mt-5">
                 <output className="spinner-border">
-                    <span className="visually-hidden">Loading...</span>
+                    <span className="visually-hidden">{t("common.loading")}</span>
                 </output>
             </div>
         );

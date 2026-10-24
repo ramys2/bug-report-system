@@ -10,6 +10,81 @@
     "common": {
         "language": "Jazyk",
         "english": "Angličtina",
-        "czech": "Čeština"
+        "czech": "Čeština",
+        "backToHome": "Zpět na úvodní stránku",
+        "loading": "Načítání...",
+        "closeNotification": "Zavřít oznámení",
+        "close": "Zavřít",
+        "cancel": "Zrušit",
+        "reset": "Zrušit filtry",
+        "none": "Žádná",
+        "creating": "Vytváření...",
+        "requiredFields": "Vyplňte prosím všechna povinná pole.",
+        "missingInformation": "Chybějící údaje"
+    },
+    "auth": {
+        "email": "E-mail",
+        "password": "Heslo",
+        "signIn": "Přihlásit se",
+        "noAccount": "Nemáte účet?",
+        "register": "Zaregistrovat se",
+        "loginFailed": "Přihlášení se nezdařilo"
+    },
+    "errors": {
+        "invalidCredentials": "Neplatný e-mail nebo heslo.",
+        "loginUnavailable": "Nelze se přihlásit. Zkuste to prosím později.",
+        "pageNotFound": "Stránka nenalezena",
+        "pageNotFoundDescription": "Hledaná stránka neexistuje.",
+        "loadReports": "Nepodařilo se načíst hlášení chyb!",
+        "loadReportsTitle": "Nelze načíst hlášení",
+        "loadReported": "Nepodařilo se načíst vaše hlášení!",
+        "loadAssigned": "Nepodařilo se načíst hlášení přiřazená vám!",
+        "loadDevelopers": "Nepodařilo se načíst vývojáře.",
+        "loadDevelopersTitle": "Nelze načíst vývojáře",
+        "loadProjects": "Nepodařilo se načíst projekty.",
+        "loadProjectsTitle": "Nelze načíst projekty",
+        "loadComponents": "Nepodařilo se načíst komponenty.",
+        "loadComponentsTitle": "Nelze načíst komponenty",
+        "createReport": "Nepodařilo se vytvořit hlášení chyby. Zkuste to prosím znovu.",
+        "createReportTitle": "Hlášení nebylo vytvořeno"
+    },
+    "reports": {
+        "listLabel": "Hlášení chyb",
+        "createNew": "Vytvořit nové +",
+        "createHeading": "Vytvořit nové hlášení chyby",
+        "create": "Vytvořit hlášení chyby",
+        "quickFilters": "Rychlé filtry:",
+        "reportedByMe": "Nahlášené mnou",
+        "assignedToMe": "Přiřazené mně",
+        "title": "Název",
+        "author": "Autor",
+        "status": "Stav",
+        "severity": "Závažnost",
+        "createdAt": "Vytvořeno",
+        "assignee": "Řešitel",
+        "unassigned": "Nepřiřazeno",
+        "project": "Projekt",
+        "selectProject": "Vyberte projekt",
+        "component": "Komponenta",
+        "description": "Popis",
+        "stepsToReproduce": "Kroky k reprodukci",
+        "expectedBehavior": "Očekávané chování",
+        "actualBehavior": "Skutečné chování",
+        "selectSeverity": "Vyberte závažnost",
+        "statuses": {
+            "OPEN": "Otevřeno",
+            "ASSIGNED": "Přiřazeno",
+            "IN_PROGRESS": "Probíhá řešení",
+            "NEEDS_INFORMATION": "Vyžaduje doplnění informací",
+            "REVIEWING": "Probíhá kontrola",
+            "REJECTED": "Zamítnuto",
+            "CLOSED": "Uzavřeno"
+        },
+        "severities": {
+            "LOW": "Nízká",
+            "MEDIUM": "Střední",
+            "HIGH": "Vysoká",
+            "CRITICAL": "Kritická"
+        }
     }
 }

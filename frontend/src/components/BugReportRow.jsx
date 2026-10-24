@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { useTranslation } from "react-i18next";
 import "./BugReportRow.css";
 import { formatDateTime } from "../utils/date";
 
@@ -9,6 +10,8 @@ import { formatDateTime } from "../utils/date";
  * @param {import("../api/bug-report.js").BugReportBrief} props.report the report to show
  */
 function BugReportRow({ report }) {
+    const { t } = useTranslation();
+
     return (
         <article className="border rounded-4 px-3 py-3">
             <div className="row g-3 align-items-center">
@@ -18,19 +21,19 @@ function BugReportRow({ report }) {
                     </Link>
                 </div>
                 <div className="col-6 col-md-2">
-                    <span className="d-md-none d-block small text-secondary">Author</span>
+                    <span className="d-md-none d-block small text-secondary">{t("reports.author")}</span>
                     {report.reporterName}
                 </div>
                 <div className="col-6 col-md-2">
-                    <span className="d-md-none d-block small text-secondary">Status</span>
-                    {report.status}
+                    <span className="d-md-none d-block small text-secondary">{t("reports.status")}</span>
+                    {t(`reports.statuses.${report.status}`, { defaultValue: report.status })}
                 </div>
                 <div className="col-6 col-md-2">
-                    <span className="d-md-none d-block small text-secondary">Severity</span>
-                    {report.severity}
+                    <span className="d-md-none d-block small text-secondary">{t("reports.severity")}</span>
+                    {t(`reports.severities.${report.severity}`, { defaultValue: report.severity })}
                 </div>
                 <div className="col-6 col-md-3">
-                    <span className="d-md-none d-block small text-secondary">Created at</span>
+                    <span className="d-md-none d-block small text-secondary">{t("reports.createdAt")}</span>
                     {formatDateTime(report.createdAt)}
                 </div>
             </div>

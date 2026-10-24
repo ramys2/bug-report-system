@@ -10,6 +10,81 @@
     "common": {
         "language": "Language",
         "english": "English",
-        "czech": "Czech"
+        "czech": "Czech",
+        "backToHome": "Back to home",
+        "loading": "Loading...",
+        "closeNotification": "Close notification",
+        "close": "Close",
+        "cancel": "Cancel",
+        "reset": "Reset",
+        "none": "None",
+        "creating": "Creating...",
+        "requiredFields": "Please fill in all required fields.",
+        "missingInformation": "Missing information"
+    },
+    "auth": {
+        "email": "Email",
+        "password": "Password",
+        "signIn": "Sign In",
+        "noAccount": "Don't have an account?",
+        "register": "Register",
+        "loginFailed": "Login failed"
+    },
+    "errors": {
+        "invalidCredentials": "Invalid email or password.",
+        "loginUnavailable": "Unable to sign in. Please try again later.",
+        "pageNotFound": "Page not found",
+        "pageNotFoundDescription": "The page you are looking for does not exist.",
+        "loadReports": "Failed to fetch bug reports!",
+        "loadReportsTitle": "Unable to load reports",
+        "loadReported": "Couldn't fetch your reported items!",
+        "loadAssigned": "Couldn't fetch items assigned to you!",
+        "loadDevelopers": "Failed to fetch developers.",
+        "loadDevelopersTitle": "Unable to load developers",
+        "loadProjects": "Failed to fetch projects.",
+        "loadProjectsTitle": "Unable to load projects",
+        "loadComponents": "Failed to fetch components.",
+        "loadComponentsTitle": "Unable to load components",
+        "createReport": "Failed to create the bug report. Please try again.",
+        "createReportTitle": "Report not created"
+    },
+    "reports": {
+        "listLabel": "Bug reports",
+        "createNew": "Create new +",
+        "createHeading": "Create new bug report",
+        "create": "Create bug report",
+        "quickFilters": "Quick filters:",
+        "reportedByMe": "Reported by me",
+        "assignedToMe": "Assigned to me",
+        "title": "Title",
+        "author": "Author",
+        "status": "Status",
+        "severity": "Severity",
+        "createdAt": "Created at",
+        "assignee": "Assignee",
+        "unassigned": "Unassigned",
+        "project": "Project",
+        "selectProject": "Select a project",
+        "component": "Component",
+        "description": "Description",
+        "stepsToReproduce": "Steps to reproduce",
+        "expectedBehavior": "Expected behavior",
+        "actualBehavior": "Actual behavior",
+        "selectSeverity": "Select severity",
+        "statuses": {
+            "OPEN": "Open",
+            "ASSIGNED": "Assigned",
+            "IN_PROGRESS": "In progress",
+            "NEEDS_INFORMATION": "Needs information",
+            "REVIEWING": "Under review",
+            "REJECTED": "Rejected",
+            "CLOSED": "Closed"
+        },
+        "severities": {
+            "LOW": "Low",
+            "MEDIUM": "Medium",
+            "HIGH": "High",
+            "CRITICAL": "Critical"
+        }
     }
 }
