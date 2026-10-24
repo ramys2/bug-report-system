@@ -23,9 +23,6 @@ marked in the code comments and were not confirmed by running the application.
 - `application.yml` contains database, Artemis and mail credentials in plain text (dev defaults).
 - `ApiExceptionHandler` handles only a fixed list of exceptions. Unexpected errors, 405 and unsupported media type errors fall back to Spring's default handling (not checked).
 
-### API design
-- `BugReportResponse` serializes the domain `Resolution` object directly, tying the API shape to the domain class.
-
 ### Messaging
 - `BugReportEventPublisher` sends asynchronously after commit using a dedicated executor with one worker and a queue of 100 tasks by default. Configure it through `messaging.publisher.core-pool-size`, `max-pool-size`, and `queue-capacity`; invalid values prevent startup. It catches JMS send failures and makes up to three attempts, one second apart. Each outcome is logged to `logs/bug-report-publisher.log` (directory configurable with `PUBLISHER_LOG_PATH`), with rotation at 10 MB or daily, seven days of history and a 100 MB archive cap. Serialization failures are logged without retrying. Full queues or executor shutdown cause new submissions to be logged and dropped, never executed on the request thread. The database change is already committed; exhausted retries lose the notification, pending tasks do not survive a restart, and uncertain send results can cause duplicate notifications.
 

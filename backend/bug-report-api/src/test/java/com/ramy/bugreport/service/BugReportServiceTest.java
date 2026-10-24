@@ -29,6 +29,7 @@ import com.ramy.bugreport.domain.Component;
 import com.ramy.bugreport.domain.EBugSeverity;
 import com.ramy.bugreport.domain.EBugStatus;
 import com.ramy.bugreport.domain.EUserRole;
+import com.ramy.bugreport.domain.Resolution;
 import com.ramy.bugreport.domain.SoftwareProject;
 import com.ramy.bugreport.domain.UserAccount;
 import com.ramy.bugreport.dto.report.CloseBugReportRequest;
@@ -111,6 +112,11 @@ class BugReportServiceTest {
     @Test
     void getReportReturnsMappedReport() {
         var report = report(UUID.randomUUID());
+        var resolutionId = UUID.randomUUID();
+        var resolvedAt = LocalDateTime.of(2026, 7, 13, 12, 5);
+        report.setResolution(new Resolution(resolutionId, "Fixed the crash", resolvedAt,
+                "0.1.1", "https://example.invalid/commits/7a21c9d"));
+        report.setStatus(EBugStatus.CLOSED);
         var reporter = namedUser("Joe Reporter");
         var assignee = namedUser("Joe Developer");
         var project = project("Bug Report");
@@ -138,6 +144,10 @@ class BugReportServiceTest {
         assertThat(result.projectName()).isEqualTo("Bug Report");
         assertThat(result.componentId()).isEqualTo(componentId);
         assertThat(result.componentName()).isEqualTo("Backend API");
+        assertThat(result.resolution())
+                .extracting("id", "description", "resolvedAt", "fixedVersion", "commitUrl")
+                .containsExactly(resolutionId, "Fixed the crash", resolvedAt,
+                        "0.1.1", "https://example.invalid/commits/7a21c9d");
         verify(bugReportRepository).findById(report.getId());
         verify(userAccountRepository).findById(report.getReporterId());
         verify(userAccountRepository).findById(report.getAssigneeId());
@@ -158,6 +168,7 @@ class BugReportServiceTest {
         when(componentRepository.findById(report.getComponentId())).thenReturn(Optional.of(component));
 
         var result = service.getReport(report.getId());
+        assertThat(result.resolution()).isNull();
 
         assertThat(result.assigneeId()).isNull();
         assertThat(result.assigneeName()).isNull();
