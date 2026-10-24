@@ -12,9 +12,10 @@ const initialFormValues = { name: "", description: "" };
  * On success the form is cleared and `onCreated` is called; on failure an error toast is shown.
  *
  * @param {object} props
+ * @param {() => void} props.onHide requests closing the modal
  * @param {() => void} props.onCreated called after the project was created
  */
-export default function CreateProjectForm({ onCreated }) {
+export default function CreateProjectForm({ onCreated, onHide }) {
     const [formValues, setFormValues] = useState(initialFormValues);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -45,7 +46,7 @@ export default function CreateProjectForm({ onCreated }) {
         <form className="d-flex flex-column h-100" onSubmit={handleSubmit}>
             <div className="modal-header">
                 <h1 className="modal-title fs-5">Create new project</h1>
-                <button aria-label="Close" className="btn-close" data-bs-dismiss="modal" type="button" />
+                <button aria-label="Close" className="btn-close" onClick={onHide} type="button" />
             </div>
             <div className="modal-body overflow-auto">
                 <div className="mb-3">
@@ -72,7 +73,7 @@ export default function CreateProjectForm({ onCreated }) {
                 </div>
             </div>
             <div className="modal-footer">
-                <button className="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancel</button>
+                <button className="btn btn-secondary" onClick={onHide} type="button">Cancel</button>
                 <button className="btn btn-primary" disabled={isSubmitting} type="submit">
                     {isSubmitting ? "Creating..." : "Create project"}
                 </button>

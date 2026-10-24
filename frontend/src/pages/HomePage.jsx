@@ -111,11 +111,12 @@ function HomePage() {
                     </button>
                 </div>
                 <BugReportList reports={bugReports} />
-                <Modal onHide={() => setIsCreateOpen(false)} show={isCreateOpen}>
+                <Modal label="Create new bug report" onHide={() => setIsCreateOpen(false)} show={isCreateOpen}>
                     <CreateBugReportForm
                         developers={developers}
                         projects={projects}
                         onCreated={onReportCreated}
+                        onHide={() => setIsCreateOpen(false)}
                     />
                 </Modal>
             </main>

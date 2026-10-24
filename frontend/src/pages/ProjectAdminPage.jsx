@@ -118,8 +118,8 @@ export default function ProjectAdminPage() {
                 onSave={updateProjectDescription}
                 onSaved={handleDescriptionSaved}
             />
-            <Modal onHide={() => setIsCreateOpen(false)} show={isCreateOpen}>
-                <CreateProjectForm onCreated={handleProjectCreated} />
+            <Modal label="Create new project" onHide={() => setIsCreateOpen(false)} show={isCreateOpen}>
+                <CreateProjectForm onCreated={handleProjectCreated} onHide={() => setIsCreateOpen(false)} />
             </Modal>
         </div>
     );
