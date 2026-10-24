@@ -1,10 +1,15 @@
 package com.ramy.bugreport.exception;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -15,10 +20,12 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  * Translates exceptions thrown from controllers and services into JSON error responses
  * ({@link ApiErrorResponse}) with the matching HTTP status. Applies to all controllers.
  *
- * <p>Exceptions not listed here are not handled by this class and fall back to Spring's default handling.
+ * <p>Unexpected failures receive a safe generic message. Framework HTTP errors keep their status and headers.
  */
 @RestControllerAdvice
 public class ApiExceptionHandler {
+
+    private static final Logger logger = LoggerFactory.getLogger(ApiExceptionHandler.class);
 
     /** Maps {@link ResourceNotFoundException} to 404 with the exception's message. */
     @ExceptionHandler(ResourceNotFoundException.class)
@@ -27,33 +34,40 @@ public class ApiExceptionHandler {
     ) {
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
-                .body(new ApiErrorResponse(exception.getMessage()));
+                .body(new ApiErrorResponse(exception.getCode(), exception.getMessage()));
     }
     
-    /** Maps {@link DuplicateEmailException} and {@link BusinessRuleConflictException} to 409 with the exception's message. */
-    @ExceptionHandler({DuplicateEmailException.class, BusinessRuleConflictException.class})
-    public ResponseEntity<ApiErrorResponse> handleConflict(RuntimeException exception) {
+    /** Maps business-rule conflicts to 409 with their specific code and English message. */
+    @ExceptionHandler(BusinessRuleConflictException.class)
+    public ResponseEntity<ApiErrorResponse> handleConflict(BusinessRuleConflictException exception) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(new ApiErrorResponse(exception.getMessage()));
+                .body(new ApiErrorResponse(exception.getCode(), exception.getMessage()));
+    }
+
+    /** Maps an email already in use to 409. */
+    @ExceptionHandler(DuplicateEmailException.class)
+    public ResponseEntity<ApiErrorResponse> handleDuplicateEmail(DuplicateEmailException exception) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ApiErrorResponse(exception.getCode(), exception.getMessage()));
     }
 
     /** Maps database constraint violations (e.g. a foreign key or NOT NULL failure) to 409 with a generic message; details are not exposed. */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiErrorResponse> handleDataIntegrityViolation() {
         return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(new ApiErrorResponse("Request conflicts with existing data."));
+                .body(new ApiErrorResponse(ErrorCode.DATA_CONFLICT, "Request conflicts with existing data."));
     }
 
+    /** Maps invalid request values and bodies to 400 without exposing validation details. */
     @ExceptionHandler({
             MethodArgumentNotValidException.class,
             HttpMessageNotReadableException.class,
             MethodArgumentTypeMismatchException.class,
             MissingServletRequestParameterException.class
     })
-    /** Maps failed validation, unreadable JSON, malformed path or query values (e.g. a bad UUID) and missing required query parameters to 400 with a generic message. */
     public ResponseEntity<ApiErrorResponse> handleInvalidRequest() {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ApiErrorResponse("Request contains invalid values."));
+                .body(new ApiErrorResponse(ErrorCode.INVALID_REQUEST, "Request contains invalid values."));
     }
 
     /**
@@ -63,6 +77,33 @@ public class ApiExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiErrorResponse> handleAccessDenied() {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(new ApiErrorResponse("Access denied."));
+                .body(new ApiErrorResponse(ErrorCode.ACCESS_DENIED, "Access denied."));
+    }
+
+    /**
+     * Handles unexpected failures without exposing their details. Spring's HTTP exceptions
+     * (for example, an unsupported method or media type) keep their status and response headers.
+     */
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiErrorResponse> handleUnexpected(Exception exception) {
+        HttpStatusCode status = HttpStatus.INTERNAL_SERVER_ERROR;
+        HttpHeaders headers = new HttpHeaders();
+
+        if (exception instanceof ErrorResponse errorResponse) {
+            status = errorResponse.getStatusCode();
+            headers = errorResponse.getHeaders();
+
+            if (!status.is5xxServerError()) {
+                HttpStatus knownStatus = HttpStatus.resolve(status.value());
+                String message = knownStatus == null ? "Request could not be processed." : knownStatus.getReasonPhrase();
+                return ResponseEntity.status(status).headers(headers)
+                        .body(new ApiErrorResponse(ErrorCode.INVALID_REQUEST, message));
+            }
+        }
+
+        // Exception messages can contain sensitive values; record only the exception type.
+        logger.error("Unexpected API error (exceptionType={})", exception.getClass().getName());
+        return ResponseEntity.status(status).headers(headers)
+                .body(new ApiErrorResponse(ErrorCode.INTERNAL_ERROR, "An unexpected error occurred."));
     }
 }

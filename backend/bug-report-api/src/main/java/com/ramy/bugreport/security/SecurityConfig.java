@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -19,8 +20,11 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.ramy.bugreport.repository.IUserAccountRepository;
+import com.ramy.bugreport.exception.ApiErrorResponse;
+import com.ramy.bugreport.exception.ErrorCode;
 
 import jakarta.servlet.http.HttpServletResponse;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Spring Security configuration: which URLs need which role, session-based form login,
@@ -60,6 +64,7 @@ public class SecurityConfig {
 	 * @param currentUserAuthenticationFilter refreshes the user on every request
 	 * @param apiAuthenticationEntryPoint answers 401
 	 * @param apiAccessDeniedHandler answers 403
+	 * @param objectMapper serializes login error responses using the API's JSON configuration
 	 * @throws Exception if the filter chain cannot be built
 	 */
 	@Bean
@@ -67,7 +72,8 @@ public class SecurityConfig {
             HttpSecurity http,
             CurrentUserAuthenticationFilter currentUserAuthenticationFilter,
             ApiAuthenticationEntryPoint apiAuthenticationEntryPoint,
-            ApiAccessDeniedHandler apiAccessDeniedHandler
+            ApiAccessDeniedHandler apiAccessDeniedHandler,
+            ObjectMapper objectMapper
     ) throws Exception {
 		http
 			.cors(Customizer.withDefaults())
@@ -138,6 +144,9 @@ public class SecurityConfig {
 					})
 					.failureHandler((request, response, exception) -> {
 						response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+						response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+						response.getWriter().write(objectMapper.writeValueAsString(
+								new ApiErrorResponse(ErrorCode.INVALID_CREDENTIALS, "Invalid email or password.")));
 					})
 					.permitAll()
 			)

@@ -17,6 +17,7 @@ import com.ramy.bugreport.dto.component.UpdateComponentDescriptionRequest;
 import com.ramy.bugreport.dto.component.UpdateComponentNameRequest;
 import com.ramy.bugreport.dto.component.UpdateComponentResponsibleUserRequest;
 import com.ramy.bugreport.dto.component.UpdateComponentResponse;
+import com.ramy.bugreport.exception.ErrorCode;
 import com.ramy.bugreport.exception.ResourceNotFoundException;
 import com.ramy.bugreport.repository.IComponentRepository;
 import com.ramy.bugreport.repository.ISoftwareProjectRepository;
@@ -171,18 +172,23 @@ public class ComponentService {
     private Component componentById(UUID componentId) {
         return componentRepository.findById(componentId)
                 .orElseThrow(() -> new ResourceNotFoundException(
+                        ErrorCode.COMPONENT_NOT_FOUND,
                         "Component with id=%s does not exist!".formatted(componentId)));
     }
 
     private void requireProjectExists(UUID projectId) {
         if (!softwareProjectRepository.existsById(projectId)) {
-            throw new ResourceNotFoundException("Project with id=%s does not exist!".formatted(projectId));
+            throw new ResourceNotFoundException(
+                    ErrorCode.PROJECT_NOT_FOUND,
+                    "Project with id=%s does not exist!".formatted(projectId));
         }
     }
 
     private void requireUserExists(UUID userId) {
         if (!userAccountRepository.existsById(userId)) {
-            throw new ResourceNotFoundException("User with id=%s does not exist!".formatted(userId));
+            throw new ResourceNotFoundException(
+                    ErrorCode.USER_NOT_FOUND,
+                    "User with id=%s does not exist!".formatted(userId));
         }
     }
 

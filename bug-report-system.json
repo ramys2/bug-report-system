@@ -7,6 +7,12 @@
       "name": "To Do",
       "tasks": [
         {
+          "id": "task-e64b1073-5f82-4e7e-8f76-f3935c2e8310",
+          "title": "[Design] Decide whether API errors should return only error codes",
+          "description": "Consider removing human-readable messages from API error responses once the frontend maps stable error codes to localized text. Decide how English diagnostic messages should be retained in server logs and review compatibility with API clients before changing the response contract. Keep both code and message for now.",
+          "color": "#4f78c4"
+        },
+        {
           "id": "task-754b8d21-38b0-4f75-8c4b-b39d37096d21",
           "title": "Refactor Dockerfile for frontend",
           "description": "Refactor Dockerfile for frontend so it is possible to build the application and run it over 'nginx'.",

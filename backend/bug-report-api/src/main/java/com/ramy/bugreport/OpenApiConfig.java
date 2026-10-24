@@ -40,7 +40,7 @@ public class OpenApiConfig {
                The token changes when you sign in, so call `GET /api/csrf` again after login and use the new token.
 
             Only `GET /api/csrf` and `POST /api/accounts` (registration) are public. Missing sign-in answers 401,
-            a missing role, ownership rule or CSRF token answers 403. Errors have the body `{"message": "..."}`.
+            a missing role, ownership rule or CSRF token answers 403. Errors have the body `{"code": "...", "message": "..."}`.
             """;
 
     /** Builds the API info and the tags, one per resource group. */
@@ -107,7 +107,7 @@ public class OpenApiConfig {
                         .addMediaType("application/x-www-form-urlencoded", new MediaType().schema(form))))
                 .responses(new ApiResponses()
                         .addApiResponse("200", new ApiResponse().description("Signed in; the session cookie is set. The body is empty."))
-                        .addApiResponse("401", new ApiResponse().description("Wrong email or password. The body is empty."))
+                        .addApiResponse("401", errorResponse("Wrong email or password (INVALID_CREDENTIALS)."))
                         .addApiResponse("403", errorResponse("The CSRF token is missing or invalid.")));
     }
 

@@ -14,6 +14,7 @@ import com.ramy.bugreport.domain.UserAccount;
 import com.ramy.bugreport.dto.comment.CommentResponse;
 import com.ramy.bugreport.dto.comment.CreateCommentRequest;
 import com.ramy.bugreport.dto.comment.CreateCommentResponse;
+import com.ramy.bugreport.exception.ErrorCode;
 import com.ramy.bugreport.exception.ResourceNotFoundException;
 import com.ramy.bugreport.exception.BusinessRuleConflictException;
 import com.ramy.bugreport.repository.IBugReportRepository;
@@ -58,7 +59,9 @@ public class CommentService {
      */
     public List<CommentResponse> getComments(UUID reportId) {
         if (!bugReportRepository.existsById(reportId)) {
-            throw new ResourceNotFoundException("Report with id: %s".formatted(reportId));
+            throw new ResourceNotFoundException(
+                    ErrorCode.BUG_REPORT_NOT_FOUND,
+                    "Report with id: %s".formatted(reportId));
         }
 
         return commentRepository.findByBugReportId(reportId)
@@ -67,6 +70,7 @@ public class CommentService {
                 .map(comment -> {
                     UserAccount author = userAccountRepository.findById(comment.getAuthorId())
                             .orElseThrow(() -> new ResourceNotFoundException(
+                                    ErrorCode.USER_NOT_FOUND,
                                     "User with id=%s does not exist!".formatted(comment.getAuthorId())
                             ));
                     return CommentResponse.from(comment, author);
@@ -98,6 +102,7 @@ public class CommentService {
 
         UserAccount author = userAccountRepository.findById(authorId)
                 .orElseThrow(() -> new ResourceNotFoundException(
+                        ErrorCode.USER_NOT_FOUND,
                         "User with id=%s does not exist!".formatted(authorId)
                 ));
 
@@ -134,7 +139,9 @@ public class CommentService {
     )
     public void delete(UUID commentId) {
         Comment comment = commentRepository.findById(commentId)
-                .orElseThrow(() -> new ResourceNotFoundException("Comment with id: %s".formatted(commentId)));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        ErrorCode.COMMENT_NOT_FOUND,
+                        "Comment with id: %s".formatted(commentId)));
 
         requireOpenReport(comment.getBugReportId());
         commentRepository.delete(comment);
@@ -143,10 +150,14 @@ public class CommentService {
     /** Fails unless the report exists and is not closed. */
     private void requireOpenReport(UUID reportId) {
         var report = bugReportRepository.findById(reportId)
-                .orElseThrow(() -> new ResourceNotFoundException("Report with id: %s".formatted(reportId)));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        ErrorCode.BUG_REPORT_NOT_FOUND,
+                        "Report with id: %s".formatted(reportId)));
 
         if (report.getStatus() == EBugStatus.CLOSED) {
-            throw new BusinessRuleConflictException("Comments cannot be changed on a closed report.");
+            throw new BusinessRuleConflictException(
+                    ErrorCode.CLOSED_REPORT_COMMENTS_FORBIDDEN,
+                    "Comments cannot be changed on a closed report.");
         }
     }
 }
