@@ -36,9 +36,10 @@ const severities = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
  * @param {object} props
  * @param {{id: string, name: string}[]} props.developers users that can be chosen as assignee
  * @param {{id: string, name: string}[]} props.projects projects to choose from
+ * @param {() => void} props.onHide requests closing the modal
  * @param {() => void} props.onCreated called after the report was created
  */
-function CreateBugReportForm({ developers, projects, onCreated }) {
+function CreateBugReportForm({ developers, projects, onCreated, onHide }) {
     const [formValues, setFormValues] = useState(initialFormValues);
     const [components, setComponents] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -125,7 +126,7 @@ function CreateBugReportForm({ developers, projects, onCreated }) {
                 <button
                     type="button"
                     className="btn-close"
-                    data-bs-dismiss="modal"
+                    onClick={onHide}
                     aria-label="Close"
                 />
             </div>
@@ -270,7 +271,7 @@ function CreateBugReportForm({ developers, projects, onCreated }) {
             </div>
 
             <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">
+                <button type="button" className="btn btn-secondary" onClick={onHide}>
                     Cancel
                 </button>
                 <button type="submit" className="btn btn-primary" disabled={isSubmitting}>

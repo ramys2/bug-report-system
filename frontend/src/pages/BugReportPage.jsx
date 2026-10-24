@@ -713,14 +713,14 @@ export default function BugReportPage() {
                             )}
                         </section>
 
-                        <Modal onHide={() => setIsCloseModalOpen(false)} show={isCloseModalOpen}>
+                        <Modal label="Close issue" onHide={() => setIsCloseModalOpen(false)} show={isCloseModalOpen}>
                             <form onSubmit={submitResolution}>
                                 <div className="modal-header">
                                     <h2 className="modal-title fs-5">Close issue</h2>
                                     <button
                                         aria-label="Close"
                                         className="btn-close"
-                                        data-bs-dismiss="modal"
+                                        onClick={() => setIsCloseModalOpen(false)}
                                         disabled={isClosing}
                                         type="button"
                                     />
@@ -768,7 +768,7 @@ export default function BugReportPage() {
                                 <div className="modal-footer">
                                     <button
                                         className="btn btn-secondary"
-                                        data-bs-dismiss="modal"
+                                        onClick={() => setIsCloseModalOpen(false)}
                                         disabled={isClosing}
                                         type="button"
                                     >
@@ -781,13 +781,13 @@ export default function BugReportPage() {
                             </form>
                         </Modal>
 
-                        <Modal fullscreen={false} onHide={() => setIsResolutionModalOpen(false)} show={isResolutionModalOpen}>
+                        <Modal label="Resolution" fullscreen={false} onHide={() => setIsResolutionModalOpen(false)} show={isResolutionModalOpen}>
                             <div className="modal-header">
                                 <h2 className="modal-title fs-5">Resolution</h2>
                                 <button
                                     aria-label="Close"
                                     className="btn-close"
-                                    data-bs-dismiss="modal"
+                                    onClick={() => setIsResolutionModalOpen(false)}
                                     type="button"
                                 />
                             </div>
@@ -808,7 +808,7 @@ export default function BugReportPage() {
                                 </dl>
                             </div>
                             <div className="modal-footer">
-                                <button className="btn btn-secondary" data-bs-dismiss="modal" type="button">
+                                <button className="btn btn-secondary" onClick={() => setIsResolutionModalOpen(false)} type="button">
                                     Close
                                 </button>
                             </div>

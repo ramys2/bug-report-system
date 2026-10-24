@@ -266,8 +266,8 @@ export default function ComponentAdminPage() {
                 onSave={updateComponentDescription}
                 onSaved={handleDescriptionSaved}
             />
-            <Modal onHide={() => setIsCreateOpen(false)} show={isCreateOpen}>
-                <CreateComponentForm onCreated={handleComponentCreated} />
+            <Modal label="Create new component" onHide={() => setIsCreateOpen(false)} show={isCreateOpen}>
+                <CreateComponentForm onCreated={handleComponentCreated} onHide={() => setIsCreateOpen(false)} />
             </Modal>
         </div>
     );

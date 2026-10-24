@@ -21,7 +21,7 @@ export default function EditDescriptionModal({ item, label, onSave, onSaved, onH
     const [isSaving, setIsSaving] = useState(false);
 
     // Reset the draft when a new item is selected (adjusting state during render is React's recommended alternative to an effect here).
-    // Nothing is reset when `item` goes back to `null`, so the text does not blank out while the modal fades away.
+    // Nothing is reset when `item` goes back to `null`, so closing the modal preserves the draft until another item is selected.
     if (item !== shownItem) {
         setShownItem(item);
         if (item) {
@@ -42,7 +42,7 @@ export default function EditDescriptionModal({ item, label, onSave, onSaved, onH
     }
 
     return (
-        <Modal onHide={onHide} show={item !== null}>
+        <Modal label={`Edit ${label} description`} onHide={onHide} show={item !== null}>
             <div className="modal-header">
                 <h2 className="modal-title fs-5">Edit {label} description</h2>
                 <button aria-label="Close" className="btn-close" disabled={isSaving} onClick={onHide} type="button" />

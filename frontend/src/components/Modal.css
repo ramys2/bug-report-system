@@ -1,0 +1,8 @@
+/* React controls visibility; Bootstrap supplies the inner dialog layout. */
+.react-modal {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.react-modal:not([hidden]) {
+    display: block;
+}
