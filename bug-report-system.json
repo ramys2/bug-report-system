@@ -7,24 +7,6 @@
       "name": "To Do",
       "tasks": [
         {
-          "id": "task-4d73c2ab-aacd-479e-b199-aaecf5ceff16",
-          "title": "Implement second authentication method",
-          "description": "",
-          "color": "#4a9270"
-        },
-        {
-          "id": "task-4d15053a-32cb-4249-a798-7e0495dcd6d0",
-          "title": "Implement register functionality",
-          "description": "",
-          "color": "#4a9270"
-        },
-        {
-          "id": "task-280e7f0c-cbb7-4749-8388-acdae6c100ef",
-          "title": "Implement UI translation",
-          "description": "",
-          "color": "#4a9270"
-        },
-        {
           "id": "task-754b8d21-38b0-4f75-8c4b-b39d37096d21",
           "title": "Refactor Dockerfile for frontend",
           "description": "Refactor Dockerfile for frontend so it is possible to build the application and run it over 'nginx'.",
@@ -133,9 +115,57 @@
       "name": "In progress",
       "tasks": [
         {
-          "id": "task-c641dcae-69f6-4921-897c-e6b5a6b3db42",
-          "title": "[Refactor] Simplify BugReport builder and mapper handling of id, status and resolution",
-          "description": "Oddities.md > Backend > Behavior.\nThe builder always starts a report as OPEN and cannot set id, status or resolution; BugReportMapper.toDomain sets them afterwards with setters. Consider a cleaner way to rebuild a report from the database.",
+          "id": "task-4d15053a-32cb-4249-a798-7e0495dcd6d0",
+          "title": "Implement register functionality",
+          "description": "",
+          "color": "#4a9270"
+        },
+        {
+          "id": "task-4d73c2ab-aacd-479e-b199-aaecf5ceff16",
+          "title": "Implement second authentication method",
+          "description": "",
+          "color": "#4a9270"
+        },
+        {
+          "id": "task-280e7f0c-cbb7-4749-8388-acdae6c100ef",
+          "title": "Implement UI translation",
+          "description": "",
+          "color": "#4a9270"
+        },
+        {
+          "id": "task-cb25dc1f-f1f1-4f50-b4ca-99f909b9665b",
+          "title": "Implement logging",
+          "description": "",
+          "color": "#4a9270"
+        }
+      ]
+    },
+    {
+      "id": "column-14e7a403-192c-4f53-950b-80997c07901c",
+      "name": "Done",
+      "tasks": [
+        {
+          "id": "task-5e312a7f-eec7-4e08-9f80-9609ec1ed16f",
+          "title": "[Refactor] Add a ResolutionResponse DTO",
+          "description": "Oddities.md > Backend > API design.\nBugReportResponse serializes the domain Resolution object directly, tying the API shape to the domain class.",
+          "color": "#7a5ab5"
+        },
+        {
+          "id": "task-e2af467b-1a20-4338-99ca-16da4dc5b46f",
+          "title": "[Design] Handle failures when publishing events",
+          "description": "Oddities.md > Backend > Messaging.\nBugReportEventPublisher does not catch send failures; the database change is already committed when sending fails. Decide on logging, retry or an outbox.",
+          "color": "#4f78c4"
+        },
+        {
+          "id": "task-dc9e8a35-8e0d-4518-979f-3c6cc4506dc4",
+          "title": "[Design] Use one path style for update endpoints",
+          "description": "Oddities.md > Backend > API design.\nComponent uses the camelCase segment /responsibleUserId; report endpoints use kebab-case (/steps-to-reproduce).",
+          "color": "#4f78c4"
+        },
+        {
+          "id": "task-760fb4c5-b2a0-4eee-89b5-e3e2a867e613",
+          "title": "[Refactor] Replace Bootstrap modal DOM handling with React state",
+          "description": "Oddities.md > Frontend.\nModal relies on Bootstrap's JavaScript, and pages open and close modals with document.getElementById plus the Bootstrap Modal API, mixing DOM access with React state.",
           "color": "#7a5ab5"
         },
         {
@@ -145,35 +175,11 @@
           "color": "#7a5ab5"
         },
         {
-          "id": "task-760fb4c5-b2a0-4eee-89b5-e3e2a867e613",
-          "title": "[Refactor] Replace Bootstrap modal DOM handling with React state",
-          "description": "Oddities.md > Frontend.\nModal relies on Bootstrap's JavaScript, and pages open and close modals with document.getElementById plus the Bootstrap Modal API, mixing DOM access with React state.",
+          "id": "task-c641dcae-69f6-4921-897c-e6b5a6b3db42",
+          "title": "[Refactor] Simplify BugReport builder and mapper handling of id, status and resolution",
+          "description": "Oddities.md > Backend > Behavior.\nThe builder always starts a report as OPEN and cannot set id, status or resolution; BugReportMapper.toDomain sets them afterwards with setters. Consider a cleaner way to rebuild a report from the database.",
           "color": "#7a5ab5"
         },
-        {
-          "id": "task-dc9e8a35-8e0d-4518-979f-3c6cc4506dc4",
-          "title": "[Design] Use one path style for update endpoints",
-          "description": "Oddities.md > Backend > API design.\nComponent uses the camelCase segment /responsibleUserId; report endpoints use kebab-case (/steps-to-reproduce).",
-          "color": "#4f78c4"
-        },
-        {
-          "id": "task-e2af467b-1a20-4338-99ca-16da4dc5b46f",
-          "title": "[Design] Handle failures when publishing events",
-          "description": "Oddities.md > Backend > Messaging.\nBugReportEventPublisher does not catch send failures; the database change is already committed when sending fails. Decide on logging, retry or an outbox.",
-          "color": "#4f78c4"
-        },
-        {
-          "id": "task-5e312a7f-eec7-4e08-9f80-9609ec1ed16f",
-          "title": "[Refactor] Add a ResolutionResponse DTO",
-          "description": "Oddities.md > Backend > API design.\nBugReportResponse serializes the domain Resolution object directly, tying the API shape to the domain class.",
-          "color": "#7a5ab5"
-        }
-      ]
-    },
-    {
-      "id": "column-14e7a403-192c-4f53-950b-80997c07901c",
-      "name": "Done",
-      "tasks": [
         {
           "id": "task-61537eca-f4ef-4b0d-9589-71e3394d3ffc",
           "title": "[UX] Show a message when login fails",
