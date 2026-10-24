@@ -23,6 +23,7 @@ import { getAllComponents } from "../api/component";
 import { getAllProjects } from "../api/project";
 import AuthContext from "../components/AuthContext";
 import Modal from "../components/Modal";
+import { getApiErrorMessage } from "../api/error";
 import { showToast } from "../components/toast";
 
 /**
@@ -116,7 +117,7 @@ function EditableReportSection({
                 onValueSaved(draftValue);
                 setIsEditing(false);
             })
-            .fail(() => showToast("danger", i18n.t("errors.updateField", { field: i18n.t(titleKey) }), i18n.t("errors.updateFailed")))
+            .fail((xhr) => showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.updateFailed")))
             .always(() => setIsSaving(false));
     }
 
@@ -256,7 +257,7 @@ function EditableSelectField({
                 onValueSaved(selectedOption);
                 setIsEditing(false);
             })
-            .fail(() => showToast("danger", i18n.t("errors.updateField", { field: i18n.t(labelKey) }), i18n.t("errors.updateFailed")))
+            .fail((xhr) => showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.updateFailed")))
             .always(() => setIsSaving(false));
     }
 
@@ -357,18 +358,18 @@ export default function BugReportPage() {
                 setBugReport(data);
                 setLoadError(false);
             })
-            .fail(() => {
+            .fail((xhr) => {
                 setLoadError(true);
-                showToast("danger", i18n.t("errors.loadReport"), i18n.t("errors.loadReportTitle"));
+                showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.loadReportTitle"));
             });
 
         getComments(id)
             .done((data) => setComments(data))
-            .fail(() => showToast("danger", i18n.t("errors.loadComments"), i18n.t("errors.loadCommentsTitle")));
+            .fail((xhr) => showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.loadCommentsTitle")));
 
         getStatusTransitions()
             .done(setStatusTransitions)
-            .fail(() => showToast("danger", i18n.t("errors.loadStatuses"), i18n.t("errors.loadStatusesTitle")));
+            .fail((xhr) => showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.loadStatusesTitle")));
     }, [id, i18n]);
 
     function loadDevelopers() {
@@ -376,7 +377,7 @@ export default function BugReportPage() {
         if (developers.length === 0) {
             getDevelopers()
                 .done(setDevelopers)
-                .fail(() => showToast("danger", i18n.t("errors.loadDevelopers"), i18n.t("errors.loadDevelopersTitle")));
+                .fail((xhr) => showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.loadDevelopersTitle")));
         }
     }
 
@@ -384,7 +385,7 @@ export default function BugReportPage() {
         if (projects.length === 0) {
             getAllProjects()
                 .done(setProjects)
-                .fail(() => showToast("danger", i18n.t("errors.loadProjects"), i18n.t("errors.loadProjectsTitle")));
+                .fail((xhr) => showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.loadProjectsTitle")));
         }
     }
 
@@ -401,9 +402,9 @@ export default function BugReportPage() {
                     setComponents(projectComponents);
                 }
             })
-            .fail(() => {
+            .fail((xhr) => {
                 if (isCurrentProject) {
-                    showToast("danger", i18n.t("errors.loadComponents"), i18n.t("errors.loadComponentsTitle"));
+                    showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.loadComponentsTitle"));
                 }
             });
 
@@ -426,7 +427,7 @@ export default function BugReportPage() {
                 setCommentDraft("");
                 setIsCommentEditing(false);
             })
-            .fail(() => showToast("danger", i18n.t("errors.saveComment"), i18n.t("errors.saveCommentTitle")))
+            .fail((xhr) => showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.saveCommentTitle")))
             .always(() => setIsCommentSaving(false));
     }
 
@@ -439,7 +440,7 @@ export default function BugReportPage() {
                     existingComments.filter((comment) => comment.id !== commentId)
                 ));
             })
-            .fail(() => showToast("danger", i18n.t("errors.removeComment"), i18n.t("errors.removeCommentTitle")))
+            .fail((xhr) => showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.removeCommentTitle")))
             .always(() => setRemovingCommentId(null));
     }
 
@@ -471,9 +472,9 @@ export default function BugReportPage() {
                 setIsCloseModalOpen(false);
                 getReport(bugReport.id)
                     .done(setBugReport)
-                    .fail(() => showToast("danger", i18n.t("errors.refreshClosedReport"), i18n.t("errors.refreshReportTitle")));
+                    .fail((xhr) => showToast("danger", i18n.t("errors.refreshClosedReport", { error: getApiErrorMessage(xhr) }), i18n.t("errors.refreshReportTitle")));
             })
-            .fail(() => showToast("danger", i18n.t("errors.closeReport"), i18n.t("errors.closeReportTitle")))
+            .fail((xhr) => showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.closeReportTitle")))
             .always(() => setIsClosing(false));
     }
 

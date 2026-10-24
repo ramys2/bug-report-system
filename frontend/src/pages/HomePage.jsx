@@ -4,6 +4,7 @@ import BugReportList from "../components/BugReportList";
 import CreateBugReportForm from "../components/CreateBugReportForm";
 import Modal from "../components/Modal";
 import QuickFilters from "../components/QuickFilters";
+import { getApiErrorMessage } from "../api/error";
 import { showToast } from "../components/toast";
 import "./HomePage.css";
 import { getAllReports, getAssigned, getReported } from "../api/bug-report";
@@ -30,8 +31,8 @@ function HomePage() {
             .done((data) => {
                 setBugReports(data);
             })
-            .fail(() => {
-                showToast("danger", i18n.t("errors.loadReports"), i18n.t("errors.loadReportsTitle"));
+            .fail((xhr) => {
+                showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.loadReportsTitle"));
             });
     }, [i18n]);
 
@@ -44,13 +45,13 @@ function HomePage() {
         if (developers.length === 0) {
             getDevelopers()
                 .done(setDevelopers)
-                .fail(() => showToast("danger", i18n.t("errors.loadDevelopers"), i18n.t("errors.loadDevelopersTitle")));
+                .fail((xhr) => showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.loadDevelopersTitle")));
         }
 
         if (projects.length === 0) {
             getAllProjects()
                 .done(setProjects)
-                .fail(() => showToast("danger", i18n.t("errors.loadProjects"), i18n.t("errors.loadProjectsTitle")));
+                .fail((xhr) => showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.loadProjectsTitle")));
         }
     }
 
@@ -61,8 +62,8 @@ function HomePage() {
             .done((data) => {
                 setBugReports(data);
             })
-            .fail(() => {
-                showToast("danger", i18n.t("errors.loadReported"), i18n.t("errors.loadReportsTitle"));
+            .fail((xhr) => {
+                showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.loadReportsTitle"));
             })
     }
 
@@ -73,8 +74,8 @@ function HomePage() {
             .done((data) => {
                 setBugReports(data);
             })
-            .fail(() => {
-                showToast("danger", i18n.t("errors.loadAssigned"), i18n.t("errors.loadReportsTitle"));
+            .fail((xhr) => {
+                showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.loadReportsTitle"));
             })
     }
 

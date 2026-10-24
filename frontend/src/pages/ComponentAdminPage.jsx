@@ -4,6 +4,7 @@ import Modal from "../components/Modal";
 import CreateComponentForm from "../components/CreateComponentForm";
 import EditableName from "../components/EditableName";
 import EditDescriptionModal from "../components/EditDescriptionModal";
+import { getApiErrorMessage } from "../api/error";
 import { showToast } from "../components/toast";
 import {
     getAllComponents,
@@ -45,10 +46,10 @@ function EditableResponsibleUser({ component, onResponsibleUserSaved }) {
                     setUsers(matchingUsers);
                 }
             })
-            .fail(() => {
+            .fail((xhr) => {
                 if (isCurrentSearch) {
                     setUsers([]);
-                    showToast("danger", i18n.t("errors.searchUsers"), i18n.t("errors.searchFailed"));
+                    showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.searchFailed"));
                 }
             })
             .always(() => {
@@ -93,7 +94,7 @@ function EditableResponsibleUser({ component, onResponsibleUserSaved }) {
                 setSearch("");
                 setUsers([]);
             })
-            .fail(() => showToast("danger", i18n.t("errors.updateResponsibleUser"), i18n.t("errors.updateFailed")))
+            .fail((xhr) => showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.updateFailed")))
             .always(() => setIsSaving(false));
     }
 
@@ -170,7 +171,7 @@ export default function ComponentAdminPage() {
     const loadComponents = useCallback(() => {
         return getAllComponents()
             .done(setComponents)
-            .fail(() => showToast("danger", i18n.t("errors.loadComponents"), i18n.t("errors.loadComponentsTitle")))
+            .fail((xhr) => showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.loadComponentsTitle")))
             .always(() => setIsLoading(false));
     }, [i18n]);
 
@@ -236,7 +237,6 @@ export default function ComponentAdminPage() {
                                         <td>
                                             <EditableName
                                                 id={component.id}
-                                                label="component"
                                                 name={component.name}
                                                 onNameSaved={(id, name) => updateComponent(id, { name })}
                                                 onSave={updateComponentName}

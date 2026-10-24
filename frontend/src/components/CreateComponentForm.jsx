@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { createComponent } from "../api/component";
 import { searchUsers } from "../api/account";
 import { getAllProjects } from "../api/project";
+import { getApiErrorMessage } from "../api/error";
 import { showToast } from "./toast";
 
 /**
@@ -15,7 +16,7 @@ const initialFormValues = { name: "", projectId: "", description: "" };
  *
  * The projects to choose from are loaded once when the form is mounted (`GET /api/projects`). The responsible user is picked by searching users by name
  * (`GET /api/accounts/users?search=...`); results of outdated searches are ignored.
- * Name and project are required; the responsible user is optional. A 404 shows a localized message about a missing related item; other failures show a generic localized creation error.
+ * Name and project are required; the responsible user is optional. Failures show localized messages resolved from backend error codes or a safe fallback.
  * On success the form is cleared and `onCreated` is called.
  *
  * @param {object} props
@@ -35,7 +36,7 @@ export default function CreateComponentForm({ onCreated, onHide }) {
     useEffect(() => {
         getAllProjects()
             .done(setProjects)
-            .fail(() => showToast("danger", i18n.t("errors.loadProjects"), i18n.t("errors.loadProjectsTitle")));
+            .fail((xhr) => showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.loadProjectsTitle")));
     }, [i18n]);
 
     useEffect(() => {
@@ -53,10 +54,10 @@ export default function CreateComponentForm({ onCreated, onHide }) {
                     setUsers(matchingUsers);
                 }
             })
-            .fail(() => {
+            .fail((xhr) => {
                 if (isCurrentSearch) {
                     setUsers([]);
-                    showToast("danger", i18n.t("errors.searchUsers"), i18n.t("errors.searchFailed"));
+                    showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.searchFailed"));
                 }
             })
             .always(() => {
@@ -113,11 +114,8 @@ export default function CreateComponentForm({ onCreated, onHide }) {
                 setResponsibleUser(null);
                 onCreated();
             })
-            .fail((jqXHR) => {
-                const message = jqXHR.status === 404
-                    ? i18n.t("errors.createComponentNotFound")
-                    : i18n.t("errors.createComponent");
-                showToast("danger", message, i18n.t("errors.createComponentTitle"));
+            .fail((xhr) => {
+                showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.createComponentTitle"));
             })
             .always(() => setIsSubmitting(false));
     }

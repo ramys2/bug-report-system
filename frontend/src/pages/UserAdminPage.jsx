@@ -2,6 +2,7 @@ import { useContext, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getAccounts, updateAccountRole } from "../api/account";
 import AuthContext from "../components/AuthContext";
+import { getApiErrorMessage } from "../api/error";
 import { showToast } from "../components/toast";
 import "./UserAdminPage.css";
 
@@ -72,7 +73,7 @@ function EditableRole({ user, onRoleSaved }) {
                 onRoleSaved();
                 setIsEditing(false);
             })
-            .fail(() => showToast("danger", i18n.t("errors.updateRole"), i18n.t("errors.updateFailed")))
+            .fail((xhr) => showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.updateFailed")))
             .always(() => setIsSaving(false));
     }
 
@@ -173,9 +174,9 @@ export default function UserAdminPage() {
                 }
                 setResult(data);
             })
-            .fail(() => {
+            .fail((xhr) => {
                 if (!isOutdated) {
-                    showToast("danger", i18n.t("errors.loadUsers"), i18n.t("errors.loadUsersTitle"));
+                    showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.loadUsersTitle"));
                 }
             })
             .always(() => {

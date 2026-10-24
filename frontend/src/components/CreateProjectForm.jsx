@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { createProject } from "../api/project";
+import { getApiErrorMessage } from "../api/error";
 import { showToast } from "./toast";
 
 /**
@@ -40,7 +41,7 @@ export default function CreateProjectForm({ onCreated, onHide }) {
                 setFormValues(initialFormValues);
                 onCreated();
             })
-            .fail(() => showToast("danger", i18n.t("errors.createProject"), i18n.t("errors.createProjectTitle")))
+            .fail((xhr) => showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.createProjectTitle")))
             .always(() => setIsSubmitting(false));
     }
 

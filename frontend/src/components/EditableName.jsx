@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { getApiErrorMessage } from "../api/error";
 import { showToast } from "./toast";
 
 /**
@@ -8,11 +9,10 @@ import { showToast } from "./toast";
  * @param {object} props
  * @param {string} props.id id of the renamed item, passed to `onSave`
  * @param {string} props.name current name
- * @param {"project"|"component"} props.label item type used to choose the error translation
  * @param {(id: string, name: string) => import("jquery").jqXHR} props.onSave sends the new name to the backend, e.g. `updateProjectName`
  * @param {(id: string, name: string) => void} props.onNameSaved called with the new name after it was saved
  */
-export default function EditableName({ id, name, label, onSave, onNameSaved }) {
+export default function EditableName({ id, name, onSave, onNameSaved }) {
     const { t, i18n } = useTranslation();
     const [isEditing, setIsEditing] = useState(false);
     const [draftName, setDraftName] = useState(name);
@@ -34,7 +34,7 @@ export default function EditableName({ id, name, label, onSave, onNameSaved }) {
                 onNameSaved(id, draftName);
                 setIsEditing(false);
             })
-            .fail(() => showToast("danger", i18n.t(`admin.${label}.updateNameError`), i18n.t("errors.updateFailed")))
+            .fail((xhr) => showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.updateFailed")))
             .always(() => setIsSaving(false));
     }
 

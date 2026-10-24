@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { createReport } from "../api/bug-report";
 import { getAllComponents } from "../api/component";
+import { getApiErrorMessage } from "../api/error";
 import { showToast } from "./toast";
 
 /**
@@ -59,9 +60,9 @@ function CreateBugReportForm({ developers, projects, onCreated, onHide }) {
                     setComponents(projectComponents);
                 }
             })
-            .fail(() => {
+            .fail((xhr) => {
                 if (isCurrentProject) {
-                    showToast("danger", i18n.t("errors.loadComponents"), i18n.t("errors.loadComponentsTitle"));
+                    showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.loadComponentsTitle"));
                 }
             });
 
@@ -113,8 +114,8 @@ function CreateBugReportForm({ developers, projects, onCreated, onHide }) {
                 setComponents([]);
                 onCreated();
             })
-            .fail(() => {
-                showToast("danger", i18n.t("errors.createReport"), i18n.t("errors.createReportTitle"));
+            .fail((xhr) => {
+                showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.createReportTitle"));
             })
             .always(() => {
                 setIsSubmitting(false);

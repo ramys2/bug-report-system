@@ -5,6 +5,7 @@ import AuthContext from "../components/AuthContext";
 import CreateProjectForm from "../components/CreateProjectForm";
 import EditableName from "../components/EditableName";
 import EditDescriptionModal from "../components/EditDescriptionModal";
+import { getApiErrorMessage } from "../api/error";
 import { showToast } from "../components/toast";
 import { getAllProjects, updateProjectDescription, updateProjectName } from "../api/project";
 import "./ProjectAdminPage.css";
@@ -26,7 +27,7 @@ export default function ProjectAdminPage() {
     const loadProjects = useCallback(() => {
         return getAllProjects()
             .done(setProjects)
-            .fail(() => showToast("danger", i18n.t("errors.loadProjects"), i18n.t("errors.loadProjectsTitle")))
+            .fail((xhr) => showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.loadProjectsTitle")))
             .always(() => setIsLoading(false));
     }, [i18n]);
 
@@ -93,7 +94,6 @@ export default function ProjectAdminPage() {
                                         <td>
                                             <EditableName
                                                 id={project.id}
-                                                label="project"
                                                 name={project.name}
                                                 onNameSaved={(id, name) => updateProject(id, { name })}
                                                 onSave={updateProjectName}

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import Modal from "./Modal";
+import { getApiErrorMessage } from "../api/error";
 import { showToast } from "./toast";
 
 /**
@@ -39,7 +40,7 @@ export default function EditDescriptionModal({ item, label, onSave, onSaved, onH
         setIsSaving(true);
         onSave(item.id, draftDescription)
             .done(() => onSaved(item.id, draftDescription))
-            .fail(() => showToast("danger", i18n.t(`admin.${label}.updateDescriptionError`), i18n.t("errors.updateFailed")))
+            .fail((xhr) => showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.updateFailed")))
             .always(() => setIsSaving(false));
     }
 
