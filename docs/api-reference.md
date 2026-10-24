@@ -372,10 +372,7 @@ answer 200 with `{"id": "...", "message": "Project updated successfully!"}`.
 | POST | `/api/components` | Create a component | Admin or developer |
 | PATCH | `/api/components/{componentId}/name` | Rename | Admin or developer |
 | PATCH | `/api/components/{componentId}/description` | Replace the description | Admin or developer |
-| PATCH | `/api/components/{componentId}/responsibleUserId` | Change the responsible user | Admin or developer |
-
-Note the camelCase path segment `responsibleUserId`, unlike the kebab-case segments of the report
-endpoints.
+| PATCH | `/api/components/{componentId}/responsible-user-id` | Change the responsible user | Admin or developer |
 
 `GET` response:
 

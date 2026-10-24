@@ -25,7 +25,6 @@ marked in the code comments and were not confirmed by running the application.
 
 ### API design
 - `BugReportResponse` serializes the domain `Resolution` object directly, tying the API shape to the domain class.
-- The component update path segment is camelCase (`/responsibleUserId`), unlike the kebab-case report segments (`/steps-to-reproduce`).
 
 ### Messaging
 - `BugReportEventPublisher` does not catch send failures; the database change is already committed when sending fails.
