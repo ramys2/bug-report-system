@@ -392,9 +392,9 @@ The API is documented with an OpenAPI 3.1 specification, generated from annotati
   (`@Operation`, `@ApiResponse`, `@Schema`, ...), so never edit the YAML by hand: the next generation overwrites it.
   A CI check fails if the committed spec no longer matches the code.
 
-The live specification adds request and response schemas, status codes and examples to the
-endpoint summary above. The committed YAML still needs regeneration to include the new support
-endpoints and updated registration constraints; use the live specification for the current API.
+The specification adds request and response schemas, status codes and examples to the
+endpoint summary above, including registration constraints and support creation/administration.
+Regenerate and commit the YAML whenever controller or DTO annotations change so CI stays in sync.
 
 How to regenerate the spec: [docs/openapi/GENERATE.md](docs/openapi/GENERATE.md).
 How to check that it is correct: [docs/openapi/VALIDATION.md](docs/openapi/VALIDATION.md).

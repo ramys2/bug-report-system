@@ -11,7 +11,7 @@ info:
        The token changes when you sign in, so call `GET /api/csrf` again after login and use the new token.
 
     Only `GET /api/csrf` and `POST /api/accounts` (registration) are public. Missing sign-in answers 401,
-    a missing role, ownership rule or CSRF token answers 403. Errors have the body `{"message": "..."}`.
+    a missing role, ownership rule or CSRF token answers 403. Errors have the body `{"code": "...", "message": "..."}`.
   title: Bug Report System API
   version: 0.1.0-SNAPSHOT
 servers:
@@ -36,7 +36,7 @@ paths:
       description: "Returns one page of the accounts, ordered by name. All filters\
         \ are optional and combined with AND; the text filters match parts of the\
         \ value, ignoring case. Access: ADMIN role."
-      operationId: getAll_3
+      operationId: getAll_4
       parameters:
       - description: "Text the account id must contain, ignoring case."
         example: 3f2a
@@ -120,9 +120,9 @@ paths:
       - Accounts
     post:
       description: "Registers a new account with the REPORTER role. Access: public,\
-        \ no sign-in needed. Returns 409 if the (trimmed, lower-cased) email is already\
-        \ registered."
-      operationId: create_4
+        \ no sign-in needed; CSRF token required. Returns 409 if the trimmed username\
+        \ or (trimmed, lower-cased) email is already registered."
+      operationId: create_5
       parameters:
       - description: "CSRF token from `GET /api/csrf`. The token changes when you\
           \ sign in, so fetch a new one after login."
@@ -332,7 +332,11 @@ paths:
         "200":
           description: Signed in; the session cookie is set. The body is empty.
         "401":
-          description: Wrong email or password. The body is empty.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Wrong email or password (INVALID_CREDENTIALS).
         "403":
           content:
             application/json:
@@ -435,7 +439,7 @@ paths:
     post:
       description: "Adds a comment as the signed-in user. Returns 409 if the report\
         \ is closed. Access: any signed-in user."
-      operationId: create_3
+      operationId: create_4
       parameters:
       - description: "CSRF token from `GET /api/csrf`. The token changes when you\
           \ sign in, so fetch a new one after login."
@@ -556,7 +560,7 @@ paths:
       description: "Access: any signed-in user. Without `projectId` all components\
         \ are returned; with it only the components of that project, or 404 if the\
         \ project does not exist."
-      operationId: getAll_2
+      operationId: getAll_3
       parameters:
       - description: Only list components of this project.
         example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
@@ -594,7 +598,7 @@ paths:
       description: "Access: ADMIN or DEVELOPER role. `projectId` must belong to an\
         \ existing project. `responsibleUserId` is optional; if given, it must belong\
         \ to an existing user. Otherwise the request fails with 404."
-      operationId: create_2
+      operationId: create_3
       parameters:
       - description: "CSRF token from `GET /api/csrf`. The token changes when you\
           \ sign in, so fetch a new one after login."
@@ -854,7 +858,7 @@ paths:
   /api/projects:
     get:
       description: "Access: any signed-in user."
-      operationId: getAll_1
+      operationId: getAll_2
       responses:
         "200":
           content:
@@ -875,7 +879,7 @@ paths:
       - Projects
     post:
       description: "Access: ADMIN role."
-      operationId: create_1
+      operationId: create_2
       parameters:
       - description: "CSRF token from `GET /api/csrf`. The token changes when you\
           \ sign in, so fetch a new one after login."
@@ -1045,7 +1049,7 @@ paths:
     get:
       description: "Lists all reports in brief form. Access: any signed-in user. There\
         \ is no filtering by owner."
-      operationId: getAll
+      operationId: getAll_1
       responses:
         "200":
           content:
@@ -1069,7 +1073,7 @@ paths:
         \ status `OPEN`. `componentId` is optional. Returns 404 if the project or\
         \ component does not exist and 409 if the component does not belong to the\
         \ project or `assigneeId` is not a developer. Access: any signed-in user."
-      operationId: create
+      operationId: create_1
       parameters:
       - description: "CSRF token from `GET /api/csrf`. The token changes when you\
           \ sign in, so fetch a new one after login."
@@ -1820,7 +1824,7 @@ paths:
         \ or `CLOSED`, or the transition is not allowed. Access: signed-in user; the\
         \ service further requires the ADMIN role, or being the report's reporter\
         \ or assignee."
-      operationId: updateStatus
+      operationId: updateStatus_1
       parameters:
       - description: Id of the bug report.
         example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
@@ -1955,17 +1959,207 @@ paths:
       summary: Replace the steps to reproduce
       tags:
       - Bug reports
+  /api/support:
+    get:
+      description: "Access: ADMIN only. Returns requests newest first, with requester\
+        \ id/name, details, status and timestamps."
+      operationId: getAll
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SupportRequestResponse"
+          description: "Support requests, newest first."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "The role or ownership check failed, or the CSRF token is missing."
+      summary: List support requests
+      tags:
+      - Support
+    post:
+      description: "Access: authenticated Reporter or Developer; CSRF token required.\
+        \ ROLE_CHANGE allows only Reporter to Developer. OTHER requires a non-blank\
+        \ description (up to 10000 characters) and no requestedRole. Identity and\
+        \ PENDING status are supplied by the server."
+      operationId: create
+      parameters:
+      - description: "CSRF token from `GET /api/csrf`. The token changes when you\
+          \ sign in, so fetch a new one after login."
+        in: header
+        name: X-CSRF-TOKEN
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSupportRequestRequest"
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateSupportRequestResponse"
+          description: Support request created. Returns code SUPPORT_REQUEST_CREATED
+            and a confirmation message.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Validation failed, the JSON is malformed, or a path or query\
+            \ value (for example an id) is malformed."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "The role or ownership check failed, or the CSRF token is missing."
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: The request conflicts with a business rule or with existing
+            data.
+      summary: Create a support request
+      tags:
+      - Support
+  /api/support/{requestId}/status:
+    patch:
+      description: "Access: ADMIN only; CSRF token required. Supply APPROVED or REJECTED.\
+        \ Approval of a role change revalidates the current account and changes its\
+        \ role atomically with resolution. Self-approval is forbidden. Resolved/outdated\
+        \ requests return 409; outdated requests remain pending."
+      operationId: updateStatus
+      parameters:
+      - in: path
+        name: requestId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - description: "CSRF token from `GET /api/csrf`. The token changes when you\
+          \ sign in, so fetch a new one after login."
+        in: header
+        name: X-CSRF-TOKEN
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSupportRequestStatusRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UpdateSupportRequestStatusResponse"
+          description: Returns code SUPPORT_REQUEST_RESOLVED and a confirmation message.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "Validation failed, the JSON is malformed, or a path or query\
+            \ value (for example an id) is malformed."
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: Not signed in.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: "The role or ownership check failed, or the CSRF token is missing."
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: A referenced resource does not exist.
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorResponse"
+          description: The request conflicts with a business rule or with existing
+            data.
+      summary: Resolve a support request
+      tags:
+      - Support
 components:
   schemas:
     ApiErrorResponse:
       type: object
       description: JSON body of every error response.
       properties:
+        code:
+          type: string
+          description: Stable error code for client-side localization.
+          enum:
+          - BUG_REPORT_NOT_FOUND
+          - PROJECT_NOT_FOUND
+          - COMPONENT_NOT_FOUND
+          - USER_NOT_FOUND
+          - COMMENT_NOT_FOUND
+          - DUPLICATE_EMAIL
+          - DUPLICATE_USERNAME
+          - BUG_REPORT_ALREADY_CLOSED
+          - BUG_REPORT_CLOSED
+          - CLOSED_REPORT_COMMENTS_FORBIDDEN
+          - RESOLUTION_REQUIRED
+          - ASSIGNEE_REQUIRED
+          - INVALID_STATUS_TRANSITION
+          - COMPONENT_PROJECT_MISMATCH
+          - ASSIGNEE_NOT_DEVELOPER
+          - LAST_ADMIN_REQUIRED
+          - DEVELOPER_HAS_OPEN_ASSIGNMENTS
+          - SUPPORT_ROLE_NOT_ALLOWED
+          - SUPPORT_REQUEST_ALREADY_PENDING
+          - SUPPORT_REQUEST_NOT_FOUND
+          - SUPPORT_REQUEST_ALREADY_RESOLVED
+          - SUPPORT_INVALID_RESOLUTION_STATUS
+          - SUPPORT_ROLE_CHANGE_OUTDATED
+          - INVALID_REQUEST
+          - DATA_CONFLICT
+          - AUTHENTICATION_REQUIRED
+          - INVALID_CREDENTIALS
+          - ACCESS_DENIED
+          - INTERNAL_ERROR
+          example: INVALID_REQUEST
         message:
           type: string
           description: Human-readable description of the error.
           example: Request contains invalid values.
       required:
+      - code
       - message
     BugReportBriefResponse:
       type: object
@@ -2425,6 +2619,35 @@ components:
       required:
       - id
       - message
+    CreateSupportRequestRequest:
+      type: object
+      description: Request body of POST /api/support. ROLE_CHANGE requires requestedRole;
+        OTHER requires a description and no requestedRole.
+      properties:
+        description:
+          type: string
+          maxLength: 10000
+          minLength: 0
+        requestedRole:
+          type: string
+          enum:
+          - REPORTER
+          - DEVELOPER
+          - ADMIN
+        type:
+          type: string
+          enum:
+          - ROLE_CHANGE
+          - OTHER
+      required:
+      - type
+    CreateSupportRequestResponse:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
     CreateUserAccountRequest:
       type: object
       description: Request body of `POST /api/accounts` (registration).
@@ -2434,12 +2657,14 @@ components:
           format: email
           description: Email address.
           example: alice@example.com
-          minLength: 1
+          maxLength: 255
+          minLength: 0
         name:
           type: string
-          description: Display name.
+          description: "Unique username, also used as the display name."
           example: Alice Admin
-          minLength: 1
+          maxLength: 255
+          minLength: 0
         password:
           type: string
           description: Plain-text password.
@@ -2571,6 +2796,42 @@ components:
       required:
       - id
       - name
+    SupportRequestResponse:
+      type: object
+      properties:
+        createdAt:
+          type: string
+          format: date-time
+        description:
+          type: string
+        id:
+          type: string
+          format: uuid
+        requestedRole:
+          type: string
+          enum:
+          - REPORTER
+          - DEVELOPER
+          - ADMIN
+        requesterId:
+          type: string
+          format: uuid
+        requesterName:
+          type: string
+        resolvedAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum:
+          - PENDING
+          - APPROVED
+          - REJECTED
+        type:
+          type: string
+          enum:
+          - ROLE_CHANGE
+          - OTHER
     UpdateActualBehaviorRequest:
       type: object
       description: "Request body of `PATCH /api/reports/{reportId}/actual-behavior`."
@@ -2791,6 +3052,26 @@ components:
           example: "Open sign in, enter valid credentials, and submit the form."
       required:
       - stepsToReproduce
+    UpdateSupportRequestStatusRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          description: "Resolution status: APPROVED or REJECTED."
+          enum:
+          - PENDING
+          - APPROVED
+          - REJECTED
+          example: APPROVED
+      required:
+      - status
+    UpdateSupportRequestStatusResponse:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
     UpdateUserAccountResponse:
       type: object
       description: "Response of the `PATCH /api/accounts/{userId}/...` endpoints."
