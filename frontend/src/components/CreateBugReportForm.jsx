@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { createReport } from "../api/bug-report";
 import { getAllComponents } from "../api/component";
+import { getApiErrorMessage } from "../api/error";
 import { showToast } from "./toast";
 
 /**
@@ -40,6 +42,7 @@ const severities = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
  * @param {() => void} props.onCreated called after the report was created
  */
 function CreateBugReportForm({ developers, projects, onCreated, onHide }) {
+    const { t, i18n } = useTranslation();
     const [formValues, setFormValues] = useState(initialFormValues);
     const [components, setComponents] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -57,16 +60,16 @@ function CreateBugReportForm({ developers, projects, onCreated, onHide }) {
                     setComponents(projectComponents);
                 }
             })
-            .fail(() => {
+            .fail((xhr) => {
                 if (isCurrentProject) {
-                    showToast("danger", "Failed to fetch components.", "Unable to load components");
+                    showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.loadComponentsTitle"));
                 }
             });
 
         return () => {
             isCurrentProject = false;
         };
-    }, [formValues.projectId]);
+    }, [formValues.projectId, i18n]);
 
     function handleChange(event) {
         const { name, value } = event.target;
@@ -90,7 +93,7 @@ function CreateBugReportForm({ developers, projects, onCreated, onHide }) {
         event.preventDefault();
 
         if (!formValues.title.trim() || !formValues.projectId || !formValues.severity) {
-            showToast("warning", "Please fill in all required fields.", "Missing information");
+            showToast("warning", t("common.requiredFields"), t("common.missingInformation"));
             return;
         }
 
@@ -111,8 +114,8 @@ function CreateBugReportForm({ developers, projects, onCreated, onHide }) {
                 setComponents([]);
                 onCreated();
             })
-            .fail(() => {
-                showToast("danger", "Failed to create the bug report. Please try again.", "Report not created");
+            .fail((xhr) => {
+                showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.createReportTitle"));
             })
             .always(() => {
                 setIsSubmitting(false);
@@ -122,18 +125,18 @@ function CreateBugReportForm({ developers, projects, onCreated, onHide }) {
     return (
         <form className="d-flex flex-column h-100" onSubmit={handleSubmit}>
             <div className="modal-header">
-                <h1 className="modal-title fs-5">Create new bug report</h1>
+                <h1 className="modal-title fs-5">{t("reports.createHeading")}</h1>
                 <button
                     type="button"
                     className="btn-close"
                     onClick={onHide}
-                    aria-label="Close"
+                    aria-label={t("common.close")}
                 />
             </div>
 
             <div className="modal-body overflow-auto">
                 <div className="mb-3">
-                    <label className="form-label" htmlFor="bug-report-title">Title *</label>
+                    <label className="form-label" htmlFor="bug-report-title">{t("reports.title")} *</label>
                     <input
                         id="bug-report-title"
                         name="title"
@@ -146,7 +149,7 @@ function CreateBugReportForm({ developers, projects, onCreated, onHide }) {
                 </div>
 
                 <div className="mb-3">
-                    <label className="form-label" htmlFor="bug-report-assignee">Assignee</label>
+                    <label className="form-label" htmlFor="bug-report-assignee">{t("reports.assignee")}</label>
                     <select
                         id="bug-report-assignee"
                         name="assigneeId"
@@ -154,7 +157,7 @@ function CreateBugReportForm({ developers, projects, onCreated, onHide }) {
                         value={formValues.assigneeId}
                         onChange={handleChange}
                     >
-                        <option value="">Unassigned</option>
+                        <option value="">{t("reports.unassigned")}</option>
                         {developers.map((developer) => (
                             <option key={developer.id} value={developer.id}>
                                 {developer.name}
@@ -164,7 +167,7 @@ function CreateBugReportForm({ developers, projects, onCreated, onHide }) {
                 </div>
 
                 <div className="mb-3">
-                    <label className="form-label" htmlFor="bug-report-project">Project *</label>
+                    <label className="form-label" htmlFor="bug-report-project">{t("reports.project")} *</label>
                     <select
                         id="bug-report-project"
                         name="projectId"
@@ -173,7 +176,7 @@ function CreateBugReportForm({ developers, projects, onCreated, onHide }) {
                         onChange={handleProjectChange}
                         required
                     >
-                        <option value="">Select a project</option>
+                        <option value="">{t("reports.selectProject")}</option>
                         {projects.map((project) => (
                             <option key={project.id} value={project.id}>
                                 {project.name}
@@ -184,7 +187,7 @@ function CreateBugReportForm({ developers, projects, onCreated, onHide }) {
 
                 {formValues.projectId && (
                     <div className="mb-3">
-                        <label className="form-label" htmlFor="bug-report-component">Component</label>
+                        <label className="form-label" htmlFor="bug-report-component">{t("reports.component")}</label>
                         <select
                             id="bug-report-component"
                             name="componentId"
@@ -192,7 +195,7 @@ function CreateBugReportForm({ developers, projects, onCreated, onHide }) {
                             value={formValues.componentId}
                             onChange={handleChange}
                         >
-                            <option value="">None</option>
+                            <option value="">{t("common.none")}</option>
                             {components.map((component) => (
                                 <option key={component.id} value={component.id}>
                                     {component.name}
@@ -203,7 +206,7 @@ function CreateBugReportForm({ developers, projects, onCreated, onHide }) {
                 )}
 
                 <div className="mb-3">
-                    <label className="form-label" htmlFor="bug-report-description">Description</label>
+                    <label className="form-label" htmlFor="bug-report-description">{t("reports.description")}</label>
                     <textarea
                         id="bug-report-description"
                         name="description"
@@ -215,7 +218,7 @@ function CreateBugReportForm({ developers, projects, onCreated, onHide }) {
                 </div>
 
                 <div className="mb-3">
-                    <label className="form-label" htmlFor="bug-report-steps">Steps to reproduce</label>
+                    <label className="form-label" htmlFor="bug-report-steps">{t("reports.stepsToReproduce")}</label>
                     <textarea
                         id="bug-report-steps"
                         name="stepsToReproduce"
@@ -227,7 +230,7 @@ function CreateBugReportForm({ developers, projects, onCreated, onHide }) {
                 </div>
 
                 <div className="mb-3">
-                    <label className="form-label" htmlFor="bug-report-expected">Expected behavior</label>
+                    <label className="form-label" htmlFor="bug-report-expected">{t("reports.expectedBehavior")}</label>
                     <textarea
                         id="bug-report-expected"
                         name="expectedBehavior"
@@ -239,7 +242,7 @@ function CreateBugReportForm({ developers, projects, onCreated, onHide }) {
                 </div>
 
                 <div className="mb-3">
-                    <label className="form-label" htmlFor="bug-report-actual">Actual behavior</label>
+                    <label className="form-label" htmlFor="bug-report-actual">{t("reports.actualBehavior")}</label>
                     <textarea
                         id="bug-report-actual"
                         name="actualBehavior"
@@ -251,7 +254,7 @@ function CreateBugReportForm({ developers, projects, onCreated, onHide }) {
                 </div>
 
                 <div>
-                    <label className="form-label" htmlFor="bug-report-severity">Severity *</label>
+                    <label className="form-label" htmlFor="bug-report-severity">{t("reports.severity")} *</label>
                     <select
                         id="bug-report-severity"
                         name="severity"
@@ -260,10 +263,10 @@ function CreateBugReportForm({ developers, projects, onCreated, onHide }) {
                         onChange={handleChange}
                         required
                     >
-                        <option value="">Select severity</option>
+                        <option value="">{t("reports.selectSeverity")}</option>
                         {severities.map((severity) => (
                             <option key={severity} value={severity}>
-                                {severity}
+                                {t(`reports.severities.${severity}`)}
                             </option>
                         ))}
                     </select>
@@ -272,10 +275,10 @@ function CreateBugReportForm({ developers, projects, onCreated, onHide }) {
 
             <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" onClick={onHide}>
-                    Cancel
+                    {t("common.cancel")}
                 </button>
                 <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-                    {isSubmitting ? "Creating..." : "Create bug report"}
+                    {isSubmitting ? t("common.creating") : t("reports.create")}
                 </button>
             </div>
         </form>

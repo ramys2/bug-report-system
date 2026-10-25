@@ -42,7 +42,7 @@ import com.ramy.bugreport.openapi.ConflictResponse;
 /**
  * REST endpoints for user accounts, under {@code /api/accounts}.
  *
- * <p>Errors are returned as JSON {@code {"message": "..."}} ({@link com.ramy.bugreport.exception.ApiErrorResponse}):
+ * <p>Errors are returned as JSON {@code {"code": "...", "message": "..."}} ({@link com.ramy.bugreport.exception.ApiErrorResponse}):
  * 400 for invalid input, 401 when not signed in, 403 when the role or ownership check fails,
  * 404 when a referenced resource does not exist, 409 for business rule conflicts. Requests that
  * change data ({@code POST}, {@code PATCH}, {@code DELETE}) also need a CSRF token, see {@code GET /api/csrf}.

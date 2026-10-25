@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import Modal from "./Modal";
+import { getApiErrorMessage } from "../api/error";
 import { showToast } from "./toast";
 
 /**
@@ -10,12 +12,13 @@ import { showToast } from "./toast";
  *
  * @param {object} props
  * @param {{id: string, description: string|null}|null} props.item item being edited, or `null` when the modal is closed
- * @param {string} props.label what is being edited, e.g. "project"; used in the title, element id and error toast
+ * @param {"project"|"component"} props.label item type used for translation keys and the element id
  * @param {(id: string, description: string) => import("jquery").jqXHR} props.onSave sends the new description to the backend, e.g. `updateProjectDescription`
  * @param {(id: string, description: string) => void} props.onSaved called with the new description after it was saved
  * @param {() => void} props.onHide called when the modal was closed without saving
  */
 export default function EditDescriptionModal({ item, label, onSave, onSaved, onHide }) {
+    const { t, i18n } = useTranslation();
     const [draftDescription, setDraftDescription] = useState("");
     const [shownItem, setShownItem] = useState(null);
     const [isSaving, setIsSaving] = useState(false);
@@ -37,18 +40,18 @@ export default function EditDescriptionModal({ item, label, onSave, onSaved, onH
         setIsSaving(true);
         onSave(item.id, draftDescription)
             .done(() => onSaved(item.id, draftDescription))
-            .fail(() => showToast("danger", `Unable to update the ${label} description.`, "Update failed"))
+            .fail((xhr) => showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.updateFailed")))
             .always(() => setIsSaving(false));
     }
 
     return (
-        <Modal label={`Edit ${label} description`} onHide={onHide} show={item !== null}>
+        <Modal label={t(`admin.${label}.editDescription`)} onHide={onHide} show={item !== null}>
             <div className="modal-header">
-                <h2 className="modal-title fs-5">Edit {label} description</h2>
-                <button aria-label="Close" className="btn-close" disabled={isSaving} onClick={onHide} type="button" />
+                <h2 className="modal-title fs-5">{t(`admin.${label}.editDescription`)}</h2>
+                <button aria-label={t("common.close")} className="btn-close" disabled={isSaving} onClick={onHide} type="button" />
             </div>
             <div className="modal-body d-flex flex-column">
-                <label className="form-label" htmlFor={`${label}-description`}>Description</label>
+                <label className="form-label" htmlFor={`${label}-description`}>{t("reports.description")}</label>
                 <textarea
                     className="form-control flex-grow-1"
                     disabled={isSaving}
@@ -58,9 +61,9 @@ export default function EditDescriptionModal({ item, label, onSave, onSaved, onH
                 />
             </div>
             <div className="modal-footer">
-                <button className="btn btn-outline-secondary" disabled={isSaving} onClick={onHide} type="button">Cancel</button>
+                <button className="btn btn-outline-secondary" disabled={isSaving} onClick={onHide} type="button">{t("common.cancel")}</button>
                 <button className="btn btn-primary" disabled={isSaving} onClick={saveDescription} type="button">
-                    {isSaving ? "Saving..." : "Save"}
+                    {isSaving ? t("common.saving") : t("common.save")}
                 </button>
             </div>
         </Modal>

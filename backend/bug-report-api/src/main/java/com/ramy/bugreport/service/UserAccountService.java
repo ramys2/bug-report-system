@@ -21,6 +21,7 @@ import com.ramy.bugreport.dto.account.UserAccountBriefResponse;
 import com.ramy.bugreport.domain.EBugStatus;
 import com.ramy.bugreport.exception.BusinessRuleConflictException;
 import com.ramy.bugreport.exception.DuplicateEmailException;
+import com.ramy.bugreport.exception.ErrorCode;
 import com.ramy.bugreport.exception.ResourceNotFoundException;
 import com.ramy.bugreport.repository.IBugReportRepository;
 import com.ramy.bugreport.repository.IUserAccountRepository;
@@ -170,18 +171,23 @@ public class UserAccountService {
     @PreAuthorize("hasRole('ADMIN') and @userAccountAuthorizer.canUpdateRole(#userId, authentication)")
     public UpdateUserAccountResponse updateRole(UUID userId, UpdateRoleRequest request) {
         UserAccount account = userAccountRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User with id=%s does not exist!".formatted(userId)));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        ErrorCode.USER_NOT_FOUND,
+                        "User with id=%s does not exist!".formatted(userId)));
 
         if (account.getRole() == EUserRole.ADMIN && request.role() != EUserRole.ADMIN) {
             // Lock every admin row so concurrent demotions are serialized.
             if (userAccountRepository.findAllByRole(EUserRole.ADMIN).size() == 1) {
-                throw new BusinessRuleConflictException("At least one admin account must remain.");
+                throw new BusinessRuleConflictException(
+                        ErrorCode.LAST_ADMIN_REQUIRED,
+                        "At least one admin account must remain.");
             }
         }
 
         if (account.getRole() == EUserRole.DEVELOPER && request.role() != EUserRole.DEVELOPER
                 && bugReportRepository.existsByAssigneeIdAndStatusNot(userId, EBugStatus.CLOSED)) {
             throw new BusinessRuleConflictException(
+                    ErrorCode.DEVELOPER_HAS_OPEN_ASSIGNMENTS,
                     "A developer with open bug report assignments cannot be assigned a different role.");
         }
 

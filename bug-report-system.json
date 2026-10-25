@@ -7,6 +7,12 @@
       "name": "To Do",
       "tasks": [
         {
+          "id": "task-e64b1073-5f82-4e7e-8f76-f3935c2e8310",
+          "title": "[Design] Decide whether API errors should return only error codes",
+          "description": "Consider removing human-readable messages from API error responses once the frontend maps stable error codes to localized text. Decide how English diagnostic messages should be retained in server logs and review compatibility with API clients before changing the response contract. Keep both code and message for now.",
+          "color": "#4f78c4"
+        },
+        {
           "id": "task-754b8d21-38b0-4f75-8c4b-b39d37096d21",
           "title": "Refactor Dockerfile for frontend",
           "description": "Refactor Dockerfile for frontend so it is possible to build the application and run it over 'nginx'.",
@@ -127,12 +133,6 @@
           "color": "#4a9270"
         },
         {
-          "id": "task-280e7f0c-cbb7-4749-8388-acdae6c100ef",
-          "title": "Implement UI translation",
-          "description": "",
-          "color": "#4a9270"
-        },
-        {
           "id": "task-cb25dc1f-f1f1-4f50-b4ca-99f909b9665b",
           "title": "Implement logging",
           "description": "",
@@ -144,6 +144,12 @@
       "id": "column-14e7a403-192c-4f53-950b-80997c07901c",
       "name": "Done",
       "tasks": [
+        {
+          "id": "task-280e7f0c-cbb7-4749-8388-acdae6c100ef",
+          "title": "Implement UI translation",
+          "description": "",
+          "color": "#4a9270"
+        },
         {
           "id": "task-5e312a7f-eec7-4e08-9f80-9609ec1ed16f",
           "title": "[Refactor] Add a ResolutionResponse DTO",

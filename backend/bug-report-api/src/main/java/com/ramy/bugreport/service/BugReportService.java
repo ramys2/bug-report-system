@@ -35,6 +35,7 @@ import com.ramy.bugreport.dto.report.UpdateSeverityRequest;
 import com.ramy.bugreport.dto.report.UpdateStatusRequest;
 import com.ramy.bugreport.dto.report.UpdateStepsToReproduceRequest;
 import com.ramy.bugreport.exception.BusinessRuleConflictException;
+import com.ramy.bugreport.exception.ErrorCode;
 import com.ramy.bugreport.exception.ResourceNotFoundException;
 import com.ramy.bugreport.messaging.event.AssigneeChangedEvent;
 import com.ramy.bugreport.messaging.event.BugReportClosedEvent;
@@ -121,23 +122,29 @@ public class BugReportService {
      */
     public BugReportResponse getReport(UUID reportId) {
         BugReport report = bugReportRepository.findById(reportId)
-                .orElseThrow(() -> new ResourceNotFoundException("Report with id: %s".formatted(reportId)));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        ErrorCode.BUG_REPORT_NOT_FOUND,
+                        "Report with id: %s".formatted(reportId)));
 
         var reporter = userAccountRepository.findById(report.getReporterId())
                 .orElseThrow(() -> new ResourceNotFoundException(
+                        ErrorCode.USER_NOT_FOUND,
                         "User with id=%s does not exist!".formatted(report.getReporterId())));
         var assignee = report.getAssigneeId() == null
                 ? null
                 : userAccountRepository.findById(report.getAssigneeId())
                         .orElseThrow(() -> new ResourceNotFoundException(
+                                ErrorCode.USER_NOT_FOUND,
                                 "User with id=%s does not exist!".formatted(report.getAssigneeId())));
         var project = softwareProjectRepository.findById(report.getProjectId())
                 .orElseThrow(() -> new ResourceNotFoundException(
+                        ErrorCode.PROJECT_NOT_FOUND,
                         "Project with id=%s does not exist!".formatted(report.getProjectId())));
         var component = report.getComponentId() == null
                 ? null
                 : componentRepository.findById(report.getComponentId())
                         .orElseThrow(() -> new ResourceNotFoundException(
+                                ErrorCode.COMPONENT_NOT_FOUND,
                                 "Component with id=%s does not exist!".formatted(report.getComponentId())));
 
         return BugReportResponse.from(report, reporter, assignee, project, component);
@@ -184,7 +191,9 @@ public class BugReportService {
     private UserAccount requiredUser(Map<UUID, UserAccount> usersById, UUID userId) {
         var user = usersById.get(userId);
         if (user == null) {
-            throw new ResourceNotFoundException("User with id=%s does not exist!".formatted(userId));
+            throw new ResourceNotFoundException(
+                    ErrorCode.USER_NOT_FOUND,
+                    "User with id=%s does not exist!".formatted(userId));
         }
         return user;
     }
@@ -219,12 +228,14 @@ public class BugReportService {
 
         if (!userAccountRepository.existsById(reporterId)) {
             throw new ResourceNotFoundException(
+                    ErrorCode.USER_NOT_FOUND,
                     "User with id=%s does not exist!".formatted(reporterId)
             );
         }
     
         if (!softwareProjectRepository.existsById(projectId)) {
             throw new ResourceNotFoundException(
+                    ErrorCode.PROJECT_NOT_FOUND,
                     "Project with id=%s does not exist!".formatted(projectId)
             );
         }
@@ -282,10 +293,14 @@ public class BugReportService {
     )
     public CloseBugReportResponse close(UUID reportId, CloseBugReportRequest request) {
         BugReport report = bugReportRepository.findById(reportId)
-                .orElseThrow(() -> new ResourceNotFoundException("Report with id: %s".formatted(reportId)));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        ErrorCode.BUG_REPORT_NOT_FOUND,
+                        "Report with id: %s".formatted(reportId)));
 
         if (report.getStatus() == EBugStatus.CLOSED || report.getResolution() != null) {
-            throw new BusinessRuleConflictException("Report is already closed and cannot be reopened.");
+            throw new BusinessRuleConflictException(
+                    ErrorCode.BUG_REPORT_ALREADY_CLOSED,
+                    "Report is already closed and cannot be reopened.");
         }
         
         var resolution = new Resolution(request.description(), LocalDateTime.now(), request.fixedVersion(), request.commitUrl());
@@ -300,11 +315,13 @@ public class BugReportService {
 
         var reporter = userAccountRepository.findById(reporterId)
                 .orElseThrow(() -> new ResourceNotFoundException(
+                        ErrorCode.USER_NOT_FOUND,
                         "User with id=%s does not exist!".formatted(reporterId)));
         var assigneeEmail = assigneeId == null
                 ? null
                 : userAccountRepository.findById(assigneeId)
                         .orElseThrow(() -> new ResourceNotFoundException(
+                                ErrorCode.USER_NOT_FOUND,
                                 "User with id=%s does not exist!".formatted(assigneeId)))
                         .getEmailAddress();
         eventPublisher.publishEvent(new BugReportClosedEvent(report.getTitle(), assigneeEmail, reporter.getEmailAddress()));
@@ -400,11 +417,15 @@ public class BugReportService {
         var report = reportById(reportId);
 
         if (request.status() == EBugStatus.CLOSED) {
-            throw new BusinessRuleConflictException("Use the resolution endpoint to close a report.");
+            throw new BusinessRuleConflictException(
+                    ErrorCode.RESOLUTION_REQUIRED,
+                    "Use the resolution endpoint to close a report.");
         }
 
         if (request.status() == EBugStatus.ASSIGNED) {
-            throw new BusinessRuleConflictException("Use the assignee endpoint to assign a report.");
+            throw new BusinessRuleConflictException(
+                    ErrorCode.ASSIGNEE_REQUIRED,
+                    "Use the assignee endpoint to assign a report.");
         }
 
         if (request.status() == report.getStatus()) {
@@ -413,6 +434,7 @@ public class BugReportService {
 
         if (!report.getStatus().canTransitionTo(request.status())) {
             throw new BusinessRuleConflictException(
+                    ErrorCode.INVALID_STATUS_TRANSITION,
                     "Cannot change status from %s to %s.".formatted(report.getStatus(), request.status()));
         }
 
@@ -421,11 +443,13 @@ public class BugReportService {
 
         var reporter = userAccountRepository.findById(report.getReporterId())
                 .orElseThrow(() -> new ResourceNotFoundException(
+                        ErrorCode.USER_NOT_FOUND,
                         "User with id=%s does not exist!".formatted(report.getReporterId())));
         var assigneeEmail = report.getAssigneeId() == null
                 ? null
                 : userAccountRepository.findById(report.getAssigneeId())
                         .orElseThrow(() -> new ResourceNotFoundException(
+                                ErrorCode.USER_NOT_FOUND,
                                 "User with id=%s does not exist!".formatted(report.getAssigneeId())))
                         .getEmailAddress();
         eventPublisher.publishEvent(new StatusChangedEvent(report.getTitle(), assigneeEmail, reporter.getEmailAddress()));
@@ -453,7 +477,9 @@ public class BugReportService {
         var report = reportById(reportId);
         var projectId = request.projectId();
         if (!softwareProjectRepository.existsById(projectId)) {
-            throw new ResourceNotFoundException("Project with id=%s does not exist!".formatted(projectId));
+            throw new ResourceNotFoundException(
+                    ErrorCode.PROJECT_NOT_FOUND,
+                    "Project with id=%s does not exist!".formatted(projectId));
         }
 
         if (!projectId.equals(report.getProjectId())) {
@@ -594,10 +620,14 @@ public class BugReportService {
     /** Loads a report for modification; unlike a plain lookup it also rejects closed reports. */
     private BugReport reportById(UUID reportId) {
         var report = bugReportRepository.findById(reportId)
-                .orElseThrow(() -> new ResourceNotFoundException("Report with id: %s".formatted(reportId)));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        ErrorCode.BUG_REPORT_NOT_FOUND,
+                        "Report with id: %s".formatted(reportId)));
 
         if (report.getStatus() == EBugStatus.CLOSED) {
-            throw new BusinessRuleConflictException("Report is closed and cannot be updated.");
+            throw new BusinessRuleConflictException(
+                    ErrorCode.BUG_REPORT_CLOSED,
+                    "Report is closed and cannot be updated.");
         }
 
         return report;
@@ -616,9 +646,11 @@ public class BugReportService {
         }
         var component = componentRepository.findById(componentId)
                 .orElseThrow(() -> new ResourceNotFoundException(
+                        ErrorCode.COMPONENT_NOT_FOUND,
                         "Component with id=%s does not exist!".formatted(componentId)));
         if (!projectId.equals(component.getProjectId())) {
             throw new BusinessRuleConflictException(
+                    ErrorCode.COMPONENT_PROJECT_MISMATCH,
                     "Component with id=%s does not belong to project with id=%s.".formatted(componentId, projectId));
         }
     }
@@ -636,9 +668,12 @@ public class BugReportService {
     /** Loads the user and checks that they have the {@code DEVELOPER} role (admins are not accepted). */
     private UserAccount requireDeveloper(UUID assigneeId) {
         UserAccount assignee = userAccountRepository.findById(assigneeId)
-                .orElseThrow(() -> new ResourceNotFoundException("User with id=%s does not exist!".formatted(assigneeId)));
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        ErrorCode.USER_NOT_FOUND,
+                        "User with id=%s does not exist!".formatted(assigneeId)));
         if (assignee.getRole() != EUserRole.DEVELOPER) {
             throw new BusinessRuleConflictException(
+                    ErrorCode.ASSIGNEE_NOT_DEVELOPER,
                     "Bug reports can only be assigned to developers.");
         }
         

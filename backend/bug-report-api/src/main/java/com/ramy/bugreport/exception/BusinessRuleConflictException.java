@@ -8,7 +8,14 @@ public class BusinessRuleConflictException extends RuntimeException {
 
     private static final long serialVersionUID = 2145687505827373609L;
 
-	public BusinessRuleConflictException(String message) {
+    private final ErrorCode code;
+
+    public BusinessRuleConflictException(ErrorCode code, String message) {
         super(message);
+        this.code = code;
+    }
+
+    public ErrorCode getCode() {
+        return code;
     }
 }

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import "./Toast.css";
 import { toastEventName } from "./toast";
 
@@ -9,6 +10,7 @@ import { toastEventName } from "./toast";
  * closes it. Mount it once in the app; it takes no props.
  */
 function Toast() {
+    const { t } = useTranslation();
     const [toasts, setToasts] = useState([]);
     const timeoutIds = useRef(new Map());
 
@@ -50,7 +52,7 @@ function Toast() {
                     <button
                         type="button"
                         className="btn-close"
-                        aria-label="Close notification"
+                        aria-label={t("common.closeNotification")}
                         onClick={() => removeToast(toast.id)}
                     />
                 </div>

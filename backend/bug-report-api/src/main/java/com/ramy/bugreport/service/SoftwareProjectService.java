@@ -13,6 +13,7 @@ import com.ramy.bugreport.dto.project.SoftwareProjectResponse;
 import com.ramy.bugreport.dto.project.UpdateSoftwareProjectDescriptionRequest;
 import com.ramy.bugreport.dto.project.UpdateSoftwareProjectNameRequest;
 import com.ramy.bugreport.dto.project.UpdateSoftwareProjectResponse;
+import com.ramy.bugreport.exception.ErrorCode;
 import com.ramy.bugreport.exception.ResourceNotFoundException;
 import com.ramy.bugreport.repository.ISoftwareProjectRepository;
 
@@ -110,6 +111,7 @@ public class SoftwareProjectService {
     private SoftwareProject projectById(UUID projectId) {
         return softwareProjectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException(
+                        ErrorCode.PROJECT_NOT_FOUND,
                         "Project with id=%s does not exist!".formatted(projectId)));
     }
 

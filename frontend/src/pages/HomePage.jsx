@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import BugReportList from "../components/BugReportList";
 import CreateBugReportForm from "../components/CreateBugReportForm";
 import Modal from "../components/Modal";
 import QuickFilters from "../components/QuickFilters";
+import { getApiErrorMessage } from "../api/error";
 import { showToast } from "../components/toast";
 import "./HomePage.css";
 import { getAllReports, getAssigned, getReported } from "../api/bug-report";
@@ -17,38 +19,39 @@ import { getAllProjects } from "../api/project";
  * After a report is created the list is reloaded and the modal is closed. Failed requests show an error toast. Takes no props.
  */
 function HomePage() {
+    const { t, i18n } = useTranslation();
     const [bugReports, setBugReports] = useState([]);
     const [isQuickFilterActive, setIsQuickFilterActive] = useState(false);
     const [developers, setDevelopers] = useState([]);
     const [projects, setProjects] = useState([]);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-    function loadAllReports() {
+    const loadAllReports = useCallback(() => {
         getAllReports()
             .done((data) => {
                 setBugReports(data);
             })
-            .fail(() => {
-                showToast("danger", "Failed to fetch bug reports!", "Unable to load reports");
+            .fail((xhr) => {
+                showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.loadReportsTitle"));
             });
-    }
+    }, [i18n]);
 
     useEffect(() => {
         loadAllReports();
-    }, []);
+    }, [loadAllReports]);
 
     function loadCreateFormOptions() {
         // Only fetch what is still missing, so reopening the modal doesn't repeat the requests (a failed request is retried on the next click).
         if (developers.length === 0) {
             getDevelopers()
                 .done(setDevelopers)
-                .fail(() => showToast("danger", "Failed to fetch developers.", "Unable to load developers"));
+                .fail((xhr) => showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.loadDevelopersTitle")));
         }
 
         if (projects.length === 0) {
             getAllProjects()
                 .done(setProjects)
-                .fail(() => showToast("danger", "Failed to fetch projects.", "Unable to load projects"));
+                .fail((xhr) => showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.loadProjectsTitle")));
         }
     }
 
@@ -59,8 +62,8 @@ function HomePage() {
             .done((data) => {
                 setBugReports(data);
             })
-            .fail(() => {
-                showToast("danger", "Couldn't fetch your reported items!", "Unable to load reports");
+            .fail((xhr) => {
+                showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.loadReportsTitle"));
             })
     }
 
@@ -71,8 +74,8 @@ function HomePage() {
             .done((data) => {
                 setBugReports(data);
             })
-            .fail(() => {
-                showToast("danger", "Couldn't fetch items assigned to you!", "Unable to load reports");
+            .fail((xhr) => {
+                showToast("danger", getApiErrorMessage(xhr), i18n.t("errors.loadReportsTitle"));
             })
     }
 
@@ -107,11 +110,11 @@ function HomePage() {
                         className="btn btn-primary"
                         onClick={openCreateForm}
                     >
-                        Create new +
+                        {t("reports.createNew")}
                     </button>
                 </div>
                 <BugReportList reports={bugReports} />
-                <Modal label="Create new bug report" onHide={() => setIsCreateOpen(false)} show={isCreateOpen}>
+                <Modal label={t("reports.createHeading")} onHide={() => setIsCreateOpen(false)} show={isCreateOpen}>
                     <CreateBugReportForm
                         developers={developers}
                         projects={projects}

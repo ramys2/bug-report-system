@@ -8,4 +8,8 @@ public class DuplicateEmailException extends RuntimeException {
 	public DuplicateEmailException() {
         super("An account with this email address already exists.");
     }
+
+    public ErrorCode getCode() {
+        return ErrorCode.DUPLICATE_EMAIL;
+    }
 }
