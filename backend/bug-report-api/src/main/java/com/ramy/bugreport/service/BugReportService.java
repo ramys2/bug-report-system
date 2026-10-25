@@ -266,7 +266,7 @@ public class BugReportService {
 
         if (assignee != null) {
             eventPublisher.publishEvent(new AssigneeChangedEvent(
-                    assignee.getName(), assignee.getEmailAddress(), report.getTitle()));
+                    report.getId(), assignee.getName(), assignee.getEmailAddress(), report.getTitle()));
         }
 
         return new CreateBugReportResponse(report.getId(), "Successfully created!");
@@ -324,7 +324,8 @@ public class BugReportService {
                                 ErrorCode.USER_NOT_FOUND,
                                 "User with id=%s does not exist!".formatted(assigneeId)))
                         .getEmailAddress();
-        eventPublisher.publishEvent(new BugReportClosedEvent(report.getTitle(), assigneeEmail, reporter.getEmailAddress()));
+        eventPublisher.publishEvent(new BugReportClosedEvent(
+                report.getId(), report.getTitle(), assigneeEmail, reporter.getEmailAddress()));
 
         return new CloseBugReportResponse(report.getId(), "Task has been closed successfully!");
     }
@@ -365,7 +366,7 @@ public class BugReportService {
         }
         saveUpdated(report);
         eventPublisher.publishEvent(new AssigneeChangedEvent(
-                assignee.getName(), assignee.getEmailAddress(), report.getTitle()));
+                report.getId(), assignee.getName(), assignee.getEmailAddress(), report.getTitle()));
         return updateResponse(report);
     }
 
@@ -452,7 +453,8 @@ public class BugReportService {
                                 ErrorCode.USER_NOT_FOUND,
                                 "User with id=%s does not exist!".formatted(report.getAssigneeId())))
                         .getEmailAddress();
-        eventPublisher.publishEvent(new StatusChangedEvent(report.getTitle(), assigneeEmail, reporter.getEmailAddress()));
+        eventPublisher.publishEvent(new StatusChangedEvent(
+                report.getId(), report.getTitle(), assigneeEmail, reporter.getEmailAddress()));
         return updateResponse(report);
     }
 

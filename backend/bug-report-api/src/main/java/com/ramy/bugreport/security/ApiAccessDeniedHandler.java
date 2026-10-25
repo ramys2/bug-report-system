@@ -2,8 +2,12 @@ package com.ramy.bugreport.security;
 
 import java.io.IOException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.csrf.CsrfException;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.stereotype.Component;
 
@@ -21,6 +25,7 @@ import tools.jackson.databind.ObjectMapper;
 @Component
 public class ApiAccessDeniedHandler implements AccessDeniedHandler {
 
+    private static final Logger logger = LoggerFactory.getLogger(ApiAccessDeniedHandler.class);
     private final ObjectMapper objectMapper;
 
     public ApiAccessDeniedHandler(ObjectMapper objectMapper) {
@@ -33,6 +38,11 @@ public class ApiAccessDeniedHandler implements AccessDeniedHandler {
             HttpServletResponse response,
             AccessDeniedException exception
     ) throws IOException {
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        var userId = authentication != null && authentication.getPrincipal() instanceof UserAccountDetails user
+                ? user.getId() : null;
+        String reason = exception instanceof CsrfException ? "csrfRejected" : "urlAuthorization";
+        logger.warn("event=accessDenied reason={} userId={}", reason, userId);
         response.setStatus(HttpServletResponse.SC_FORBIDDEN);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.getWriter().write(objectMapper.writeValueAsString(

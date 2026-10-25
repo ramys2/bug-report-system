@@ -5,6 +5,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders.formLogin;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.authenticated;
 import static org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.unauthenticated;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
@@ -12,6 +14,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -21,11 +25,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -34,10 +41,14 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.ramy.bugreport.domain.EUserRole;
 import com.ramy.bugreport.domain.UserAccount;
 import com.ramy.bugreport.repository.IUserAccountRepository;
+import com.ramy.bugreport.exception.ApiExceptionHandler;
+import com.ramy.bugreport.logging.RequestLoggingFilter;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
@@ -52,6 +63,8 @@ import tools.jackson.databind.ObjectMapper;
         CurrentUserAuthenticationFilter.class,
         ApiAuthenticationEntryPoint.class,
         ApiAccessDeniedHandler.class,
+        ApiExceptionHandler.class,
+        RequestLoggingFilter.class,
         AuthenticationLoggingTest.TestConfig.class
 })
 @TestPropertySource(properties = "app.cors.allowed-origins=http://localhost:5173")
@@ -73,13 +86,20 @@ class AuthenticationLoggingTest {
     @BeforeEach
     void setUp() {
         reset(userAccountRepository);
-        mockMvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
+        mockMvc = MockMvcBuilders.webAppContextSetup(context)
+                .addFilters(context.getBean(RequestLoggingFilter.class)).apply(springSecurity()).build();
         account = new UserAccount(
                 UUID.randomUUID(), "Reporter", EMAIL, passwordEncoder.encode(PASSWORD), EUserRole.REPORTER);
-        logger = (Logger) LoggerFactory.getLogger(SecurityConfig.class);
+        logger = (Logger) LoggerFactory.getLogger("com.ramy.bugreport");
         previousLevel = logger.getLevel();
-        logger.setLevel(Level.INFO);
-        logs = new ListAppender<>();
+        logger.setLevel(Level.DEBUG);
+        logs = new ListAppender<>() {
+            @Override
+            protected void append(ILoggingEvent event) {
+                event.prepareForDeferredProcessing();
+                super.append(event);
+            }
+        };
         logs.start();
         logger.addAppender(logs);
     }
@@ -103,6 +123,8 @@ class AuthenticationLoggingTest {
 
         assertLog(Level.INFO, "event=authenticationSucceeded userId=" + account.getId());
         assertThat(logs.list.getFirst().getArgumentArray()).containsExactly(account.getId());
+        assertThat(UUID.fromString(logs.list.getFirst().getMDCPropertyMap().get("requestId"))).isNotNull();
+        assertThat(MDC.get("requestId")).isNull();
     }
 
     @Test
@@ -135,8 +157,67 @@ class AuthenticationLoggingTest {
 
         assertRejectedLogin(EMAIL, PASSWORD);
 
-        assertLog(Level.WARN, "event=authenticationFailed reason=authenticationFailed");
-        assertThat(logs.list.getFirst().getFormattedMessage()).doesNotContain(exceptionMessage);
+        assertThat(logs.list).extracting(ILoggingEvent::getLevel).containsExactly(Level.ERROR, Level.WARN);
+        assertThat(logs.list.getFirst().getFormattedMessage())
+                .isEqualTo("event=authenticationServiceFailed exceptionType=InternalAuthenticationServiceException");
+        assertThat(logs.list.getLast().getFormattedMessage())
+                .isEqualTo("event=authenticationFailed reason=authenticationFailed");
+        assertThat(logs.list).allSatisfy(entry -> {
+            assertThat(entry.getFormattedMessage()).doesNotContain(exceptionMessage, EMAIL, PASSWORD);
+            assertThat(entry.getThrowableProxy()).isNull();
+        });
+    }
+
+    @Test
+    void logoutLogsUserIdAndInvalidatesAuthentication() throws Exception {
+        when(userAccountRepository.findById(account.getId())).thenReturn(Optional.of(account));
+        mockMvc.perform(post("/api/auth/logout").with(authentication(authenticationForAccount())).with(csrf()))
+                .andExpect(status().isOk()).andExpect(unauthenticated());
+        assertLog(Level.INFO, "event=logoutSucceeded userId=" + account.getId());
+    }
+
+    @Test
+    void anonymousLogoutDoesNotRequireAnAccountToLog() throws Exception {
+        mockMvc.perform(post("/api/auth/logout").with(csrf())).andExpect(status().isOk());
+        assertLog(Level.INFO, "event=logoutSucceeded userId=null");
+    }
+
+    @Test
+    void urlAuthorizationLogsExactlyOneDenial() throws Exception {
+        when(userAccountRepository.findById(account.getId())).thenReturn(Optional.of(account));
+        mockMvc.perform(get("/api/accounts").with(authentication(authenticationForAccount())))
+                .andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
+        assertLog(Level.WARN, "event=accessDenied reason=urlAuthorization userId=" + account.getId());
+    }
+
+    @Test
+    void csrfRejectionIsDistinctFromAuthorizationDenials() throws Exception {
+        when(userAccountRepository.findById(account.getId())).thenReturn(Optional.of(account));
+        mockMvc.perform(post("/api/comments").with(authentication(authenticationForAccount())))
+                .andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
+        assertLog(Level.WARN, "event=accessDenied reason=csrfRejected userId=" + account.getId());
+    }
+
+    @Test
+    void methodSecurityLogsExactlyOneServiceDenial() throws Exception {
+        when(userAccountRepository.findById(account.getId())).thenReturn(Optional.of(account));
+        mockMvc.perform(get("/api/logging-test").with(authentication(authenticationForAccount())))
+                .andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
+        assertLog(Level.WARN, "event=accessDenied reason=serviceAuthorization userId=" + account.getId());
+    }
+
+    @Test
+    void removedAccountIsAnonymousForCurrentRequestAndLogsOnlyAtDebug() throws Exception {
+        when(userAccountRepository.findById(account.getId())).thenReturn(Optional.empty());
+        mockMvc.perform(get("/api/logging-test").with(authentication(authenticationForAccount())))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("AUTHENTICATION_REQUIRED"));
+        assertLog(Level.DEBUG, "event=staleAuthenticationCleared userId=" + account.getId());
+    }
+
+    private UsernamePasswordAuthenticationToken authenticationForAccount() {
+        var details = new UserAccountDetails(account);
+        return new UsernamePasswordAuthenticationToken(details, null, details.getAuthorities());
     }
 
     private void assertRejectedLogin(String email, String password) throws Exception {
@@ -170,6 +251,35 @@ class AuthenticationLoggingTest {
         @Bean
         ObjectMapper objectMapper() {
             return new ObjectMapper();
+        }
+
+        @Bean
+        DeniedService deniedService() {
+            return new DeniedService();
+        }
+
+        @Bean
+        TestController testController(DeniedService service) {
+            return new TestController(service);
+        }
+    }
+
+    static class DeniedService {
+        @PreAuthorize("denyAll()")
+        public void execute() { }
+    }
+
+    @RestController
+    static class TestController {
+        private final DeniedService service;
+
+        TestController(DeniedService service) {
+            this.service = service;
+        }
+
+        @GetMapping("/api/logging-test")
+        public void denied() {
+            service.execute();
         }
     }
 }

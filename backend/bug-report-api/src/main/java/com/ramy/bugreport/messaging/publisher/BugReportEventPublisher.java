@@ -2,6 +2,7 @@ package com.ramy.bugreport.messaging.publisher;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jms.JmsException;
 import org.springframework.jms.core.JmsTemplate;
@@ -60,33 +61,41 @@ public class BugReportEventPublisher {
         try {
             payload = objectMapper.writeValueAsString(event);
         } catch (JacksonException exception) {
-            logger.error("Cannot serialize {}; notification was not sent (exceptionType={})",
-                    eventType, exception.getClass().getSimpleName());
+            logger.error("Cannot serialize {}; notification was not sent (exceptionType={}) reportId={}",
+                    eventType, exception.getClass().getSimpleName(), event.reportId());
             return;
         }
 
         for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
             try {
-                template.convertAndSend(bugReportEventDestination, payload);
-                logger.info("Send attempt {}/{} succeeded for {}", attempt, MAX_ATTEMPTS, eventType);
+                String requestId = MDC.get("requestId");
+                template.convertAndSend(bugReportEventDestination, payload, message -> {
+                    if (requestId != null) {
+                        message.setStringProperty("requestId", requestId);
+                    }
+                    return message;
+                });
+                logger.info("Send attempt {}/{} succeeded for {} reportId={}",
+                        attempt, MAX_ATTEMPTS, eventType, event.reportId());
                 return;
             } catch (JmsException exception) {
                 // Log exception types, not messages or payloads, which may contain recipient details.
                 if (attempt == MAX_ATTEMPTS) {
-                    logger.error("Send attempt {}/{} failed for {}; giving up (exceptionType={})",
-                            attempt, MAX_ATTEMPTS, eventType, exception.getClass().getSimpleName());
+                    logger.error("Send attempt {}/{} failed for {}; giving up (exceptionType={}) reportId={}",
+                            attempt, MAX_ATTEMPTS, eventType, exception.getClass().getSimpleName(), event.reportId());
                     return;
                 }
-                logger.warn("Send attempt {}/{} failed for {}; retrying in {} ms (exceptionType={})",
+                logger.warn("Send attempt {}/{} failed for {}; retrying in {} ms (exceptionType={}) reportId={}",
                         attempt, MAX_ATTEMPTS, eventType, RETRY_DELAY_MILLIS,
-                        exception.getClass().getSimpleName());
+                        exception.getClass().getSimpleName(), event.reportId());
             }
 
             try {
                 Thread.sleep(RETRY_DELAY_MILLIS);
             } catch (InterruptedException exception) {
                 Thread.currentThread().interrupt();
-                logger.error("Retries interrupted for {}; notification delivery stopped", eventType);
+                logger.error("Retries interrupted for {}; notification delivery stopped reportId={}",
+                        eventType, event.reportId());
                 return;
             }
         }

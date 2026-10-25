@@ -7,6 +7,8 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -18,9 +20,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.jms.core.JmsTemplate;
+import org.springframework.jms.core.MessagePostProcessor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.event.TransactionalEventListenerFactory;
@@ -35,11 +39,12 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import tools.jackson.databind.ObjectMapper;
+import jakarta.jms.Message;
 
 class AsyncBugReportEventPublisherTest {
 
     private final AssigneeChangedEvent event = new AssigneeChangedEvent(
-            "Developer", "developer@example.com", "Report title");
+            java.util.UUID.randomUUID(), "Developer", "developer@example.com", "Report title");
     private final JmsTemplate template = mock(JmsTemplate.class);
     private final ObjectMapper objectMapper = mock(ObjectMapper.class);
     private final TransactionTemplate transaction = new TransactionTemplate(new TestTransactionManager());
@@ -64,7 +69,30 @@ class AsyncBugReportEventPublisherTest {
 
     @AfterEach
     void tearDown() {
+        MDC.clear();
         context.close();
+    }
+
+    @Test
+    void committedEventCarriesRequestIdThroughWorkerAndJmsWithoutLeakingIntoNextTask() throws Exception {
+        String requestId = java.util.UUID.randomUUID().toString();
+        AtomicReference<String> workerRequestId = new AtomicReference<>();
+        Message message = mock(Message.class);
+        when(objectMapper.writeValueAsString(event)).thenReturn("payload");
+        doAnswer(invocation -> {
+            workerRequestId.set(MDC.get("requestId"));
+            invocation.getArgument(2, MessagePostProcessor.class).postProcessMessage(message);
+            return null;
+        }).when(template).convertAndSend(eq("bug-report-event"), eq("payload"), any(MessagePostProcessor.class));
+        MDC.put("requestId", requestId);
+        transaction.executeWithoutResult(status -> context.publishEvent(event));
+        MDC.remove("requestId");
+        // Inspect the worker directly, bypassing the decorator so it cannot mask a leaked value.
+        assertThat(executor.getThreadPoolExecutor().submit(() -> MDC.get("requestId")).get(2, TimeUnit.SECONDS))
+                .isNull();
+        assertThat(workerRequestId.get()).isEqualTo(requestId);
+        verify(message).setStringProperty("requestId", requestId);
+        verify(template).convertAndSend(eq("bug-report-event"), eq("payload"), any(MessagePostProcessor.class));
     }
 
     @Test
@@ -80,7 +108,7 @@ class AsyncBugReportEventPublisherTest {
                 throw new AssertionError("Send was not released by the test");
             }
             return null;
-        }).when(template).convertAndSend("bug-report-event", "payload");
+        }).when(template).convertAndSend(eq("bug-report-event"), eq("payload"), any(MessagePostProcessor.class));
 
         var requestThread = Executors.newSingleThreadExecutor();
         try {
@@ -99,7 +127,7 @@ class AsyncBugReportEventPublisherTest {
             requestThread.shutdownNow();
         }
         executor.submit(() -> { }).get(2, TimeUnit.SECONDS);
-        verify(template).convertAndSend("bug-report-event", "payload");
+        verify(template).convertAndSend(eq("bug-report-event"), eq("payload"), any(MessagePostProcessor.class));
     }
 
     @Test
@@ -145,6 +173,8 @@ class AsyncBugReportEventPublisherTest {
                 assertThat(entry.getFormattedMessage()).contains("Publisher task rejected", "notification dropped");
             });
             verifyNoInteractions(template, objectMapper);
+            var rejectedFuture = executor.submit(() -> { });
+            assertThat(rejectedFuture.isCancelled()).isTrue();
         } finally {
             releaseWorker.countDown();
             logger.detachAppender(logs);

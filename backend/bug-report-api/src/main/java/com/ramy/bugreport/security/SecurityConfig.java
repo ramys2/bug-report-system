@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -151,6 +152,10 @@ public class SecurityConfig {
 					})
 					.failureHandler((request, response, exception) -> {
 						// Keep submitted credentials and exception details out of the log.
+						if (exception instanceof AuthenticationServiceException) {
+							logger.error("event=authenticationServiceFailed exceptionType={}",
+									exception.getClass().getSimpleName());
+						}
 						String reason = exception instanceof BadCredentialsException
 								? "invalidCredentials" : "authenticationFailed";
 						logger.warn("event=authenticationFailed reason={}", reason);
@@ -164,6 +169,9 @@ public class SecurityConfig {
 			.logout((logout) -> logout
 					.logoutUrl("/api/auth/logout")
 					.logoutSuccessHandler((request, response, authentication) -> {
+						var userId = authentication != null
+								&& authentication.getPrincipal() instanceof UserAccountDetails user ? user.getId() : null;
+						logger.info("event=logoutSucceeded userId={}", userId);
 						response.setStatus(HttpServletResponse.SC_OK);
 					})
 			)
@@ -198,6 +206,7 @@ public class SecurityConfig {
 	    );
 
 	    configuration.setAllowCredentials(true);
+	    configuration.setExposedHeaders(List.of("X-Request-ID"));
 
 	    UrlBasedCorsConfigurationSource source =
 	        new UrlBasedCorsConfigurationSource();

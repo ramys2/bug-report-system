@@ -36,6 +36,8 @@ class PublisherLoggingTest {
             context.getLogger("com.ramy.bugreport.service.BugReportService").info("Other application entry");
 
             assertThat(context.getLogger("com.ramy.bugreport.messaging.publisher").isAdditive()).isFalse();
+            assertThat(context.getLogger("org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter")
+                    .isErrorEnabled()).isFalse();
             assertThat(context.getStatusManager().getCopyOfStatusList())
                     .noneMatch(status -> status.getEffectiveLevel() == Status.ERROR);
             assertThat(Files.readString(logDirectory.resolve("bug-report-publisher.log")))
