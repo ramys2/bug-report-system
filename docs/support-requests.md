@@ -1,4 +1,4 @@
-# Support-request creation
+# Support requests
 
 `POST /api/support` creates a persisted request for the signed-in Reporter or Developer.
 The server supplies the requester, generated id, `PENDING` status and creation timestamp.
@@ -31,6 +31,48 @@ Successful creation returns HTTP 201 with only a stable code and confirmation me
 
 The saved request has no resolution timestamp. Submitted identity, status and timestamp
 fields are ignored by the creation DTO.
+
+## Administrator API
+
+`GET /api/support` is Administrator-only and returns all requests, newest first.
+Each item includes `id`, `requesterId`, `requesterName`, `type`, `requestedRole`,
+`description`, `status`, `createdAt`, and `resolvedAt`. Requester names are loaded
+from existing accounts in one batch. This simple listing is not paginated.
+
+`PATCH /api/support/{id}/status` is Administrator-only and requires a CSRF token:
+
+```json
+{"status":"APPROVED"}
+```
+
+Use `REJECTED` to reject a request. `PENDING` is not a resolution. Successful
+resolution returns HTTP 200 with only:
+
+```json
+{"code":"SUPPORT_REQUEST_RESOLVED","message":"Support request resolved successfully."}
+```
+
+The service locks the request before checking its pending status. For a role-change
+approval it also locks and reloads the requester, revalidates Reporter to Developer,
+and calls the existing `UserAccountService.updateRole()`. The role update, resolved
+status, and server-supplied resolution timestamp are committed in one transaction.
+If either update fails, both changes roll back. Concurrent decisions can resolve
+a request only once. Administrators cannot approve their own historical requests.
+
+Outdated role changes return a conflict and remain pending, so an administrator can
+inspect or reject them. Rejection and approval of `OTHER` never modify user roles.
+Resolution uses the columns already present in V6; no additional migration is needed.
+
+| Status | Meaning |
+| --- | --- |
+| 404 `SUPPORT_REQUEST_NOT_FOUND` | The request does not exist |
+| 409 `SUPPORT_REQUEST_ALREADY_RESOLVED` | Another decision has already resolved the request |
+| 409 `SUPPORT_INVALID_RESOLUTION_STATUS` | The supplied resolution is not APPROVED or REJECTED |
+| 409 `SUPPORT_ROLE_CHANGE_OUTDATED` | The target role is no longer eligible for the current account |
+
+Missing/unknown status values return 400. Unauthenticated users receive 401 when
+CSRF is valid, and non-administrators receive 403. Missing/invalid CSRF and self-approval
+also receive 403. Management permissions are checked both in HTTP security and on services.
 
 ## Persistence and security
 
@@ -108,5 +150,42 @@ console.log(response.status, await response.json());
 6. Try as an Administrator: expect 403. Try signed out with a newly fetched CSRF
    token: expect 401. Omit the CSRF header while signed in: expect 403.
 
-Fetch a fresh CSRF token after each login/logout. Administrator review/resolution
-functionality is not implemented yet.
+Fetch a fresh CSRF token after each login/logout.
+
+### Administrator checks
+
+Sign in as an Administrator and use the frontend browser console to inspect requests:
+
+```js
+const supportRequests = await fetch("/api/support").then(response => response.json());
+console.table(supportRequests);
+
+async function resolveSupportRequest(id, status) {
+    const csrf = await fetch("/api/csrf").then(response => response.json());
+    const response = await fetch(`/api/support/${id}/status`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+            [csrf.headerName]: csrf.token,
+        },
+        body: JSON.stringify({ status }),
+    });
+    console.log(response.status, await response.json());
+}
+```
+
+1. Call `resolveSupportRequest("<pending-request-id>", "APPROVED")` for a Reporter's
+   Developer request. Expect HTTP 200, the two-field confirmation, an approved request
+   with `resolved_at`, and Developer in the corresponding `user_account` row.
+2. Repeat resolution of that id: expect 409 and an unchanged resolution timestamp.
+3. Reject a different pending role request: expect HTTP 200, a rejected status, and
+   an unchanged account role. The Reporter can then submit a new request for Developer.
+4. Approve/reject general requests: only their status and resolution timestamp change.
+5. Before approving another role request, change its requester to Developer or Administrator
+   through existing user administration. Approval should return 409 and keep the request pending;
+   rejecting it should still work.
+6. List/resolve as Reporter or Developer: expect 403. Signed out: expect 401 with a valid
+   CSRF token. Omit CSRF during a signed-in resolution: expect 403.
+
+Administrator UI is not implemented in this backend iteration. The integration tests
+also cover competing approval/rejection and rollback after both updates have been flushed.

@@ -44,6 +44,12 @@ public class UserAccountRepositoryJpaAdapter implements IUserAccountRepository {
     }
 
     @Override
+    @Transactional
+    public Optional<UserAccount> findByIdForUpdate(UUID id) {
+        return repository.findByIdForUpdate(id).map(UserAccountMapper::toDomain);
+    }
+
+    @Override
     public List<UserAccount> findAll() {
         return repository.findAll().stream().map(UserAccountMapper::toDomain).toList();
     }

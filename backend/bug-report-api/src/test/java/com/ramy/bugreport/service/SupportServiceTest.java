@@ -41,11 +41,12 @@ import com.ramy.bugreport.security.UserAccountDetails;
 class SupportServiceTest {
     @Mock private ISupportRequestRepository requests;
     @Mock private IUserAccountRepository users;
+    @Mock private UserAccountService userAccountService;
     private SupportService service;
 
     @BeforeEach
     void setUp() {
-        service = new SupportService(requests, users);
+        service = new SupportService(requests, users, userAccountService);
         SecurityContextHolder.clearContext();
     }
 

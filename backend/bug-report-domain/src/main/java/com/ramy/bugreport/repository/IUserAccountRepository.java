@@ -15,6 +15,8 @@ public interface IUserAccountRepository {
      * @return the user account, or empty if none exists
      */
     Optional<UserAccount> findById(UUID id);
+    /** Locks the account until the surrounding transaction completes, for role-change approval. */
+    Optional<UserAccount> findByIdForUpdate(UUID id);
     /** Returns all stored user account objects, in no guaranteed order. */
     List<UserAccount> findAll();
     /**

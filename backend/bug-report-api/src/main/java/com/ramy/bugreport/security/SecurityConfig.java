@@ -56,7 +56,7 @@ public class SecurityConfig {
 	 *
 	 * <ul>
 	 * <li>Public: {@code GET /api/csrf} and {@code POST /api/accounts} (registration). Login and logout are handled by their own filters before these rules apply.</li>
-	 * <li>ADMIN: listing accounts, changing roles, creating projects.</li>
+	 * <li>ADMIN: listing accounts, changing roles, creating projects, listing/resolving support requests.</li>
 	 * <li>ADMIN or DEVELOPER: searching users, updating projects, creating and updating components.</li>
 	 * <li>REPORTER or DEVELOPER: creating support requests.</li>
 	 * <li>Any signed-in user: everything else that is explicitly listed (all reads, creating, updating and closing reports,
@@ -123,7 +123,11 @@ public class SecurityConfig {
 							"/api/components/*/responsible-user-id")
 					.hasAnyRole("ADMIN", "DEVELOPER")
 
-					// Support creation is limited to the two existing non-administrator roles.
+					// Admins manage support requests; the two non-administrator roles create them.
+					.requestMatchers(HttpMethod.GET, "/api/support")
+					.hasRole("ADMIN")
+					.requestMatchers(HttpMethod.PATCH, "/api/support/*/status")
+					.hasRole("ADMIN")
 					.requestMatchers(HttpMethod.POST, "/api/support")
 					.hasAnyRole("REPORTER", "DEVELOPER")
 

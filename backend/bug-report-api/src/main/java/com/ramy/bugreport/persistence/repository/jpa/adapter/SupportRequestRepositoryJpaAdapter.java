@@ -1,9 +1,11 @@
 package com.ramy.bugreport.persistence.repository.jpa.adapter;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.stereotype.Repository;
+import org.springframework.data.domain.Sort;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ramy.bugreport.domain.ESupportRequestStatus;
@@ -27,6 +29,18 @@ public class SupportRequestRepositoryJpaAdapter implements ISupportRequestReposi
     @Override
     public Optional<SupportRequest> findById(UUID id) {
         return repository.findById(id).map(SupportRequestMapper::toDomain);
+    }
+
+    @Override
+    @Transactional
+    public Optional<SupportRequest> findByIdForUpdate(UUID id) {
+        return repository.findByIdForUpdate(id).map(SupportRequestMapper::toDomain);
+    }
+
+    @Override
+    public List<SupportRequest> findAll() {
+        return repository.findAll(Sort.by(Sort.Direction.DESC, "createdAt", "id"))
+                .stream().map(SupportRequestMapper::toDomain).toList();
     }
 
     @Override
