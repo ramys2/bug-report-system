@@ -5,6 +5,8 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
@@ -28,6 +30,8 @@ import jakarta.transaction.Transactional;
 /** Business logic for components (parts of a project that reports are filed against). */
 @Service
 public class ComponentService {
+    private static final Logger logger = LoggerFactory.getLogger(ComponentService.class);
+
     private final IComponentRepository componentRepository;
     private final IUserAccountRepository userAccountRepository;
     private final ISoftwareProjectRepository softwareProjectRepository;
@@ -57,6 +61,7 @@ public class ComponentService {
      * @throws ResourceNotFoundException if a project id is given and no such project exists
      */
     public List<ComponentResponse> getAll(UUID projectId) {
+        logger.debug("event=componentsLookup projectId={}", projectId);
         List<Component> components;
         if (projectId == null) {
             components = componentRepository.findAll();
@@ -108,6 +113,8 @@ public class ComponentService {
                 request.responsibleUserId(),
                 request.projectId());
         component = componentRepository.save(component);
+        logger.info("event=componentCreatePrepared componentId={} projectId={} transaction=pendingCommit",
+                component.getId(), component.getProjectId());
 
         return new CreateComponentResponse(component.getId(), "Successfully created!");
     }
@@ -129,6 +136,7 @@ public class ComponentService {
     @PreAuthorize("hasAnyRole('ADMIN', 'DEVELOPER')")
     public UpdateComponentResponse updateName(UUID componentId, UpdateComponentNameRequest request) {
         var component = componentById(componentId);
+        logger.info("event=componentUpdateRequested componentId={} field=name", componentId);
         component.setName(request.name());
         componentRepository.save(component);
         return updateResponse(component);
@@ -146,6 +154,7 @@ public class ComponentService {
             UpdateComponentDescriptionRequest request
     ) {
         var component = componentById(componentId);
+        logger.info("event=componentUpdateRequested componentId={} field=description", componentId);
         component.setDescription(request.description());
         componentRepository.save(component);
         return updateResponse(component);
@@ -164,6 +173,8 @@ public class ComponentService {
     ) {
         var component = componentById(componentId);
         requireUserExists(request.responsibleUserId());
+        logger.info("event=componentResponsibleUserChangeRequested componentId={} fromUserId={} toUserId={}",
+                componentId, component.getResponsibleUserId(), request.responsibleUserId());
         component.setResponsibleUserId(request.responsibleUserId());
         componentRepository.save(component);
         return updateResponse(component);
