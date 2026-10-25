@@ -96,6 +96,8 @@
         "ASSIGNEE_NOT_DEVELOPER": "Hlášení chyb lze přiřazovat pouze vývojářům.",
         "LAST_ADMIN_REQUIRED": "Musí zůstat alespoň jeden administrátorský účet.",
         "DEVELOPER_HAS_OPEN_ASSIGNMENTS": "Roli tohoto vývojáře nelze změnit, dokud má přiřazená neuzavřená hlášení chyb.",
+        "SUPPORT_ROLE_NOT_ALLOWED": "Můžete požádat pouze o vyšší roli. O roli administrátora požádat nelze.",
+        "SUPPORT_REQUEST_ALREADY_PENDING": "Pro tuto roli již máte nevyřízenou žádost.",
         "INVALID_REQUEST": "Požadavek obsahuje neplatné hodnoty.",
         "DATA_CONFLICT": "Požadavek je v konfliktu s existujícími daty.",
         "AUTHENTICATION_REQUIRED": "Pro pokračování se prosím přihlaste.",

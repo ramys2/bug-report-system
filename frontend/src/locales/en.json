@@ -96,6 +96,8 @@
         "ASSIGNEE_NOT_DEVELOPER": "Bug reports can only be assigned to developers.",
         "LAST_ADMIN_REQUIRED": "At least one administrator account must remain.",
         "DEVELOPER_HAS_OPEN_ASSIGNMENTS": "This developer's role cannot be changed while they have open assigned bug reports.",
+        "SUPPORT_ROLE_NOT_ALLOWED": "You can only request a higher role. Administrator access cannot be requested.",
+        "SUPPORT_REQUEST_ALREADY_PENDING": "You already have a pending request for this role.",
         "INVALID_REQUEST": "The request contains invalid values.",
         "DATA_CONFLICT": "The request conflicts with existing data.",
         "AUTHENTICATION_REQUIRED": "Please sign in to continue.",
