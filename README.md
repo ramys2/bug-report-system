@@ -26,12 +26,13 @@ to a message broker and sent to the people involved as emails.
 
 ## Features
 
-- **Accounts and roles.** Anyone can register (new accounts get the `REPORTER` role) and sign
-  in with email and password. An administrator can change roles to `DEVELOPER` or `ADMIN`.
+- **Accounts and roles.** Register from the login page with a unique username, email and
+  confirmed password, then sign in with email and password. New accounts always receive
+  `REPORTER`; registration does not sign users in automatically. Passwords are BCrypt hashes.
+  Login and registration forms include password visibility toggles.
 - **Bug reports.** A signed-in user files a report with a title, severity (`LOW`, `MEDIUM`,
   `HIGH`, `CRITICAL`), project, component and optional details (description, steps to
-  reproduce, expected and actual behavior, assignee). _Currently the create request fails, see
-  [Known limitations](#known-limitations)._
+  reproduce, expected and actual behavior, assignee).
 - **Triage.** The reporter, the assignee or an admin can edit a report, change its severity
   and status, move it to another project or component, and assign it to a developer.
 - **Comments.** Any signed-in user can comment on an open report. A comment can be deleted by
@@ -39,9 +40,29 @@ to a message broker and sent to the people involved as emails.
 - **Resolution.** A report is closed by adding a resolution (description, optional fixed
   version and commit URL). A closed report can no longer be changed or commented on.
 - **Administration.** Admins and developers manage projects and components; admins manage
-  user roles.
+  user roles and support requests. Administrator access is assigned through user administration.
+- **Support requests.** Reporters and developers contact administrators through the Navbar
+  dialog. Reporters can request Developer access; both roles can submit general requests.
+  Administrators approve or reject pending requests, with a recorded resolution timestamp.
+  Role-change approval updates the existing account and request atomically.
+- **Localization.** English and Czech labels, validation feedback and API error messages.
 - **Email notifications.** Assigning (also when creating a report with an assignee), changing
   the status and closing a report send an email (caught by Mailpit in the development setup).
+
+### Registration and support
+
+1. Open **Register** from `/login`, enter a username, email, password and matching repeat
+   password, and submit. Successful registration returns to login; sign in using the email.
+2. As a Reporter, select **Support** in the Navbar to request Developer access or choose
+   **Different service** and describe the assistance needed. Developers can use general support,
+   but have no eligible higher role to request. Current/lower roles and Administrator cannot
+   be requested, and duplicate pending requests for the same role are rejected.
+3. As an Administrator, open **Support requests** at `/admin/support` to inspect and resolve
+   requests. Resolved requests cannot be processed again; self-approval is blocked. An outdated
+   role change remains pending when approval is refused, so it can still be reviewed or rejected.
+
+The [support-request guide](docs/support-requests.md) contains request/response examples,
+security and transaction details, and manual checks for the dialog and administrator page.
 
 ### Bug report lifecycle
 
@@ -97,10 +118,10 @@ _Figure 2: Runtime components and how they communicate. All of them run as servi
 | Backend language | Java | 21 |
 | Backend framework | Spring Boot (web MVC, Data JPA, Security, Validation, Artemis, Mail) | 4.1.0 |
 | Build tool | Maven (multi-module) | 3.9.16 in the Docker build (no Maven wrapper in the repository) |
-| Database | MariaDB | `latest` image tag (not pinned) |
+| Database | MariaDB | 12.3.3 |
 | Schema migrations | Flyway | managed by Spring Boot |
-| Message broker | Apache ActiveMQ Artemis | `latest-alpine` image tag (not pinned) |
-| Email (development) | Mailpit | `latest` image tag (not pinned) |
+| Message broker | Apache ActiveMQ Artemis | 2.44.0-alpine |
+| Email (development) | Mailpit | v1.31.1 |
 | Frontend framework | React, React Router | 19.2 / 8.3 |
 | Frontend UI and HTTP | Bootstrap, Bootstrap Icons, jQuery (`$.ajax`) | 5.3 / 1.13 / 4.0 |
 | Frontend build tool | Vite | 8.2 |
@@ -127,7 +148,8 @@ bug-report-system/
 │       ├── components/           Reusable UI components and route guards
 │       └── pages/                Application pages built from the components
 ├── database/init/                SQL that MariaDB runs on first start (creates the test database)
-├── docs/                         Design images, Excalidraw sketches of the UI, and the OpenAPI spec
+├── docs/                         Architecture references, design images, and feature guides
+│   ├── support-requests.md       Support workflow, API examples, and manual verification
 │   └── openapi/                  Generated openapi.yaml plus guides to generate and validate it
 ├── .github/workflows/            CI check that the committed OpenAPI spec is up to date
 ├── redocly.yaml                  Lint rules for the OpenAPI spec
@@ -141,7 +163,7 @@ bug-report-system/
 
 ## Domain model
 
-The system stores six entities. A seventh class, `Attachment`, exists in the domain module but
+The system stores seven entities. An eighth class, `Attachment`, exists in the domain module but
 is not persisted or exposed, so attachments are not a working feature yet.
 
 ```mermaid
@@ -150,6 +172,7 @@ erDiagram
     USER_ACCOUNT |o--o{ BUG_REPORT : "is assigned (assignee_id)"
     USER_ACCOUNT ||--o{ COMPONENT : "is responsible for"
     USER_ACCOUNT ||--o{ COMMENT : "writes (author_id)"
+    USER_ACCOUNT ||--o{ SUPPORT_REQUEST : "submits (requester_id)"
     SOFTWARE_PROJECT ||--o{ BUG_REPORT : "has"
     COMPONENT ||--o{ BUG_REPORT : "has"
     BUG_REPORT ||--o{ COMMENT : "has"
@@ -157,7 +180,7 @@ erDiagram
 
     USER_ACCOUNT {
         char36 id PK
-        varchar name
+        varchar name UK
         varchar email_address UK
         varchar password_hash
         varchar role
@@ -200,18 +223,31 @@ erDiagram
         text content
         datetime created_at
     }
+    SUPPORT_REQUEST {
+        char36 id PK
+        char36 requester_id FK
+        varchar type
+        varchar requested_role
+        text description
+        varchar status
+        datetime created_at
+        datetime resolved_at
+    }
 ```
 
-_Figure 3: Database tables and their relations, as created by
-[V1__Base.sql](backend/bug-report-api/src/main/resources/db/migration/V1__Base.sql). Text columns
+_Figure 3: Selected database columns and relations defined by the
+[Flyway migrations](backend/bug-report-api/src/main/resources/db/migration/). Text columns
 of `bug_report` (`description`, `steps_to_reproduce`, `expected_behavior`, `actual_behavior`) and the
-unused `archived_at` columns are left out of the diagram._
+unused `archived_at` columns and the support table's generated `pending_requested_role` column
+are left out of the diagram._
 
 | Enum | Values |
 | --- | --- |
 | `EUserRole` | `REPORTER`, `DEVELOPER`, `ADMIN` |
 | `EBugSeverity` | `LOW`, `MEDIUM`, `HIGH`, `CRITICAL` |
 | `EBugStatus` | `OPEN`, `ASSIGNED`, `IN_PROGRESS`, `NEEDS_INFORMATION`, `REVIEWING`, `REJECTED`, `CLOSED` |
+| `ESupportRequestType` | `ROLE_CHANGE`, `OTHER` |
+| `ESupportRequestStatus` | `PENDING`, `APPROVED`, `REJECTED` |
 
 Field descriptions, business rules and class diagrams are in the
 [domain model reference](docs/domain-model.md).
@@ -254,9 +290,16 @@ _Figure 4: Layers of the backend. Services depend only on repository interfaces 
 module; the persistence package implements them with Spring Data JPA._
 
 **Database.** MariaDB (database `bug_report`, user `bug_report`), not an in-memory database. The
-schema is created by Flyway from
-[V1__Base.sql](backend/bug-report-api/src/main/resources/db/migration/V1__Base.sql). Data is kept
+schema is created and upgraded by the
+[Flyway migrations](backend/bug-report-api/src/main/resources/db/migration/). Data is kept
 in the `mariadb-data` Docker volume, so it survives restarts.
+
+Registration and support add these migrations:
+
+| Migration | Change |
+| --- | --- |
+| [V5__Unique_username.sql](backend/bug-report-api/src/main/resources/db/migration/V5__Unique_username.sql) | Makes `user_account.name` a unique username/display name; existing duplicate names must be resolved before applying it |
+| [V6__Support_request.sql](backend/bug-report-api/src/main/resources/db/migration/V6__Support_request.sql) | Adds persisted support requests, requester foreign key, validation constraints, and a unique key preventing duplicate pending role requests, including concurrent inserts |
 
 **Demo data.** On startup, `BugReportApplication.seedData` fills an empty database (it does
 nothing if a user already exists) with 4 users, 1 project, 2 components, 3 bug reports and 3
@@ -275,7 +318,7 @@ diagram, and the startup and seeding flow, are in the [backend reference](docs/b
 The backend serves a JSON REST API under `/api` (default port 8080). Fields are camelCase.
 Authentication is a session cookie from `POST /api/auth/login`. Every `POST`, `PATCH` and
 `DELETE` request, including login, must send the CSRF token from `GET /api/csrf` in the
-`X-CSRF-TOKEN` header. Errors have the body `{"message": "..."}` with status 400, 401, 403, 404
+`X-CSRF-TOKEN` header. Errors have the body `{"code": "...", "message": "..."}` with status 400, 401, 403, 404
 or 409. URLs that are not explicitly allowed answer 403.
 
 "Owner" below means: the report's reporter or assignee (an admin is always allowed).
@@ -291,6 +334,9 @@ or 409. URLs that are not explicitly allowed answer 403.
 | GET | `/api/accounts/developers` | List developers | Signed in |
 | GET | `/api/accounts/users?search=` | Search users by name | Admin, developer |
 | PATCH | `/api/accounts/{userId}/role` | Change a user's role | Admin |
+| POST | `/api/support` | Create a role-change or general support request | Reporter, developer |
+| GET | `/api/support` | List support requests with requester details, newest first | Admin |
+| PATCH | `/api/support/{requestId}/status` | Approve or reject a pending request | Admin |
 | GET | `/api/projects` | List projects | Signed in |
 | POST | `/api/projects` | Create a project | Admin |
 | PATCH | `/api/projects/{projectId}/name` | Rename a project | Admin, developer |
@@ -305,7 +351,7 @@ or 409. URLs that are not explicitly allowed answer 403.
 | GET | `/api/reports/reported` | Reports filed by me | Signed in |
 | GET | `/api/reports/assigned` | Reports assigned to me | Signed in |
 | GET | `/api/reports/status-transitions` | Statuses that can be chosen next, by current status | Signed in |
-| POST | `/api/reports` | File a report (currently fails, see below) | Signed in |
+| POST | `/api/reports` | File a report | Signed in |
 | POST | `/api/reports/{reportId}/resolution` | Close a report | Owner or admin |
 | PATCH | `/api/reports/{reportId}/assignee` | Assign a developer | Owner or admin |
 | PATCH | `/api/reports/{reportId}/severity` | Change severity | Owner or admin |
@@ -320,9 +366,14 @@ or 409. URLs that are not explicitly allowed answer 403.
 | POST | `/api/comments` | Add a comment (`reportId` in the body) | Signed in |
 | DELETE | `/api/comments/{commentId}` | Delete a comment | Author or admin |
 
-> **Known issue:** `POST /api/reports` currently answers 409 for valid input, because the
-> service never sets `updatedAt` and the database column `bug_report.updated_at` is `NOT NULL`
-> (verified against the running backend). See [Known limitations](#known-limitations).
+Registration accepts `{name, email, password}`; `name` is the unique username also used for
+display. The browser checks password confirmation; the backend assigns Reporter and validates
+required fields and duplicates. Clients cannot choose a registration role.
+
+Support creation and resolution return only `{code, message}` on success: HTTP 201 with
+`SUPPORT_REQUEST_CREATED`, or HTTP 200 with `SUPPORT_REQUEST_RESOLVED`. The server determines
+requester identity and timestamps; only administrators can resolve requests. See the
+[support-request guide](docs/support-requests.md) for request bodies and conflict handling.
 
 Request and response examples, validation rules, error cases and sequence diagrams for the sign-in
 and create-report flows are in the [API reference](docs/api-reference.md). The machine-readable
@@ -341,9 +392,9 @@ The API is documented with an OpenAPI 3.1 specification, generated from annotati
   (`@Operation`, `@ApiResponse`, `@Schema`, ...), so never edit the YAML by hand: the next generation overwrites it.
   A CI check fails if the committed spec no longer matches the code.
 
-The endpoint table above and the spec list the same 36 operations. The spec adds request and response
-schemas, status codes and examples. It documents the intended behavior, so the known issue with
-`POST /api/reports` (see [Known limitations](#known-limitations)) also applies to what Swagger UI shows.
+The live specification adds request and response schemas, status codes and examples to the
+endpoint summary above. The committed YAML still needs regeneration to include the new support
+endpoints and updated registration constraints; use the live specification for the current API.
 
 How to regenerate the spec: [docs/openapi/GENERATE.md](docs/openapi/GENERATE.md).
 How to check that it is correct: [docs/openapi/VALIDATION.md](docs/openapi/VALIDATION.md).
@@ -361,12 +412,20 @@ Bootstrap and using React Router for navigation. Requests to the backend are sen
 
 | Route | Page | Access |
 | --- | --- | --- |
-| `/login` | Sign-in form | Public |
+| `/login` | Sign-in form with a registration link and password visibility toggle | Signed out |
+| `/register` | Registration form with password confirmation and visibility toggles | Signed out |
 | `/` | Report list with quick filters ("Reported by me", "Assigned to me") and a "Create new" dialog | Signed in |
 | `/reports/:id` | Report detail: inline editing, comments, closing with a resolution | Signed in |
 | `/admin/projects` | Project administration | Admin, developer |
 | `/admin/components` | Component administration | Admin, developer |
 | `/admin/users` | User roles | Admin |
+| `/admin/support` | Support requests, full descriptions, status/timestamps, and approve/reject actions | Admin |
+
+The Navbar shows the **Support** dialog button to Reporters and Developers, and the
+**Support requests** administration link to Administrators. Submissions and decisions disable
+their controls while processing. The administrator page reloads after successful decisions
+or conflicts so resolved requests no longer offer actions. Both interfaces provide localized
+success and error toasts.
 
 ```mermaid
 flowchart LR
@@ -385,7 +444,8 @@ The current user is loaded with `GET /api/auth/me` when the app starts and share
 the backend enforces the same rules. The CSRF token is fetched from `GET /api/csrf` and sent with
 every request that changes data.
 
-There are no frontend tests. `npm ci`, `npm run build` and `npm run lint` pass. The frontend is
+There is no automated frontend test suite; use `npm run lint` for static checks and the
+[support-request guide](docs/support-requests.md#manual-checks) for browser verification. The frontend is
 run as a Vite development server; the Docker image does not build a production bundle.
 
 More details, including the route and session diagrams, are in the
@@ -516,26 +576,21 @@ and three comments.
 | Reporter | `reporter@bugreport.local` | `Reporter123!` |
 
 > **Warning:** these accounts are development fixtures only. Passwords are stored in the
-> database as BCrypt hashes, but the plain-text demo passwords are hard-coded in the source code
-> and written to the application log at startup.
->
-> The previous README listed `Frontend123!` for `frontend@bugreport.local`. That is wrong: the
-> seed code gives this account the developer password, and signing in with `Frontend123!` answers
-> 401 (verified).
+> database as BCrypt hashes, but the plain-text demo passwords are hard-coded in the source code.
 
 ## Testing
 
-The backend has 95 automated tests (JUnit 5, Mockito, Spring MockMvc). There are no frontend
-tests.
+The backend uses JUnit, Mockito and Spring MockMvc. There is no automated frontend test suite.
 
-| Kind | Tests | What is covered |
-| --- | --- | --- |
-| Service unit tests (Mockito, no Spring) | 58 | Business rules of `BugReportService` (28), `UserAccountService` (9), `CommentService` (9), `ComponentService` (7) and `SoftwareProjectService` (5) |
-| Controller tests (standalone MockMvc, mocked services) | 25 | Routes, status codes and request handling of the five controllers |
-| Integration tests (`@SpringBootTest`, profile `test`, classes named `*IT`) | 12 | `PersistenceIT` (6): repositories and mapping against MariaDB; `UserRoleSecurityIT` (6): role rules on the URLs with a real security configuration |
+| Kind | What is covered |
+| --- | --- |
+| Service unit tests (Mockito, no Spring) | Report, comment, project, component and account rules; support eligibility, duplicate requests, and administrator decisions |
+| Controller tests (standalone MockMvc, mocked services) | Routes, validation, JSON fields, status codes, and minimal support success responses |
+| Integration tests (`@SpringBootTest`, profile `test`, classes named `*IT`) | Persistence and mapping, session login, registration, authorization, CSRF, forged fields, concurrent support creation/resolution, and transactional rollback |
+| Logging and messaging tests | Request ids, safe error/authentication logging, event publishing, notification consumers, and messaging configuration |
 
-The unit and controller tests run with `mvn test` and need nothing. The integration tests run
-only in `mvn verify` (and `mvn install`), through the Failsafe plugin, and use the database
+The unit and controller tests run with `mvn test` without a database. The integration tests run
+through the Failsafe plugin during `mvn verify` (and `mvn install`), and use the database
 `bug_report_test` on `localhost:3306`
 ([application-test.yml](backend/bug-report-api/src/test/resources/application-test.yml)), so start
 the database first.
@@ -550,6 +605,26 @@ mvn test -pl bug-report-api -am -Dtest=BugReportServiceTest -Dsurefire.failIfNoS
 mvn verify -pl bug-report-api -am -Dit.test=PersistenceIT -Dtest=NoSuchTest -Dsurefire.failIfNoSpecifiedTests=false -Dfailsafe.failIfNoSpecifiedTests=false   # one integration test class
 ```
 
+To run the registration and support tests specifically, use these commands from `backend/`
+after starting the test database:
+
+```shell
+# Registration and support unit/controller tests (database not required)
+mvn -pl bug-report-api -am \
+  -Dtest=UserAccountServiceTest,UserAccountControllerTest,SupportServiceTest,SupportAdministrationServiceTest,SupportControllerTest \
+  -Dsurefire.failIfNoSpecifiedTests=false test
+
+# Registration and support integration tests, without packaging the application
+mvn -pl bug-report-api -am \
+  -Dit.test=RegistrationSecurityIT,SupportCreationIT,SupportAdministrationIT \
+  -Dfailsafe.failIfNoSpecifiedTests=false \
+  test-compile failsafe:integration-test failsafe:verify
+```
+
+Integration tests clear and repopulate tables in `bug_report_test`. Results are written to
+`backend/bug-report-api/target/surefire-reports/` and
+`backend/bug-report-api/target/failsafe-reports/`.
+
 `./build-backend.sh` runs `mvn clean install`, so it also runs the integration tests. To build without them, use
 `mvn clean install -DskipTests` in `backend/`.
 
@@ -560,11 +635,8 @@ Notes:
   exits. The database image itself runs that script only on an empty volume, so this service is what
   also fixes volumes created earlier. It is safe to run repeatedly.
 
-- The test log contains Artemis connection errors (`AMQ219007`), because the broker host is not
-  reachable from your machine. The tests still pass.
-- The tests do not catch the `POST /api/reports` failure described in
-  [Known limitations](#known-limitations): the service tests use mocked repositories, so the
-  `NOT NULL` column is never hit.
+- If the broker is unavailable, test logs can contain Artemis connection errors (`AMQ219007`).
+  Registration, support and persistence checks use MariaDB and do not verify live message delivery.
 
 ## Configuration reference
 
@@ -613,17 +685,15 @@ All passwords above are development defaults. Do not use them in production.
 Nothing below is hidden from the code; this is the honest current state. More detailed
 findings are in [Oddities.md](Oddities.md).
 
-- **Filing a new bug report fails.** `POST /api/reports` answers 409 because `updatedAt` is never
-  set while `bug_report.updated_at` is `NOT NULL` (verified). The seeded demo reports work.
-- **Basic authentication only.** Session cookie and CSRF token, with three fixed roles. There
-  is no password policy, password reset, email verification or account lockout.
-- **Demo passwords are hard-coded** and printed to the log at startup.
+- **Email/password session login only.** Session cookie and CSRF token, with three fixed roles.
+  There is no password-strength policy, password reset, email verification or account lockout.
+- **Demo passwords are hard-coded** in the development seed data.
+- **Support listing is not paginated.** The administrator page displays all stored requests.
 - **Attachments are not implemented.** An `Attachment` domain class exists, but there is no
   table, endpoint or user interface for it.
 - **Every signed-in user sees every report** (no per-project visibility).
 - **Hard-coded development settings.** Database, broker and mail credentials are plain
   defaults in `application.yml`.
-- **Docker images are not pinned** for MariaDB, Artemis and Mailpit.
 - **The frontend runs as a Vite development server**, not as a production build.
 - **No license file** is part of the repository.
 
