@@ -5,6 +5,7 @@
         "users": "Users",
         "components": "Components",
         "projects": "Projects",
+        "support": "Support",
         "logout": "Log out"
     },
     "common": {
@@ -166,6 +167,21 @@
             "HIGH": "High",
             "CRITICAL": "Critical"
         }
+    },
+    "support": {
+        "heading": "Contact support",
+        "requestType": "Request type",
+        "roleChange": "Request role change",
+        "other": "Different service",
+        "requestedRole": "Requested role",
+        "selectRole": "Select a role",
+        "noEligibleRoles": "No higher role is available. Choose Different service to request other assistance.",
+        "roleRequired": "Select an eligible role.",
+        "descriptionRequired": "Please describe what you need help with.",
+        "submit": "Send request",
+        "submitting": "Sending...",
+        "created": "Your support request was created successfully.",
+        "createFailed": "Support request not created"
     },
     "admin": {
         "project": {

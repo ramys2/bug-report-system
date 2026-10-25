@@ -1,24 +1,29 @@
 import { Link, useNavigate } from "react-router";
 import "./Navbar.css";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Blobatar } from "@blobatar/react";
 import AuthContext from "./AuthContext";
 import LanguageSwitcher from "./LanguageSwitcher";
+import Modal from "./Modal";
+import CreateSupportRequestForm from "./CreateSupportRequestForm";
 
 /**
  * Top navigation bar. Shows the brand and language switcher while nobody is signed in; otherwise links to Home, and by role also to
- * Users (ADMIN) and Components and Projects (ADMIN or DEVELOPER), plus the user's name and a log-out button.
+ * Users (ADMIN) and Components and Projects (ADMIN or DEVELOPER), plus Support (REPORTER or DEVELOPER), the user's name and a log-out button.
  * Logging out calls `auth.logout()` and then navigates to `/login`. Takes no props; reads `AuthContext`.
  */
 function Navbar() {
     const auth = useContext(AuthContext);
     const navigate = useNavigate();
     const { t } = useTranslation();
+    const [isSupportOpen, setIsSupportOpen] = useState(false);
+    const canRequestSupport = auth.currentUser?.role === "REPORTER" || auth.currentUser?.role === "DEVELOPER";
 
     function handleLogout() {
         auth.logout()
             .done(() => {
+                setIsSupportOpen(false);
                 void navigate("/login", { replace: true });
             });
     }
@@ -60,6 +65,12 @@ function Navbar() {
                 </div>
 
                 <div className="d-flex flex-wrap align-items-center gap-3">
+                    {canRequestSupport && (
+                        <button className="btn btn-outline-primary btn-sm" onClick={() => setIsSupportOpen(true)} type="button">
+                            <i aria-hidden="true" className="bi bi-question-circle me-1" />
+                            {t("navbar.support")}
+                        </button>
+                    )}
                     <span
                         className="d-flex align-items-center gap-2 text-break link-secondary link-underline-opacity-0 link-underline-opacity-100-hover"
                     >
@@ -83,6 +94,21 @@ function Navbar() {
                     </button>
                 </div>
             </div>
+            {canRequestSupport && (
+                <Modal
+                    fullscreen={false}
+                    key={auth.currentUser.id}
+                    label={t("support.heading")}
+                    onHide={() => setIsSupportOpen(false)}
+                    show={isSupportOpen}
+                >
+                    <CreateSupportRequestForm
+                        currentRole={auth.currentUser.role}
+                        onCreated={() => setIsSupportOpen(false)}
+                        onHide={() => setIsSupportOpen(false)}
+                    />
+                </Modal>
+            )}
         </nav>
     );
 }

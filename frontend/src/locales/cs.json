@@ -5,6 +5,7 @@
         "users": "Uživatelé",
         "components": "Komponenty",
         "projects": "Projekty",
+        "support": "Podpora",
         "logout": "Odhlásit se"
     },
     "common": {
@@ -166,6 +167,21 @@
             "HIGH": "Vysoká",
             "CRITICAL": "Kritická"
         }
+    },
+    "support": {
+        "heading": "Kontaktovat podporu",
+        "requestType": "Typ žádosti",
+        "roleChange": "Požádat o změnu role",
+        "other": "Jiná služba",
+        "requestedRole": "Požadovaná role",
+        "selectRole": "Vyberte roli",
+        "noEligibleRoles": "Není k dispozici žádná vyšší role. Pro jinou pomoc vyberte možnost Jiná služba.",
+        "roleRequired": "Vyberte dostupnou roli.",
+        "descriptionRequired": "Popište prosím, s čím potřebujete pomoci.",
+        "submit": "Odeslat žádost",
+        "submitting": "Odesílání...",
+        "created": "Vaše žádost o podporu byla úspěšně vytvořena.",
+        "createFailed": "Žádost o podporu nebyla vytvořena"
     },
     "admin": {
         "project": {

@@ -60,6 +60,24 @@ Errors use the existing JSON error format:
 
 ## Manual checks
 
+### Navbar dialog
+
+1. Sign in as a Reporter and select **Support** in the Navbar. Under **Request role
+   change**, only Developer should be available. Select it and send the request.
+   Expect a success notification, the dialog to close, and an empty form when reopened.
+2. Submit the same role request again. Expect a duplicate-request error with the
+   dialog left open. The backend remains responsible for rejecting duplicates.
+3. Choose **Different service**. Submission must stay disabled for an empty or
+   whitespace-only description. Enter a description and submit successfully.
+4. Sign in as a Developer. The role-change dropdown and submission are disabled
+   because no eligible higher role exists. General requests should still work.
+5. Confirm the Support button is hidden for Administrators and signed-out visitors.
+6. Check the labels and success/error feedback in English and Czech. While a
+   request is in progress, fields and submission are disabled. Closing and reopening
+   the dialog preserves the draft and any pending submission; success clears it.
+
+### API checks
+
 Run the existing development frontend/backend with MariaDB available. Flyway applies
 V6 when the backend starts. Sign in through the frontend as a Reporter and use the
 browser's developer console on that frontend page:
@@ -90,5 +108,5 @@ console.log(response.status, await response.json());
 6. Try as an Administrator: expect 403. Try signed out with a newly fetched CSRF
    token: expect 401. Omit the CSRF header while signed in: expect 403.
 
-Fetch a fresh CSRF token after each login/logout. The Navbar modal and administrator
-review/resolution functionality are outside this creation-only iteration.
+Fetch a fresh CSRF token after each login/logout. Administrator review/resolution
+functionality is not implemented yet.
