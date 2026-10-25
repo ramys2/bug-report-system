@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
+    <property name="LOG_LEVEL_PATTERN" value="%5p [requestId=%X{requestId:-none}]"/>
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
     <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
 
@@ -7,7 +8,7 @@
     <appender name="PUBLISHER_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${PUBLISHER_LOG_PATH:-logs}/bug-report-publisher.log</file>
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger - %msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] [requestId=%X{requestId:-none}] %logger - %msg%n</pattern>
             <charset>UTF-8</charset>
         </encoder>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
@@ -22,6 +23,10 @@
     <logger name="com.ramy.bugreport.messaging.publisher" level="INFO" additivity="false">
         <appender-ref ref="PUBLISHER_FILE"/>
     </logger>
+
+    <!-- SecurityConfig records a safe ERROR for authentication-service failures instead
+         of this filter's raw exception messages, which may contain database values. -->
+    <logger name="org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter" level="OFF"/>
 
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>

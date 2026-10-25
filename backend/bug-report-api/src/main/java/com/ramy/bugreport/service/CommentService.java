@@ -5,6 +5,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +31,8 @@ import jakarta.transaction.Transactional;
  */
 @Service
 public class CommentService {
+    private static final Logger logger = LoggerFactory.getLogger(CommentService.class);
+
     private final ICommentRepository commentRepository;
     private final IBugReportRepository bugReportRepository;
     private final IUserAccountRepository userAccountRepository;
@@ -58,6 +62,7 @@ public class CommentService {
      * @throws ResourceNotFoundException if the report or a comment's author does not exist
      */
     public List<CommentResponse> getComments(UUID reportId) {
+        logger.debug("event=commentsLookup reportId={}", reportId);
         if (!bugReportRepository.existsById(reportId)) {
             throw new ResourceNotFoundException(
                     ErrorCode.BUG_REPORT_NOT_FOUND,
@@ -112,6 +117,8 @@ public class CommentService {
                 request.content(),
                 LocalDateTime.now());
         comment = commentRepository.save(comment);
+        logger.info("event=commentCreatePrepared commentId={} reportId={} authorId={} transaction=pendingCommit",
+                comment.getId(), reportId, authorId);
 
         return CreateCommentResponse.from(comment, author);
     }
@@ -144,6 +151,7 @@ public class CommentService {
                         "Comment with id: %s".formatted(commentId)));
 
         requireOpenReport(comment.getBugReportId());
+        logger.info("event=commentDeleteRequested commentId={} reportId={}", commentId, comment.getBugReportId());
         commentRepository.delete(comment);
     }
 

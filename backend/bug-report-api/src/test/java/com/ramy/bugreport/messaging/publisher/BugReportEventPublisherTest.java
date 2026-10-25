@@ -7,6 +7,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 
 import java.util.List;
 
@@ -15,10 +17,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.jms.JmsException;
 import org.springframework.jms.core.JmsTemplate;
+import org.springframework.jms.core.MessagePostProcessor;
 
 import com.ramy.bugreport.messaging.event.AssigneeChangedEvent;
 
@@ -28,6 +33,7 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
+import jakarta.jms.Message;
 
 @ExtendWith(MockitoExtension.class)
 class BugReportEventPublisherTest {
@@ -35,7 +41,7 @@ class BugReportEventPublisherTest {
     private static final String DESTINATION = "bug-report-event";
     private static final String PAYLOAD = "{\"eventType\":\"ASSIGNEE_CHANGED\"}";
     private final AssigneeChangedEvent event = new AssigneeChangedEvent(
-            "Developer", "developer@example.com", "Private report title");
+            java.util.UUID.randomUUID(), "Developer", "developer@example.com", "Private report title");
 
     @Mock
     private JmsTemplate template;
@@ -60,9 +66,23 @@ class BugReportEventPublisherTest {
 
     @AfterEach
     void tearDown() {
+        MDC.clear();
         logger.detachAppender(logs);
         logger.setLevel(previousLevel);
         logs.stop();
+    }
+
+    @Test
+    void forwardsOnlyRequestCorrelationAsJmsMetadata() throws Exception {
+        when(objectMapper.writeValueAsString(event)).thenReturn(PAYLOAD);
+        String requestId = java.util.UUID.randomUUID().toString();
+        MDC.put("requestId", requestId);
+        publisher.onBugReportEvent(event);
+        var processor = ArgumentCaptor.forClass(MessagePostProcessor.class);
+        verify(template).convertAndSend(eq(DESTINATION), eq(PAYLOAD), processor.capture());
+        Message message = mock(Message.class);
+        assertThat(processor.getValue().postProcessMessage(message)).isSameAs(message);
+        verify(message).setStringProperty("requestId", requestId);
     }
 
     @Test
@@ -71,8 +91,8 @@ class BugReportEventPublisherTest {
 
         publisher.onBugReportEvent(event);
 
-        verify(template).convertAndSend(DESTINATION, PAYLOAD);
-        assertThat(messages()).containsExactly("Send attempt 1/3 succeeded for AssigneeChangedEvent");
+        verify(template).convertAndSend(eq(DESTINATION), eq(PAYLOAD), any(MessagePostProcessor.class));
+        assertThat(messages()).containsExactly("Send attempt 1/3 succeeded for AssigneeChangedEvent reportId=" + event.reportId());
         assertThat(logs.list.getFirst().getLevel()).isEqualTo(Level.INFO);
     }
 
@@ -80,16 +100,16 @@ class BugReportEventPublisherTest {
     void retriesUntilThirdAttemptSucceedsAndSerializesOnlyOnce() {
         when(objectMapper.writeValueAsString(event)).thenReturn(PAYLOAD);
         doThrow(sendFailure()).doThrow(sendFailure()).doNothing()
-                .when(template).convertAndSend(DESTINATION, PAYLOAD);
+                .when(template).convertAndSend(eq(DESTINATION), eq(PAYLOAD), any(MessagePostProcessor.class));
 
         publisher.onBugReportEvent(event);
 
-        verify(template, times(3)).convertAndSend(DESTINATION, PAYLOAD);
+        verify(template, times(3)).convertAndSend(eq(DESTINATION), eq(PAYLOAD), any(MessagePostProcessor.class));
         verify(objectMapper).writeValueAsString(event);
         assertThat(messages()).hasSize(3);
         assertThat(messages().get(0)).startsWith("Send attempt 1/3 failed");
         assertThat(messages().get(1)).startsWith("Send attempt 2/3 failed");
-        assertThat(messages().get(2)).isEqualTo("Send attempt 3/3 succeeded for AssigneeChangedEvent");
+        assertThat(messages().get(2)).isEqualTo("Send attempt 3/3 succeeded for AssigneeChangedEvent reportId=" + event.reportId());
         assertThat(logs.list).extracting(ILoggingEvent::getLevel)
                 .containsExactly(Level.WARN, Level.WARN, Level.INFO);
     }
@@ -97,23 +117,23 @@ class BugReportEventPublisherTest {
     @Test
     void stopsAfterSecondAttemptSucceeds() {
         when(objectMapper.writeValueAsString(event)).thenReturn(PAYLOAD);
-        doThrow(sendFailure()).doNothing().when(template).convertAndSend(DESTINATION, PAYLOAD);
+        doThrow(sendFailure()).doNothing().when(template).convertAndSend(eq(DESTINATION), eq(PAYLOAD), any(MessagePostProcessor.class));
 
         publisher.onBugReportEvent(event);
 
-        verify(template, times(2)).convertAndSend(DESTINATION, PAYLOAD);
+        verify(template, times(2)).convertAndSend(eq(DESTINATION), eq(PAYLOAD), any(MessagePostProcessor.class));
         assertThat(messages()).hasSize(2);
-        assertThat(messages().getLast()).isEqualTo("Send attempt 2/3 succeeded for AssigneeChangedEvent");
+        assertThat(messages().getLast()).isEqualTo("Send attempt 2/3 succeeded for AssigneeChangedEvent reportId=" + event.reportId());
     }
 
     @Test
     void logsAndContainsFailureAfterThreeAttemptsWithoutExposingEventData() {
         when(objectMapper.writeValueAsString(event)).thenReturn(PAYLOAD);
-        doThrow(sendFailure()).when(template).convertAndSend(DESTINATION, PAYLOAD);
+        doThrow(sendFailure()).when(template).convertAndSend(eq(DESTINATION), eq(PAYLOAD), any(MessagePostProcessor.class));
 
         publisher.onBugReportEvent(event);
 
-        verify(template, times(3)).convertAndSend(DESTINATION, PAYLOAD);
+        verify(template, times(3)).convertAndSend(eq(DESTINATION), eq(PAYLOAD), any(MessagePostProcessor.class));
         assertThat(messages()).hasSize(3);
         assertThat(messages().getLast()).startsWith("Send attempt 3/3 failed").contains("giving up");
         assertThat(logs.list).extracting(ILoggingEvent::getLevel)
@@ -139,14 +159,14 @@ class BugReportEventPublisherTest {
     @Test
     void interruptionStopsRetriesAndPreservesInterruptFlag() {
         when(objectMapper.writeValueAsString(event)).thenReturn(PAYLOAD);
-        doThrow(sendFailure()).when(template).convertAndSend(DESTINATION, PAYLOAD);
+        doThrow(sendFailure()).when(template).convertAndSend(eq(DESTINATION), eq(PAYLOAD), any(MessagePostProcessor.class));
 
         Thread.currentThread().interrupt();
         try {
             publisher.onBugReportEvent(event);
 
             assertThat(Thread.currentThread().isInterrupted()).isTrue();
-            verify(template).convertAndSend(DESTINATION, PAYLOAD);
+            verify(template).convertAndSend(eq(DESTINATION), eq(PAYLOAD), any(MessagePostProcessor.class));
             assertThat(messages()).hasSize(2);
             assertThat(messages().getLast()).startsWith("Retries interrupted");
         } finally {

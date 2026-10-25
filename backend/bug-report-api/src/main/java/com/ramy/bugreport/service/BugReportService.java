@@ -9,6 +9,8 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Function;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
@@ -58,6 +60,8 @@ import jakarta.transaction.Transactional;
  */
 @Service
 public class BugReportService {
+    private static final Logger logger = LoggerFactory.getLogger(BugReportService.class);
+
     private final IBugReportRepository bugReportRepository;
     private final IUserAccountRepository userAccountRepository;
     private final ISoftwareProjectRepository softwareProjectRepository;
@@ -92,6 +96,7 @@ public class BugReportService {
      * @throws ResourceNotFoundException if a report references a user that does not exist
      */
     public List<BugReportBriefResponse> getAll() {
+        logger.debug("event=bugReportsLookup");
         return mapToBriefResponses(bugReportRepository.findAll());
     }
     
@@ -121,6 +126,7 @@ public class BugReportService {
      * @throws ResourceNotFoundException if the report, or any user, project or component it refers to, does not exist
      */
     public BugReportResponse getReport(UUID reportId) {
+        logger.debug("event=bugReportLookup reportId={}", reportId);
         BugReport report = bugReportRepository.findById(reportId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         ErrorCode.BUG_REPORT_NOT_FOUND,
@@ -156,6 +162,7 @@ public class BugReportService {
      * @param reporterId id of the reporting user
      */
     public List<BugReportBriefResponse> getReportsByReporter(UUID reporterId) {
+        logger.debug("event=bugReportsByReporterLookup reporterId={}", reporterId);
         return mapToBriefResponses(bugReportRepository.findByReporterId(reporterId));
     }
     
@@ -165,6 +172,7 @@ public class BugReportService {
      * @param assigneeId id of the assigned user
      */
     public List<BugReportBriefResponse> getReportsByAssignee(UUID assigneeId) {
+        logger.debug("event=bugReportsByAssigneeLookup assigneeId={}", assigneeId);
         return mapToBriefResponses(bugReportRepository.findByAssigneeId(assigneeId));
     }
 
@@ -263,10 +271,12 @@ public class BugReportService {
         }
 
         report = bugReportRepository.save(report);
+        logger.info("event=bugReportCreatePrepared reportId={} reporterId={} projectId={} status={} transaction=pendingCommit",
+                report.getId(), reporterId, projectId, report.getStatus());
 
         if (assignee != null) {
             eventPublisher.publishEvent(new AssigneeChangedEvent(
-                    assignee.getName(), assignee.getEmailAddress(), report.getTitle()));
+                    report.getId(), assignee.getName(), assignee.getEmailAddress(), report.getTitle()));
         }
 
         return new CreateBugReportResponse(report.getId(), "Successfully created!");
@@ -305,6 +315,7 @@ public class BugReportService {
         
         var resolution = new Resolution(request.description(), LocalDateTime.now(), request.fixedVersion(), request.commitUrl());
         
+        logger.info("event=bugReportCloseRequested reportId={} fromStatus={} toStatus=CLOSED", reportId, report.getStatus());
         report.setResolution(resolution);
         report.setStatus(EBugStatus.CLOSED);
 
@@ -324,7 +335,8 @@ public class BugReportService {
                                 ErrorCode.USER_NOT_FOUND,
                                 "User with id=%s does not exist!".formatted(assigneeId)))
                         .getEmailAddress();
-        eventPublisher.publishEvent(new BugReportClosedEvent(report.getTitle(), assigneeEmail, reporter.getEmailAddress()));
+        eventPublisher.publishEvent(new BugReportClosedEvent(
+                report.getId(), report.getTitle(), assigneeEmail, reporter.getEmailAddress()));
 
         return new CloseBugReportResponse(report.getId(), "Task has been closed successfully!");
     }
@@ -359,13 +371,16 @@ public class BugReportService {
         var assigneeId = request.assigneeId();
         var assignee = requireDeveloper(assigneeId);
 
+        logger.info("event=bugReportAssigneeChangeRequested reportId={} fromUserId={} toUserId={}",
+                reportId, report.getAssigneeId(), assigneeId);
         report.setAssigneeId(assigneeId);
         if (report.getStatus() == EBugStatus.OPEN) {
+            logger.info("event=bugReportStatusChangeRequested reportId={} fromStatus=OPEN toStatus=ASSIGNED", reportId);
             report.setStatus(EBugStatus.ASSIGNED);
         }
         saveUpdated(report);
         eventPublisher.publishEvent(new AssigneeChangedEvent(
-                assignee.getName(), assignee.getEmailAddress(), report.getTitle()));
+                report.getId(), assignee.getName(), assignee.getEmailAddress(), report.getTitle()));
         return updateResponse(report);
     }
 
@@ -387,6 +402,8 @@ public class BugReportService {
     )
     public UpdateBugReportResponse updateSeverity(UUID reportId, UpdateSeverityRequest request) {
         var report = reportById(reportId);
+        logger.info("event=bugReportSeverityChangeRequested reportId={} fromSeverity={} toSeverity={}",
+                reportId, report.getSeverity(), request.severity());
         report.setSeverity(request.severity());
         saveUpdated(report);
         return updateResponse(report);
@@ -429,6 +446,7 @@ public class BugReportService {
         }
 
         if (request.status() == report.getStatus()) {
+            logger.debug("event=bugReportStatusUnchanged reportId={} status={}", reportId, report.getStatus());
             return updateResponse(report);
         }
 
@@ -438,6 +456,8 @@ public class BugReportService {
                     "Cannot change status from %s to %s.".formatted(report.getStatus(), request.status()));
         }
 
+        logger.info("event=bugReportStatusChangeRequested reportId={} fromStatus={} toStatus={}",
+                reportId, report.getStatus(), request.status());
         report.setStatus(request.status());
         saveUpdated(report);
 
@@ -452,7 +472,8 @@ public class BugReportService {
                                 ErrorCode.USER_NOT_FOUND,
                                 "User with id=%s does not exist!".formatted(report.getAssigneeId())))
                         .getEmailAddress();
-        eventPublisher.publishEvent(new StatusChangedEvent(report.getTitle(), assigneeEmail, reporter.getEmailAddress()));
+        eventPublisher.publishEvent(new StatusChangedEvent(
+                report.getId(), report.getTitle(), assigneeEmail, reporter.getEmailAddress()));
         return updateResponse(report);
     }
 
@@ -483,6 +504,8 @@ public class BugReportService {
         }
 
         if (!projectId.equals(report.getProjectId())) {
+            logger.info("event=bugReportProjectChangeRequested reportId={} fromProjectId={} toProjectId={}",
+                    reportId, report.getProjectId(), projectId);
             report.setProjectId(projectId);
             report.setComponentId(null);
         }
@@ -511,6 +534,8 @@ public class BugReportService {
         var componentId = request.componentId();
         requireComponentInProject(componentId, report.getProjectId());
 
+        logger.info("event=bugReportComponentChangeRequested reportId={} fromComponentId={} toComponentId={}",
+                reportId, report.getComponentId(), componentId);
         report.setComponentId(componentId);
         saveUpdated(report);
         return updateResponse(report);
@@ -534,6 +559,7 @@ public class BugReportService {
     )
     public UpdateBugReportResponse updateDescription(UUID reportId, UpdateDescriptionRequest request) {
         var report = reportById(reportId);
+        logger.info("event=bugReportUpdateRequested reportId={} field=description", reportId);
         report.setDescription(request.description());
         saveUpdated(report);
         return updateResponse(report);
@@ -560,6 +586,7 @@ public class BugReportService {
             UpdateStepsToReproduceRequest request
     ) {
         var report = reportById(reportId);
+        logger.info("event=bugReportUpdateRequested reportId={} field=stepsToReproduce", reportId);
         report.setStepsToReproduce(request.stepsToReproduce());
         saveUpdated(report);
         return updateResponse(report);
@@ -586,6 +613,7 @@ public class BugReportService {
             UpdateExpectedBehaviorRequest request
     ) {
         var report = reportById(reportId);
+        logger.info("event=bugReportUpdateRequested reportId={} field=expectedBehavior", reportId);
         report.setExpectedBehavior(request.expectedBehavior());
         saveUpdated(report);
         return updateResponse(report);
@@ -612,6 +640,7 @@ public class BugReportService {
             UpdateActualBehaviorRequest request
     ) {
         var report = reportById(reportId);
+        logger.info("event=bugReportUpdateRequested reportId={} field=actualBehavior", reportId);
         report.setActualBehavior(request.actualBehavior());
         saveUpdated(report);
         return updateResponse(report);

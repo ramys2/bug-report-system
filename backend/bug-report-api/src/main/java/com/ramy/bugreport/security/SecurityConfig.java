@@ -2,11 +2,15 @@ package com.ramy.bugreport.security;
 
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -44,6 +48,8 @@ import tools.jackson.databind.ObjectMapper;
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
+
+	private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
 	
 	/**
 	 * Defines the HTTP security rules.
@@ -140,9 +146,19 @@ public class SecurityConfig {
 			.formLogin((form) -> form
 					.loginProcessingUrl("/api/auth/login")
 					.successHandler((request, response, authentication) -> {
+						var user = (UserAccountDetails) authentication.getPrincipal();
+						logger.info("event=authenticationSucceeded userId={}", user.getId());
 						response.setStatus(HttpServletResponse.SC_OK);
 					})
 					.failureHandler((request, response, exception) -> {
+						// Keep submitted credentials and exception details out of the log.
+						if (exception instanceof AuthenticationServiceException) {
+							logger.error("event=authenticationServiceFailed exceptionType={}",
+									exception.getClass().getSimpleName());
+						}
+						String reason = exception instanceof BadCredentialsException
+								? "invalidCredentials" : "authenticationFailed";
+						logger.warn("event=authenticationFailed reason={}", reason);
 						response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 						response.setContentType(MediaType.APPLICATION_JSON_VALUE);
 						response.getWriter().write(objectMapper.writeValueAsString(
@@ -153,6 +169,9 @@ public class SecurityConfig {
 			.logout((logout) -> logout
 					.logoutUrl("/api/auth/logout")
 					.logoutSuccessHandler((request, response, authentication) -> {
+						var userId = authentication != null
+								&& authentication.getPrincipal() instanceof UserAccountDetails user ? user.getId() : null;
+						logger.info("event=logoutSucceeded userId={}", userId);
 						response.setStatus(HttpServletResponse.SC_OK);
 					})
 			)
@@ -187,6 +206,7 @@ public class SecurityConfig {
 	    );
 
 	    configuration.setAllowCredentials(true);
+	    configuration.setExposedHeaders(List.of("X-Request-ID"));
 
 	    UrlBasedCorsConfigurationSource source =
 	        new UrlBasedCorsConfigurationSource();

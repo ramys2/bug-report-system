@@ -2,6 +2,7 @@ package com.ramy.bugreport.messaging.event;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.util.UUID;
 
 /**
  * Notification about a change to a bug report. Published by {@code BugReportService} after the change is
@@ -18,6 +19,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 		@JsonSubTypes.Type(value = BugReportClosedEvent.class, name = "BUG_REPORT_CLOSED")
 })
 public sealed interface IBugReportEvent permits AssigneeChangedEvent, StatusChangedEvent, BugReportClosedEvent {
+	/** Stable report identifier for diagnostics; may be null for messages queued by an older version. */
+	UUID reportId();
 	/** Title of the report the event is about. */
 	String reportTitle();
 }

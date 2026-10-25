@@ -15,6 +15,9 @@ spring:
     port: 1025
 
 app:
+  logging:
+    # Warn when synchronous request processing takes at least five seconds.
+    slow-request-ms: 5000
   # Filled in from the Maven project version by resource filtering.
   version: "@project.version@"
   cors:

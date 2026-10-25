@@ -54,7 +54,7 @@ public class BugReportApplication {
      * {@code developer@bugreport.local / Developer123!} and {@code reporter@bugreport.local / Reporter123!}
      * ({@code frontend@bugreport.local} uses the developer password).
      *
-     * <p><b>Note:</b> The credentials are hard-coded and are also written to the application log at startup.
+     * <p><b>Note:</b> The credentials are hard-coded for the demo and are not written to the application log.
      * Only their BCrypt hashes are stored. This is acceptable for a demo but must not be used in production.
      * The data is written to the configured database (MariaDB in {@code application.yml}).
      */
@@ -167,12 +167,6 @@ public class BugReportApplication {
                     bugReportRepository.count(), commentRepository.count(),
 //                    attachmentRepository.count(),
                     resolutionRepository.count());
-            logger.info("""
-                    Test API credentials for curl:
-                      ADMIN: admin@bugreport.local / {}
-                      DEVELOPER: developer@bugreport.local / {}
-                      REPORTER: reporter@bugreport.local / {}
-                    """, adminPassword, developerPassword, reporterPassword);
         };
     }
 }

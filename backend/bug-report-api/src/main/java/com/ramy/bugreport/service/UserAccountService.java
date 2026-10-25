@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -34,6 +36,8 @@ import jakarta.transaction.Transactional;
 /** Business logic for user accounts: listing, searching, registration and role changes. */
 @Service
 public class UserAccountService {
+    private static final Logger logger = LoggerFactory.getLogger(UserAccountService.class);
+
     /** Largest page size a client can get from {@link #getAll}. */
     static final int MAX_PAGE_SIZE = 100;
 
@@ -77,6 +81,7 @@ public class UserAccountService {
                 blankToNull(filter.email()),
                 filter.role());
         var pageQuery = new PageQuery(Math.max(page, 0), Math.clamp(size, 1, MAX_PAGE_SIZE));
+        logger.debug("event=accountsLookup page={} size={} role={}", pageQuery.page(), pageQuery.size(), filter.role());
 
         PageResult<UserAccount> result = userAccountRepository.findPage(normalizedFilter, pageQuery);
 
@@ -89,6 +94,7 @@ public class UserAccountService {
 
     /** Returns the accounts with the {@code DEVELOPER} role. */
     public List<DeveloperResponse> getDevelopers() {
+        logger.debug("event=developersLookup");
         return userAccountRepository.findByRole(EUserRole.DEVELOPER)
                 .stream()
                 .map(DeveloperResponse::from)
@@ -109,6 +115,7 @@ public class UserAccountService {
             return List.of();
         }
 
+        logger.debug("event=usersSearch");
         return userAccountRepository.findByNameContainingIgnoreCase(search.trim())
                 .stream()
                 .map(UserAccountBriefResponse::from)
@@ -142,6 +149,8 @@ public class UserAccountService {
                 passwordEncoder.encode(request.password()),
                 EUserRole.REPORTER);
         userAccount = userAccountRepository.save(userAccount);
+        logger.info("event=userRegistrationPrepared userId={} role={} transaction=pendingCommit",
+                userAccount.getId(), userAccount.getRole());
 
         return new CreateUserAccountResponse(userAccount.getId(), "Successfully created!");
     }
@@ -191,6 +200,8 @@ public class UserAccountService {
                     "A developer with open bug report assignments cannot be assigned a different role.");
         }
 
+        logger.info("event=userRoleChangeRequested userId={} fromRole={} toRole={}",
+                userId, account.getRole(), request.role());
         account.setRole(request.role());
         userAccountRepository.save(account);
         return new UpdateUserAccountResponse(userId, "User role updated successfully!");

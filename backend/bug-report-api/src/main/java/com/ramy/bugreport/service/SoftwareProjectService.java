@@ -3,6 +3,8 @@ package com.ramy.bugreport.service;
 import java.util.List;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +24,8 @@ import jakarta.transaction.Transactional;
 /** Business logic for software projects that bug reports belong to. */
 @Service
 public class SoftwareProjectService {
+    private static final Logger logger = LoggerFactory.getLogger(SoftwareProjectService.class);
+
     private final ISoftwareProjectRepository softwareProjectRepository;
 
     public SoftwareProjectService(ISoftwareProjectRepository softwareProjectRepository) {
@@ -38,6 +42,7 @@ public class SoftwareProjectService {
 
     /** Returns all projects. */
     public List<SoftwareProjectResponse> getAll() {
+        logger.debug("event=projectsLookup");
         return softwareProjectRepository.findAll()
                 .stream()
                 .map(SoftwareProjectResponse::from)
@@ -62,6 +67,7 @@ public class SoftwareProjectService {
     public CreateSoftwareProjectResponse create(CreateSoftwareProjectRequest request) {
         SoftwareProject project = new SoftwareProject(request.name(), request.description());
         project = softwareProjectRepository.save(project);
+        logger.info("event=projectCreatePrepared projectId={} transaction=pendingCommit", project.getId());
 
         return new CreateSoftwareProjectResponse(project.getId(), "Successfully created!");
     }
@@ -86,6 +92,7 @@ public class SoftwareProjectService {
             UpdateSoftwareProjectNameRequest request
     ) {
         var project = projectById(projectId);
+        logger.info("event=projectUpdateRequested projectId={} field=name", projectId);
         project.setName(request.name());
         softwareProjectRepository.save(project);
         return updateResponse(project);
@@ -103,6 +110,7 @@ public class SoftwareProjectService {
             UpdateSoftwareProjectDescriptionRequest request
     ) {
         var project = projectById(projectId);
+        logger.info("event=projectUpdateRequested projectId={} field=description", projectId);
         project.setDescription(request.description());
         softwareProjectRepository.save(project);
         return updateResponse(project);

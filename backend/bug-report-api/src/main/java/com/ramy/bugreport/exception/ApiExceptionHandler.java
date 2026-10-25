@@ -3,18 +3,22 @@ package com.ramy.bugreport.exception;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import com.ramy.bugreport.security.UserAccountDetails;
 
 /**
  * Translates exceptions thrown from controllers and services into JSON error responses
@@ -76,6 +80,10 @@ public class ApiExceptionHandler {
      */
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ApiErrorResponse> handleAccessDenied() {
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        var userId = authentication != null && authentication.getPrincipal() instanceof UserAccountDetails user
+                ? user.getId() : null;
+        logger.warn("event=accessDenied reason=serviceAuthorization userId={}", userId);
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(new ApiErrorResponse(ErrorCode.ACCESS_DENIED, "Access denied."));
     }
@@ -102,7 +110,12 @@ public class ApiExceptionHandler {
         }
 
         // Exception messages can contain sensitive values; record only the exception type.
-        logger.error("Unexpected API error (exceptionType={})", exception.getClass().getName());
+        if (exception instanceof DataAccessException) {
+            logger.error("event=databaseOperationFailed operation=api exceptionType={}",
+                    exception.getClass().getSimpleName());
+        } else {
+            logger.error("Unexpected API error (exceptionType={})", exception.getClass().getName());
+        }
         return ResponseEntity.status(status).headers(headers)
                 .body(new ApiErrorResponse(ErrorCode.INTERNAL_ERROR, "An unexpected error occurred."));
     }
