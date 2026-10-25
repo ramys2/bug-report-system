@@ -44,7 +44,19 @@
         "signIn": "Přihlásit se",
         "noAccount": "Nemáte účet?",
         "register": "Zaregistrovat se",
-        "loginFailed": "Přihlášení se nezdařilo"
+        "loginFailed": "Přihlášení se nezdařilo",
+        "username": "Uživatelské jméno",
+        "haveAccount": "Už máte účet?",
+        "registrationSuccess": "Účet byl vytvořen. Přihlaste se e-mailem a heslem.",
+        "registrationFailed": "Registrace se nezdařila",
+        "passwordHint": "Maximálně 72 znaků.",
+        "passwordTooLong": "Heslo je příliš dlouhé. Zvolte kratší heslo.",
+        "repeatPassword": "Zopakujte heslo",
+        "passwordsDoNotMatch": "Hesla se musí shodovat.",
+        "showPassword": "Zobrazit heslo",
+        "hidePassword": "Skrýt heslo",
+        "showRepeatPassword": "Zobrazit zopakované heslo",
+        "hideRepeatPassword": "Skrýt zopakované heslo"
     },
     "errors": {
         "pageNotFound": "Stránka nenalezena",
@@ -73,6 +85,7 @@
         "USER_NOT_FOUND": "Uživatel nebyl nalezen.",
         "COMMENT_NOT_FOUND": "Komentář nebyl nalezen.",
         "DUPLICATE_EMAIL": "Účet s touto e-mailovou adresou již existuje.",
+        "DUPLICATE_USERNAME": "Účet s tímto uživatelským jménem již existuje.",
         "BUG_REPORT_ALREADY_CLOSED": "Toto hlášení chyby je již uzavřeno.",
         "BUG_REPORT_CLOSED": "Uzavřená hlášení chyb nelze měnit.",
         "CLOSED_REPORT_COMMENTS_FORBIDDEN": "Komentáře u uzavřeného hlášení chyby nelze měnit.",

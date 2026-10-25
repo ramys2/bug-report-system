@@ -99,6 +99,11 @@ public class UserAccountRepositoryJpaAdapter implements IUserAccountRepository {
     }
 
     @Override
+    public boolean existsByName(String name) {
+        return repository.existsByName(name);
+    }
+
+    @Override
     public List<UserAccount> findByNameContainingIgnoreCase(String name) {
         return repository.findByNameContainingIgnoreCase(name).stream()
                 .map(UserAccountMapper::toDomain).toList();

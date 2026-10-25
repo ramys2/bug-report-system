@@ -44,7 +44,19 @@
         "signIn": "Sign In",
         "noAccount": "Don't have an account?",
         "register": "Register",
-        "loginFailed": "Login failed"
+        "loginFailed": "Login failed",
+        "username": "Username",
+        "haveAccount": "Already have an account?",
+        "registrationSuccess": "Account created. Sign in with your email and password.",
+        "registrationFailed": "Registration failed",
+        "passwordHint": "Maximum 72 characters.",
+        "passwordTooLong": "Password is too long. Choose a shorter password.",
+        "repeatPassword": "Repeat password",
+        "passwordsDoNotMatch": "Passwords must match.",
+        "showPassword": "Show password",
+        "hidePassword": "Hide password",
+        "showRepeatPassword": "Show repeat password",
+        "hideRepeatPassword": "Hide repeat password"
     },
     "errors": {
         "pageNotFound": "Page not found",
@@ -73,6 +85,7 @@
         "USER_NOT_FOUND": "User was not found.",
         "COMMENT_NOT_FOUND": "Comment was not found.",
         "DUPLICATE_EMAIL": "An account with this email address already exists.",
+        "DUPLICATE_USERNAME": "An account with this username already exists.",
         "BUG_REPORT_ALREADY_CLOSED": "This bug report is already closed.",
         "BUG_REPORT_CLOSED": "Closed bug reports cannot be changed.",
         "CLOSED_REPORT_COMMENTS_FORBIDDEN": "Comments cannot be changed on a closed bug report.",

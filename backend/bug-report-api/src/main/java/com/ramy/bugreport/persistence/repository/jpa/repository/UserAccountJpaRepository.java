@@ -22,6 +22,8 @@ public interface UserAccountJpaRepository extends JpaRepository<UserAccountEntit
     Optional<UserAccountEntity> findByEmailAddress(String emailAddress);
     /** Whether an account with exactly this email address exists. */
     boolean existsByEmailAddress(String emailAddress);
+    /** Whether a username exists, using the database collation. */
+    boolean existsByName(String name);
     /** Accounts whose name contains the text, ignoring case. */
     List<UserAccountEntity> findByNameContainingIgnoreCase(String name);
 

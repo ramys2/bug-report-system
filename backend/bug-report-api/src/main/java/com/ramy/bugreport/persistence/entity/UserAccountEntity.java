@@ -28,8 +28,8 @@ public class UserAccountEntity {
     @Column(name = "id", nullable = false, length = 36)
     private UUID id;
 
-    /** Display name. Not null, up to 255 characters. */
-    @Column(name = "name", nullable = false)
+    /** Unique username, also used as the display name. Not null, up to 255 characters. */
+    @Column(name = "name", nullable = false, unique = true)
     private String name;
 
     /** Email address. Not null and unique (database constraint). */

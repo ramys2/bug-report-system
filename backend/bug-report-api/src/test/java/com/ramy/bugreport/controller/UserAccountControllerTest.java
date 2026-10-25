@@ -1,6 +1,7 @@
 package com.ramy.bugreport.controller;
 
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -14,6 +15,8 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
@@ -156,6 +159,40 @@ class UserAccountControllerTest {
                 .andExpect(jsonPath("$.id").value(accountId.toString()));
 
         verify(userAccountService).create(request);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "{}",
+            "{\"name\":\"  \",\"email\":\"ramy@example.com\",\"password\":\"secret\"}",
+            "{\"name\":\"Ramy\",\"email\":\"invalid\",\"password\":\"secret\"}",
+            "{\"name\":\"Ramy\",\"email\":\"ramy@example.com\",\"password\":\"  \"}"
+    })
+    void createRejectsMissingBlankOrInvalidFields(String body) throws Exception {
+        mockMvc.perform(post("/api/accounts").contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
+        verifyNoInteractions(userAccountService);
+    }
+
+    @Test
+    void createRejectsOverlongUsername() throws Exception {
+        mockMvc.perform(post("/api/accounts").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"%s\",\"email\":\"ramy@example.com\",\"password\":\"secret\"}"
+                                .formatted("x".repeat(256))))
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(userAccountService);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"a", "ě", "😀"})
+    void createRejectsPasswordsExceedingBcryptByteLimit(String character) throws Exception {
+        mockMvc.perform(post("/api/accounts").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"name\":\"Ramy\",\"email\":\"ramy@example.com\",\"password\":\"%s\"}"
+                                .formatted(character.repeat(73))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
+        verifyNoInteractions(userAccountService);
     }
 
     @Test

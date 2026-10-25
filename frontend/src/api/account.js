@@ -1,5 +1,28 @@
 import $ from "jquery";
-import { getCsrfToken } from "./csrf";
+import { getCsrfToken, loadCsrfToken } from "./csrf";
+
+/**
+ * Registers a Reporter with `POST /api/accounts`. Load CSRF first because this is a guest request.
+ * Does not sign the user in; the registration form redirects to login on success.
+ *
+ * @param {{name: string, email: string, password: string}} account registration fields
+ * @returns {JQuery.Promise} resolves with `{id, message}`
+ */
+export function registerAccount({ name, email, password }) {
+    return loadCsrfToken().then(() => {
+        const csrfToken = getCsrfToken();
+
+        return $.ajax({
+            method: "POST",
+            url: "/api/accounts",
+            contentType: "application/json",
+            data: JSON.stringify({ name, email, password }),
+            headers: {
+                [csrfToken.headerName]: csrfToken.token,
+            },
+        });
+    });
+}
 
 /**
  * `GET /api/accounts` (ADMIN only): lists one page of accounts, ordered by name. Empty filters are ignored by the backend.
