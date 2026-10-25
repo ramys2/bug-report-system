@@ -72,12 +72,15 @@ Open <http://localhost:8080/swagger-ui.html> in a browser.
 
 Expected:
 - The page title is "Bug Report System API", version `0.1.0-SNAPSHOT`, and the description explains the session cookie and CSRF flow.
-- Six groups are listed: **Authentication** (4 operations), **Bug reports** (15), **Comments** (3), **Projects** (4),
-  **Components** (5) and **Accounts** (5). That is 36 in total.
+- Seven groups are listed: **Authentication** (4 operations), **Bug reports** (16), **Comments** (3), **Projects** (4),
+  **Components** (5), **Accounts** (5) and **Support** (3). That is 40 in total.
 - Under **Schemas** at the bottom, for example `CreateBugReportRequest` shows field descriptions, example values,
-  and `title`, `projectId`, `componentId` and `severity` marked as required. `BugReportBriefResponse` shows an example
+  and `title`, `projectId` and `severity` marked as required (`componentId` is optional). `BugReportBriefResponse` shows an example
   `createdAt` of `2026-05-14T09:30:00`.
 - Every write operation (POST, PATCH, DELETE) has a required `X-CSRF-TOKEN` header field.
+- Support schemas include the creation payload, administrator listing item, and resolution payload.
+  Creation and resolution confirmations contain only `code` and `message`. For role-specific
+  browser and API checks, see [support-requests.md](../support-requests.md#manual-checks).
 
 Then try it out, in this order (**Try it out**, then **Execute**):
 1. `GET /api/csrf`: expected `200` with `{"headerName":"X-CSRF-TOKEN","parameterName":"_csrf","token":"..."}`. Copy the token.
@@ -88,8 +91,8 @@ Then try it out, in this order (**Try it out**, then **Execute**):
 
 If it fails:
 - The page does not load or shows `403`: the docs URLs are not permitted in `SecurityConfig`.
-- `403` with `{"message":"Access denied."}` on a POST or login: the token is missing, or it is the old one from before login.
-- `401` with `{"message":"Authentication is required."}` on a GET: you are not signed in, or the browser blocks the session cookie.
+- `403` with `{"code":"ACCESS_DENIED","message":"Access denied."}` on a POST or login: the token is missing, or it is the old one from before login.
+- `401` with `{"code":"AUTHENTICATION_REQUIRED","message":"Authentication is required."}` on a GET: you are not signed in, or the browser blocks the session cookie.
 
 ## 4. Fetch the raw spec
 
@@ -148,9 +151,9 @@ CLOSED_ID=$(curl -s -b $COOKIES http://localhost:8080/api/reports | grep -o '"re
 curl -s -b $COOKIES -w "\n%{http_code}\n" -X POST -H "X-CSRF-TOKEN: $TOKEN" -H 'Content-Type: application/json' -d "{\"reportId\":\"$CLOSED_ID\",\"content\":\"Too late.\"}" http://localhost:8080/api/comments
 ```
 
-Expected: status `409` and the body `{"message":"Comments cannot be changed on a closed report."}`.
+Expected: status `409` and the body `{"code":"CLOSED_REPORT_COMMENTS_FORBIDDEN","message":"Comments cannot be changed on a closed report."}`.
 This matches the `409` response of `POST /api/comments`, schema `ApiErrorResponse`
-(the same `{"message": "..."}` body is used for every error).
+(the same `{"code": "...", "message": "..."}` format is used for every error).
 
 **An error case (404).** A report id that does not exist:
 
@@ -158,7 +161,7 @@ This matches the `409` response of `POST /api/comments`, schema `ApiErrorRespons
 curl -s -b $COOKIES -w "\n%{http_code}\n" http://localhost:8080/api/reports/00000000-0000-0000-0000-000000000000
 ```
 
-Expected: status `404` and `{"message":"Report with id: 00000000-0000-0000-0000-000000000000"}`.
+Expected: status `404` and `{"code":"BUG_REPORT_NOT_FOUND","message":"Report with id: 00000000-0000-0000-0000-000000000000"}`.
 This matches the `404` response of `GET /api/reports/{reportId}`, schema `ApiErrorResponse`.
 
 ## 6. Lint the spec
@@ -167,17 +170,17 @@ This matches the `404` response of `GET /api/reports/{reportId}`, schema `ApiErr
 npx -y @redocly/cli lint docs/openapi/openapi.yaml
 ```
 
-Expected: `Woohoo! Your API description is valid.` and `You have 7 warnings.`, with exit code 0.
+Expected: a valid description with exit code 0. The regenerated spec has 9 warnings with Redocly CLI 2.57.0.
 The linter reads `redocly.yaml` in the repository root, which uses the recommended rules except `security-defined`.
-Without that setting, the same command reports 36 errors (one per operation), because the spec declares no
+Without that setting, the security rule reports an error for each operation, because the spec declares no
 security scheme. That is intentional: the project documents the session-cookie and CSRF flow in the API
 description text instead.
 
-The 7 known warnings, which are left as they are:
+The 9 known warnings, which are left as they are:
 - `info-license` (1): the spec has no license, because the project has none to reference.
-- `no-server-example.com` (1): springdoc adds the server `http://localhost:8080` automatically.
+- `no-server-example.com` (1): the generation profile adds the local server `http://localhost:8089` automatically.
 - `operation-4xx-response` (1): `GET /api/csrf` is public and has no error response.
-- `no-invalid-schema-examples` (4): the `createdAt` and `updatedAt` examples (for example `2026-05-14T09:30:00`)
+- `no-invalid-schema-examples` (6): the creation, update and resolution timestamp examples (for example `2026-05-14T09:30:00`)
   have no time zone offset. The API really does return times without an offset (Java `LocalDateTime`),
   so the examples match the real output and the `date-time` format is what is imprecise.
 
@@ -208,12 +211,12 @@ annotations: review the diff and commit the regenerated `docs/openapi/openapi.ya
 grep -cE '^    (get|post|put|patch|delete):' docs/openapi/openapi.yaml; grep -cE '^  /' docs/openapi/openapi.yaml
 ```
 
-Expected: two lines, `36` (operations) and `31` (paths).
+Expected: two lines, `40` (operations) and `34` (paths).
 
-Compare with the endpoints found in the code: 15 bug report, 3 comment, 4 project, 5 component and 5 account
-endpoints, plus `GET /api/csrf` and `GET /api/auth/me`, is **34 controller endpoints**. The spec has 2 more
+Compare with the endpoints found in the code: 16 bug report, 3 comment, 4 project, 5 component, 5 account
+and 3 support endpoints, plus `GET /api/csrf` and `GET /api/auth/me`, is **38 controller endpoints**. The spec has 2 more
 (`POST /api/auth/login` and `POST /api/auth/logout`), which are handled by Spring Security and added by
-`OpenApiConfig`. 34 + 2 = 36.
+`OpenApiConfig`. 38 + 2 = 40.
 If the number is lower: an endpoint is missing or hidden from the spec; if it is higher, a new endpoint was added.
 
 ## Clean up

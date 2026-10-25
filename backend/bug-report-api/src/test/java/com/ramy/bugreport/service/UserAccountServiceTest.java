@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -28,6 +30,7 @@ import com.ramy.bugreport.dto.account.UserAccountResponse;
 import com.ramy.bugreport.dto.account.UserAccountBriefResponse;
 import com.ramy.bugreport.exception.BusinessRuleConflictException;
 import com.ramy.bugreport.exception.DuplicateEmailException;
+import com.ramy.bugreport.exception.ErrorCode;
 import com.ramy.bugreport.repository.IBugReportRepository;
 import com.ramy.bugreport.repository.IUserAccountRepository;
 import com.ramy.bugreport.repository.PageQuery;
@@ -126,7 +129,7 @@ class UserAccountServiceTest {
 
     @Test
     void createHashesPasswordAndNormalizesEmail() {
-        var request = new CreateUserAccountRequest("Ramy", " Ramy@Example.COM ", "Password123!");
+        var request = new CreateUserAccountRequest(" Ramy ", " Ramy@Example.COM ", "Password123!");
         var accountId = UUID.randomUUID();
         var savedAccount = org.mockito.Mockito.mock(UserAccount.class);
         when(passwordEncoder.encode(request.password())).thenReturn("hashed-password");
@@ -137,8 +140,10 @@ class UserAccountServiceTest {
 
         var accountCaptor = ArgumentCaptor.forClass(UserAccount.class);
         verify(userAccountRepository).existsByEmailAddress("ramy@example.com");
+        verify(userAccountRepository).existsByName("Ramy");
         verify(userAccountRepository).save(accountCaptor.capture());
         var account = accountCaptor.getValue();
+        assertThat(account.getName()).isEqualTo("Ramy");
         assertThat(account.getEmailAddress()).isEqualTo("ramy@example.com");
         assertThat(account.getPasswordHash()).isEqualTo("hashed-password");
         assertThat(account.getRole()).isEqualTo(EUserRole.REPORTER);
@@ -151,6 +156,20 @@ class UserAccountServiceTest {
         when(userAccountRepository.existsByEmailAddress("ramy@example.com")).thenReturn(true);
 
         assertThatThrownBy(() -> service.create(request)).isInstanceOf(DuplicateEmailException.class);
+        verify(userAccountRepository, never()).save(any());
+        verifyNoInteractions(passwordEncoder);
+    }
+
+    @Test
+    void createRejectsDuplicateTrimmedUsernameBeforeEncodingOrSaving() {
+        var request = new CreateUserAccountRequest(" Ramy ", "new@example.com", "Password123!");
+        when(userAccountRepository.existsByName("Ramy")).thenReturn(true);
+
+        assertThatThrownBy(() -> service.create(request))
+                .isInstanceOfSatisfying(BusinessRuleConflictException.class,
+                        exception -> assertThat(exception.getCode()).isEqualTo(ErrorCode.DUPLICATE_USERNAME));
+        verify(userAccountRepository, never()).save(any());
+        verifyNoInteractions(passwordEncoder);
     }
 
     @Test

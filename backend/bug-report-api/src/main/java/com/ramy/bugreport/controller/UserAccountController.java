@@ -141,11 +141,12 @@ public class UserAccountController {
      *
      * <p>Access: public, no sign-in needed.
      *
-     * @param request body {@code {name, email, password}}, all required and not blank; {@code email} must be a valid address
+     * @param request body {@code {name, email, password}}, all required and not blank; name is a unique username,
+     *                name and email allow up to 255 characters, and passwords allow up to 72 UTF-8 bytes
      * @return 201 with {@code {id, message}}
      * @throws com.ramy.bugreport.exception.DuplicateEmailException 409 if the (trimmed, lower-cased) email is already registered
      */
-    @Operation(summary = "Register an account", description = "Registers a new account with the REPORTER role. Access: public, no sign-in needed. Returns 409 if the (trimmed, lower-cased) email is already registered.")
+    @Operation(summary = "Register an account", description = "Registers a new account with the REPORTER role. Access: public, no sign-in needed; CSRF token required. Returns 409 if the trimmed username or (trimmed, lower-cased) email is already registered.")
     @ApiResponse(responseCode = "201", description = "Account created.")
     @BadRequestResponse
     @ForbiddenResponse

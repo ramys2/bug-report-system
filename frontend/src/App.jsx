@@ -6,9 +6,11 @@ import DeveloperRoute from "./components/DeveloperRoute";
 import GuestRoute from "./components/GuestRoute";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
+import RegistrationPage from "./pages/RegistrationPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import BugReportPage from "./pages/BugReportPage";
 import UserAdminPage from "./pages/UserAdminPage";
+import SupportAdminPage from "./pages/SupportAdminPage";
 import ComponentAdminPage from "./pages/ComponentAdminPage";
 import ProjectAdminPage from "./pages/ProjectAdminPage";
 import Navbar from "./components/Navbar";
@@ -19,10 +21,10 @@ import Toast from "./components/Toast";
  * Root component: sets up routing and the app-wide providers.
  *
  * `AuthProvider` wraps everything, `Navbar` and `Toast` are always visible. Routes:
- * - `/login`: only for users who are not signed in (`GuestRoute`), `LoginPage`.
+ * - `/login` and `/register`: only for users who are not signed in (`GuestRoute`).
  * - `/` and `/reports/:id`: any signed-in user (`ProtectedRoute`).
  * - `/admin/components` and `/admin/projects`: ADMIN or DEVELOPER (`DeveloperRoute`).
- * - `/admin/users`: ADMIN only (`AdminRoute`).
+ * - `/admin/users` and `/admin/support`: ADMIN only (`AdminRoute`).
  * - Any other path: `NotFoundPage`.
  *
  * The route guards only control what the UI shows; the backend enforces access itself.
@@ -44,11 +46,13 @@ export default function App() {
                         </Route>
                         <Route element={<AdminRoute />}>
                             <Route path="/admin/users" element={<UserAdminPage />} />
+                            <Route path="/admin/support" element={<SupportAdminPage />} />
                         </Route>
                     </Route>
 
                     <Route element={<GuestRoute />}>
                         <Route path="/login" element={<LoginPage />} />
+                        <Route path="/register" element={<RegistrationPage />} />
                     </Route>
 
                     <Route path="*" element={<NotFoundPage />} />

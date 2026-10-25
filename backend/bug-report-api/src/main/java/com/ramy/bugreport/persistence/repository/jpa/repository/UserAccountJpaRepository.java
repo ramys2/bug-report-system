@@ -18,10 +18,17 @@ import jakarta.persistence.LockModeType;
 
 /** Spring Data repository for {@link com.ramy.bugreport.persistence.entity.UserAccountEntity}. */
 public interface UserAccountJpaRepository extends JpaRepository<UserAccountEntity, UUID> {
+    /** Reads the current stored role under a write lock held by the surrounding transaction. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select u from UserAccountEntity u where u.id = :id")
+    Optional<UserAccountEntity> findByIdForUpdate(@Param("id") UUID id);
+
     /** Account with exactly this email address (comparison is left to the database collation). */
     Optional<UserAccountEntity> findByEmailAddress(String emailAddress);
     /** Whether an account with exactly this email address exists. */
     boolean existsByEmailAddress(String emailAddress);
+    /** Whether a username exists, using the database collation. */
+    boolean existsByName(String name);
     /** Accounts whose name contains the text, ignoring case. */
     List<UserAccountEntity> findByNameContainingIgnoreCase(String name);
 

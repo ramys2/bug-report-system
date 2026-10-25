@@ -13,7 +13,7 @@ public class UserAccount {
      */
     private UUID id;
     /**
-     * Display name.
+     * Unique username, also used as the display name.
      */
     private String name;
 

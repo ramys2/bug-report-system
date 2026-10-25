@@ -5,6 +5,8 @@
         "users": "Users",
         "components": "Components",
         "projects": "Projects",
+        "support": "Support",
+        "supportRequests": "Support requests",
         "logout": "Log out"
     },
     "common": {
@@ -44,7 +46,19 @@
         "signIn": "Sign In",
         "noAccount": "Don't have an account?",
         "register": "Register",
-        "loginFailed": "Login failed"
+        "loginFailed": "Login failed",
+        "username": "Username",
+        "haveAccount": "Already have an account?",
+        "registrationSuccess": "Account created. Sign in with your email and password.",
+        "registrationFailed": "Registration failed",
+        "passwordHint": "Maximum 72 characters.",
+        "passwordTooLong": "Password is too long. Choose a shorter password.",
+        "repeatPassword": "Repeat password",
+        "passwordsDoNotMatch": "Passwords must match.",
+        "showPassword": "Show password",
+        "hidePassword": "Hide password",
+        "showRepeatPassword": "Show repeat password",
+        "hideRepeatPassword": "Hide repeat password"
     },
     "errors": {
         "pageNotFound": "Page not found",
@@ -73,6 +87,7 @@
         "USER_NOT_FOUND": "User was not found.",
         "COMMENT_NOT_FOUND": "Comment was not found.",
         "DUPLICATE_EMAIL": "An account with this email address already exists.",
+        "DUPLICATE_USERNAME": "An account with this username already exists.",
         "BUG_REPORT_ALREADY_CLOSED": "This bug report is already closed.",
         "BUG_REPORT_CLOSED": "Closed bug reports cannot be changed.",
         "CLOSED_REPORT_COMMENTS_FORBIDDEN": "Comments cannot be changed on a closed bug report.",
@@ -83,6 +98,12 @@
         "ASSIGNEE_NOT_DEVELOPER": "Bug reports can only be assigned to developers.",
         "LAST_ADMIN_REQUIRED": "At least one administrator account must remain.",
         "DEVELOPER_HAS_OPEN_ASSIGNMENTS": "This developer's role cannot be changed while they have open assigned bug reports.",
+        "SUPPORT_ROLE_NOT_ALLOWED": "You can only request a higher role. Administrator access cannot be requested.",
+        "SUPPORT_REQUEST_ALREADY_PENDING": "You already have a pending request for this role.",
+        "SUPPORT_REQUEST_NOT_FOUND": "Support request was not found.",
+        "SUPPORT_REQUEST_ALREADY_RESOLVED": "This support request has already been resolved.",
+        "SUPPORT_INVALID_RESOLUTION_STATUS": "Choose Approved or Rejected to resolve the support request.",
+        "SUPPORT_ROLE_CHANGE_OUTDATED": "This role change is no longer valid for the user's current role.",
         "INVALID_REQUEST": "The request contains invalid values.",
         "DATA_CONFLICT": "The request conflicts with existing data.",
         "AUTHENTICATION_REQUIRED": "Please sign in to continue.",
@@ -152,7 +173,54 @@
             "CRITICAL": "Critical"
         }
     },
+    "support": {
+        "heading": "Contact support",
+        "requestType": "Request type",
+        "roleChange": "Request role change",
+        "other": "Different service",
+        "requestedRole": "Requested role",
+        "selectRole": "Select a role",
+        "noEligibleRoles": "No higher role is available. Choose Different service to request other assistance.",
+        "roleRequired": "Select an eligible role.",
+        "descriptionRequired": "Please describe what you need help with.",
+        "submit": "Send request",
+        "submitting": "Sending...",
+        "created": "Your support request was created successfully.",
+        "createFailed": "Support request not created"
+    },
     "admin": {
+        "support": {
+            "heading": "Support administration",
+            "description": "Review support requests and approve or reject pending requests.",
+            "requester": "Requester",
+            "details": "Details",
+            "resolvedAt": "Resolved at",
+            "actions": "Actions",
+            "count_one": "{{count}} request",
+            "count_other": "{{count}} requests",
+            "refresh": "Refresh",
+            "loading": "Loading support requests...",
+            "empty": "No support requests found.",
+            "loadFailed": "Unable to load support requests",
+            "approve": "Approve",
+            "reject": "Reject",
+            "approveFor": "Approve request from {{name}}",
+            "rejectFor": "Reject request from {{name}}",
+            "resolving": "Resolving...",
+            "approved": "Support request approved.",
+            "rejected": "Support request rejected.",
+            "resolveFailed": "Support request not resolved",
+            "ownApprovalHint": "You cannot approve your own request.",
+            "types": {
+                "ROLE_CHANGE": "Role change",
+                "OTHER": "Different service"
+            },
+            "statuses": {
+                "PENDING": "Pending",
+                "APPROVED": "Approved",
+                "REJECTED": "Rejected"
+            }
+        },
         "project": {
             "heading": "Project administration",
             "description": "Manage software project details.",

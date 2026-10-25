@@ -15,6 +15,8 @@ public interface IUserAccountRepository {
      * @return the user account, or empty if none exists
      */
     Optional<UserAccount> findById(UUID id);
+    /** Locks the account until the surrounding transaction completes, for role-change approval. */
+    Optional<UserAccount> findByIdForUpdate(UUID id);
     /** Returns all stored user account objects, in no guaranteed order. */
     List<UserAccount> findAll();
     /**
@@ -48,6 +50,8 @@ public interface IUserAccountRepository {
     Optional<UserAccount> findByEmailAddress(String emailAddress);
     /** Returns whether an account with this exact email address exists. */
     boolean existsByEmailAddress(String emailAddress);
+    /** Whether a username exists, using the same database collation as the unique constraint. */
+    boolean existsByName(String name);
     /** Returns accounts whose name contains {@code name}, ignoring case. */
     List<UserAccount> findByNameContainingIgnoreCase(String name);
 

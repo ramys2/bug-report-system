@@ -131,7 +131,8 @@ public class UserAccountService {
     */
 
     /**
-     * Registers a new account with the {@code REPORTER} role. The email is trimmed and lower-cased and the password is stored as a hash produced by the configured {@code PasswordEncoder}.
+     * Registers a new account with the {@code REPORTER} role. The unique username is trimmed,
+     * the email is trimmed and lower-cased, and the password is hashed by the configured {@code PasswordEncoder}.
      *
      * @return the id of the new account
      * @throws DuplicateEmailException if an account with the normalized email already exists
@@ -143,8 +144,14 @@ public class UserAccountService {
             throw new DuplicateEmailException();
         }
 
+        String name = request.name().trim();
+        if (userAccountRepository.existsByName(name)) {
+            throw new BusinessRuleConflictException(
+                    ErrorCode.DUPLICATE_USERNAME, "An account with this username already exists.");
+        }
+
         UserAccount userAccount = new UserAccount(
-                request.name(),
+                name,
                 emailAddress,
                 passwordEncoder.encode(request.password()),
                 EUserRole.REPORTER);
