@@ -152,7 +152,33 @@ console.log(response.status, await response.json());
 
 Fetch a fresh CSRF token after each login/logout.
 
-### Administrator checks
+### Administrator page
+
+1. Create a role-change request and a general request as a Reporter using the Navbar
+   dialog. Sign in as an Administrator and select **Support requests**, opening
+   `/admin/support`.
+2. Confirm the table shows requester name/id, request type, requested role and full
+   description where provided, status, creation date, and resolution date. Requests
+   are newest first. The page lists all requests returned by the existing API.
+3. Approve a pending Developer request. Expect a success notification, a refreshed
+   row marked Approved with a resolution date, and a Developer role on the existing
+   user administration page. Reject another role request and confirm its user's
+   role is unchanged. General requests should resolve without changing roles.
+4. Resolved rows must have no action buttons. An Administrator's own historical
+   pending request has Approve disabled with an explanation. During resolution,
+   action buttons and Refresh are disabled to prevent repeated submissions.
+5. Open the page in two Administrator tabs. Resolve a request in one tab, then try
+   resolving its stale row in the other. Expect a localized conflict message and
+   a refreshed list showing the resolved status.
+6. Change a requester's role through existing user administration before approving
+   their request. Expect an outdated-role error; the request stays pending and can
+   still be rejected.
+7. Check labels, types, statuses, and feedback in English and Czech. Check the empty
+   state before requests exist, and use Refresh to recover after a failed load.
+8. Reporters and Developers must not see the management link and must be redirected
+   when visiting `/admin/support`. Signed-out visitors are redirected to login.
+
+### Administrator API checks
 
 Sign in as an Administrator and use the frontend browser console to inspect requests:
 
@@ -187,5 +213,5 @@ async function resolveSupportRequest(id, status) {
 6. List/resolve as Reporter or Developer: expect 403. Signed out: expect 401 with a valid
    CSRF token. Omit CSRF during a signed-in resolution: expect 403.
 
-Administrator UI is not implemented in this backend iteration. The integration tests
-also cover competing approval/rejection and rollback after both updates have been flushed.
+The backend integration tests also cover competing approval/rejection and rollback
+after both updates have been flushed.

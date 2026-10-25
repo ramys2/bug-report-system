@@ -10,6 +10,7 @@ import RegistrationPage from "./pages/RegistrationPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import BugReportPage from "./pages/BugReportPage";
 import UserAdminPage from "./pages/UserAdminPage";
+import SupportAdminPage from "./pages/SupportAdminPage";
 import ComponentAdminPage from "./pages/ComponentAdminPage";
 import ProjectAdminPage from "./pages/ProjectAdminPage";
 import Navbar from "./components/Navbar";
@@ -23,7 +24,7 @@ import Toast from "./components/Toast";
  * - `/login` and `/register`: only for users who are not signed in (`GuestRoute`).
  * - `/` and `/reports/:id`: any signed-in user (`ProtectedRoute`).
  * - `/admin/components` and `/admin/projects`: ADMIN or DEVELOPER (`DeveloperRoute`).
- * - `/admin/users`: ADMIN only (`AdminRoute`).
+ * - `/admin/users` and `/admin/support`: ADMIN only (`AdminRoute`).
  * - Any other path: `NotFoundPage`.
  *
  * The route guards only control what the UI shows; the backend enforces access itself.
@@ -45,6 +46,7 @@ export default function App() {
                         </Route>
                         <Route element={<AdminRoute />}>
                             <Route path="/admin/users" element={<UserAdminPage />} />
+                            <Route path="/admin/support" element={<SupportAdminPage />} />
                         </Route>
                     </Route>
 

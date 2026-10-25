@@ -1,0 +1,12 @@
+.support-admin-page {
+    height: calc(100svh - 73px);
+}
+
+.support-request-details {
+    min-width: 16rem;
+}
+
+.support-request-description {
+    max-width: 32rem;
+    white-space: pre-wrap;
+}

@@ -10,7 +10,7 @@ import CreateSupportRequestForm from "./CreateSupportRequestForm";
 
 /**
  * Top navigation bar. Shows the brand and language switcher while nobody is signed in; otherwise links to Home, and by role also to
- * Users (ADMIN) and Components and Projects (ADMIN or DEVELOPER), plus Support (REPORTER or DEVELOPER), the user's name and a log-out button.
+ * Users and Support requests (ADMIN) and Components and Projects (ADMIN or DEVELOPER), plus Support (REPORTER or DEVELOPER), the user's name and a log-out button.
  * Logging out calls `auth.logout()` and then navigates to `/login`. Takes no props; reads `AuthContext`.
  */
 function Navbar() {
@@ -49,6 +49,9 @@ function Navbar() {
                         <>
                             <Link to="/admin/users" className="link-secondary link-underline-opacity-100">
                                 {t("navbar.users")}
+                            </Link>
+                            <Link to="/admin/support" className="link-secondary link-underline-opacity-100">
+                                {t("navbar.supportRequests")}
                             </Link>
                         </>
                     )}

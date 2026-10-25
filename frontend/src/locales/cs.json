@@ -6,6 +6,7 @@
         "components": "Komponenty",
         "projects": "Projekty",
         "support": "Podpora",
+        "supportRequests": "Žádosti o podporu",
         "logout": "Odhlásit se"
     },
     "common": {
@@ -188,6 +189,39 @@
         "createFailed": "Žádost o podporu nebyla vytvořena"
     },
     "admin": {
+        "support": {
+            "heading": "Správa podpory",
+            "description": "Prohlížejte žádosti o podporu a schvalujte nebo zamítejte nevyřízené žádosti.",
+            "requester": "Žadatel",
+            "details": "Podrobnosti",
+            "resolvedAt": "Vyřízeno dne",
+            "actions": "Akce",
+            "count_one": "{{count}} žádost",
+            "count_few": "{{count}} žádosti",
+            "count_other": "{{count}} žádostí",
+            "refresh": "Obnovit",
+            "loading": "Načítání žádostí o podporu...",
+            "empty": "Nebyly nalezeny žádné žádosti o podporu.",
+            "loadFailed": "Nelze načíst žádosti o podporu",
+            "approve": "Schválit",
+            "reject": "Zamítnout",
+            "approveFor": "Schválit žádost uživatele {{name}}",
+            "rejectFor": "Zamítnout žádost uživatele {{name}}",
+            "resolving": "Vyřizování...",
+            "approved": "Žádost o podporu byla schválena.",
+            "rejected": "Žádost o podporu byla zamítnuta.",
+            "resolveFailed": "Žádost o podporu nebyla vyřízena",
+            "ownApprovalHint": "Nemůžete schválit svou vlastní žádost.",
+            "types": {
+                "ROLE_CHANGE": "Změna role",
+                "OTHER": "Jiná služba"
+            },
+            "statuses": {
+                "PENDING": "Nevyřízeno",
+                "APPROVED": "Schváleno",
+                "REJECTED": "Zamítnuto"
+            }
+        },
         "project": {
             "heading": "Správa projektů",
             "description": "Spravujte údaje o softwarových projektech.",

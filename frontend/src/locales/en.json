@@ -6,6 +6,7 @@
         "components": "Components",
         "projects": "Projects",
         "support": "Support",
+        "supportRequests": "Support requests",
         "logout": "Log out"
     },
     "common": {
@@ -188,6 +189,38 @@
         "createFailed": "Support request not created"
     },
     "admin": {
+        "support": {
+            "heading": "Support administration",
+            "description": "Review support requests and approve or reject pending requests.",
+            "requester": "Requester",
+            "details": "Details",
+            "resolvedAt": "Resolved at",
+            "actions": "Actions",
+            "count_one": "{{count}} request",
+            "count_other": "{{count}} requests",
+            "refresh": "Refresh",
+            "loading": "Loading support requests...",
+            "empty": "No support requests found.",
+            "loadFailed": "Unable to load support requests",
+            "approve": "Approve",
+            "reject": "Reject",
+            "approveFor": "Approve request from {{name}}",
+            "rejectFor": "Reject request from {{name}}",
+            "resolving": "Resolving...",
+            "approved": "Support request approved.",
+            "rejected": "Support request rejected.",
+            "resolveFailed": "Support request not resolved",
+            "ownApprovalHint": "You cannot approve your own request.",
+            "types": {
+                "ROLE_CHANGE": "Role change",
+                "OTHER": "Different service"
+            },
+            "statuses": {
+                "PENDING": "Pending",
+                "APPROVED": "Approved",
+                "REJECTED": "Rejected"
+            }
+        },
         "project": {
             "heading": "Project administration",
             "description": "Manage software project details.",
