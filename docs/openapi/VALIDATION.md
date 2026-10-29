@@ -72,8 +72,8 @@ Open <http://localhost:8080/swagger-ui.html> in a browser.
 
 Expected:
 - The page title is "Bug Report System API", version `0.1.0-SNAPSHOT`, and the description explains the session cookie and CSRF flow.
-- Seven groups are listed: **Authentication** (4 operations), **Bug reports** (16), **Comments** (3), **Projects** (4),
-  **Components** (5), **Accounts** (5) and **Support** (3). That is 40 in total.
+- Seven groups are listed: **Authentication** (5 operations), **Bug reports** (16), **Comments** (3), **Projects** (4),
+  **Components** (5), **Accounts** (5) and **Support** (3). That is 41 in total.
 - Under **Schemas** at the bottom, for example `CreateBugReportRequest` shows field descriptions, example values,
   and `title`, `projectId` and `severity` marked as required (`componentId` is optional). `BugReportBriefResponse` shows an example
   `createdAt` of `2026-05-14T09:30:00`.
@@ -170,16 +170,16 @@ This matches the `404` response of `GET /api/reports/{reportId}`, schema `ApiErr
 npx -y @redocly/cli lint docs/openapi/openapi.yaml
 ```
 
-Expected: a valid description with exit code 0. The regenerated spec has 9 warnings with Redocly CLI 2.57.0.
+Expected: a valid description with exit code 0. The regenerated spec has 10 warnings with Redocly CLI 2.57.0.
 The linter reads `redocly.yaml` in the repository root, which uses the recommended rules except `security-defined`.
 Without that setting, the security rule reports an error for each operation, because the spec declares no
 security scheme. That is intentional: the project documents the session-cookie and CSRF flow in the API
 description text instead.
 
-The 9 known warnings, which are left as they are:
+The 10 known warnings, which are left as they are:
 - `info-license` (1): the spec has no license, because the project has none to reference.
 - `no-server-example.com` (1): the generation profile adds the local server `http://localhost:8089` automatically.
-- `operation-4xx-response` (1): `GET /api/csrf` is public and has no error response.
+- `operation-4xx-response` (2): `GET /api/csrf` and `GET /api/auth/methods` are public and have no error response.
 - `no-invalid-schema-examples` (6): the creation, update and resolution timestamp examples (for example `2026-05-14T09:30:00`)
   have no time zone offset. The API really does return times without an offset (Java `LocalDateTime`),
   so the examples match the real output and the `date-time` format is what is imprecise.
@@ -211,12 +211,13 @@ annotations: review the diff and commit the regenerated `docs/openapi/openapi.ya
 grep -cE '^    (get|post|put|patch|delete):' docs/openapi/openapi.yaml; grep -cE '^  /' docs/openapi/openapi.yaml
 ```
 
-Expected: two lines, `40` (operations) and `34` (paths).
+Expected: two lines, `41` (operations) and `35` (paths).
 
 Compare with the endpoints found in the code: 16 bug report, 3 comment, 4 project, 5 component, 5 account
-and 3 support endpoints, plus `GET /api/csrf` and `GET /api/auth/me`, is **38 controller endpoints**. The spec has 2 more
+and 3 support endpoints, plus `GET /api/csrf`, `GET /api/auth/me` and `GET /api/auth/methods`, is **39 controller endpoints**. The spec has 2 more
 (`POST /api/auth/login` and `POST /api/auth/logout`), which are handled by Spring Security and added by
-`OpenApiConfig`. 38 + 2 = 40.
+`OpenApiConfig`. 39 + 2 = 41. The Google authorization and callback filters are documented in
+[the API reference](../api-reference.md#optional-google-oidc), outside the REST operation count.
 If the number is lower: an endpoint is missing or hidden from the spec; if it is higher, a new endpoint was added.
 
 ## Clean up

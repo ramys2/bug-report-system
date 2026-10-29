@@ -392,6 +392,21 @@ paths:
       summary: Get the signed-in user
       tags:
       - Authentication
+  /api/auth/methods:
+    get:
+      description: Public login capabilities. Password login is always available;
+        no credentials are exposed.
+      operationId: methods
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthenticationMethodsResponse"
+          description: OK
+      summary: Get available login methods
+      tags:
+      - Authentication
   /api/comments:
     get:
       description: "Newest first; empty if there are none. Access: any signed-in user."
@@ -2151,6 +2166,9 @@ components:
           - DATA_CONFLICT
           - AUTHENTICATION_REQUIRED
           - INVALID_CREDENTIALS
+          - GOOGLE_EMAIL_CONFLICT
+          - GOOGLE_EMAIL_NOT_VERIFIED
+          - GOOGLE_LOGIN_FAILED
           - ACCESS_DENIED
           - INTERNAL_ERROR
           example: INVALID_REQUEST
@@ -2161,6 +2179,11 @@ components:
       required:
       - code
       - message
+    AuthenticationMethodsResponse:
+      type: object
+      properties:
+        googleEnabled:
+          type: boolean
     BugReportBriefResponse:
       type: object
       description: "A report in the list endpoints (`GET /api/reports`, `/reported`,\

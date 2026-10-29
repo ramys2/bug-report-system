@@ -22,6 +22,9 @@ services:
   backend:
     build: ./backend
     image: bug-report-backend
+    environment:
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
     ports:
       - "8080:8080"
     depends_on:
