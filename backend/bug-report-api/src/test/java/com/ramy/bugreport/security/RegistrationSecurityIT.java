@@ -66,6 +66,14 @@ class RegistrationSecurityIT {
     }
 
     @Test
+    void absentGoogleCredentialsHideTheMethodAndLeaveTheStartEndpointInactive() throws Exception {
+        mockMvc.perform(get("/api/auth/methods"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.googleEnabled").value(false));
+        mockMvc.perform(get("/api/auth/oauth2/authorization/google"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void guestCanRegisterWithFetchedCsrfTokenThenLogInUsingExistingSessionAuthentication() throws Exception {
         var session = new MockHttpSession();
         var csrfResponse = mockMvc.perform(get("/api/csrf").session(session))

@@ -60,6 +60,7 @@ import tools.jackson.databind.ObjectMapper;
 @WebAppConfiguration
 @ContextConfiguration(classes = {
         SecurityConfig.class,
+        GoogleLoginConfiguration.class,
         CurrentUserAuthenticationFilter.class,
         ApiAuthenticationEntryPoint.class,
         ApiAccessDeniedHandler.class,

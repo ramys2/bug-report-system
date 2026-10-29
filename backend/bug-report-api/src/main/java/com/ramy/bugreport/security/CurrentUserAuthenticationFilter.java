@@ -5,8 +5,10 @@ import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -48,8 +50,16 @@ public class CurrentUserAuthenticationFilter extends OncePerRequestFilter {
                 && authentication.getPrincipal() instanceof UserAccountDetails currentUser) {
             userAccountRepository.findById(currentUser.getId()).ifPresentOrElse(account -> {
                 var refreshedUser = new UserAccountDetails(account);
-                var refreshedAuthentication = new UsernamePasswordAuthenticationToken(
-                        refreshedUser, authentication.getCredentials(), refreshedUser.getAuthorities());
+                AbstractAuthenticationToken refreshedAuthentication;
+                if (authentication instanceof OAuth2AuthenticationToken oauth
+                        && currentUser instanceof GoogleUserAccountDetails googleUser) {
+                    var refreshedGoogleUser = googleUser.withAccount(account);
+                    refreshedAuthentication = new OAuth2AuthenticationToken(refreshedGoogleUser,
+                            refreshedGoogleUser.getAuthorities(), oauth.getAuthorizedClientRegistrationId());
+                } else {
+                    refreshedAuthentication = new UsernamePasswordAuthenticationToken(
+                            refreshedUser, authentication.getCredentials(), refreshedUser.getAuthorities());
+                }
                 refreshedAuthentication.setDetails(authentication.getDetails());
                 SecurityContextHolder.getContext().setAuthentication(refreshedAuthentication);
             }, () -> {

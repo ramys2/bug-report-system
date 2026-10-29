@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.ramy.bugreport.dto.account.UserAccountResponse;
 import com.ramy.bugreport.security.UserAccountDetails;
+import com.ramy.bugreport.security.GoogleLoginConfiguration;
+import com.ramy.bugreport.dto.auth.AuthenticationMethodsResponse;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -23,6 +25,17 @@ import com.ramy.bugreport.openapi.UnauthorizedResponse;
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
+    private final GoogleLoginConfiguration googleLogin;
+
+    public AuthController(GoogleLoginConfiguration googleLogin) {
+        this.googleLogin = googleLogin;
+    }
+
+    @Operation(summary = "Get available login methods", description = "Public login capabilities. Password login is always available; no credentials are exposed.")
+    @GetMapping("/methods")
+    public AuthenticationMethodsResponse methods() {
+        return new AuthenticationMethodsResponse(googleLogin.isConfigured());
+    }
 
     /**
      * {@code GET /api/auth/me}: returns the signed-in user.
