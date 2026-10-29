@@ -44,6 +44,7 @@
         "email": "Email",
         "password": "Password",
         "signIn": "Sign In",
+        "signInWithGoogle": "Sign in with Google",
         "noAccount": "Don't have an account?",
         "register": "Register",
         "loginFailed": "Login failed",
@@ -61,6 +62,9 @@
         "hideRepeatPassword": "Hide repeat password"
     },
     "errors": {
+        "GOOGLE_EMAIL_CONFLICT": "This Google email is already used by another account. Sign in using that account's existing login method.",
+        "GOOGLE_EMAIL_NOT_VERIFIED": "Google must provide a verified email address to sign in.",
+        "GOOGLE_LOGIN_FAILED": "Google sign-in could not be completed. Please try again.",
         "pageNotFound": "Page not found",
         "pageNotFoundDescription": "The page you are looking for does not exist.",
         "loadReportsTitle": "Unable to load reports",

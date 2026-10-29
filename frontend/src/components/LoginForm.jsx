@@ -1,6 +1,6 @@
-import { useContext, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { login } from "../api/auth";
+import { getAuthenticationMethods, login } from "../api/auth";
 import { getApiErrorMessage } from "../api/error";
 import "./LoginForm.css";
 import { Link, useLocation, useNavigate } from "react-router";
@@ -22,6 +22,30 @@ function LoginForm() {
     const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
+    const [googleEnabled, setGoogleEnabled] = useState(false);
+    const consumedError = useRef(null);
+    const from = location.state?.from;
+    const returnTo = from?.pathname ? `${from.pathname}${from.search ?? ""}${from.hash ?? ""}` : "/";
+    const googleLoginUrl = `/api/auth/oauth2/authorization/google?${new URLSearchParams({ returnTo })}`;
+
+    useEffect(() => {
+        const request = getAuthenticationMethods()
+            .done((methods) => setGoogleEnabled(methods.googleEnabled === true));
+        return () => request.abort();
+    }, []);
+
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const error = params.get("oauthError");
+        if (error === null || consumedError.current === location.search) return;
+        consumedError.current = location.search;
+        const code = ["GOOGLE_EMAIL_CONFLICT", "GOOGLE_EMAIL_NOT_VERIFIED"].includes(error)
+            ? error : "GOOGLE_LOGIN_FAILED";
+        showToast("danger", getApiErrorMessage({ responseJSON: { code } }), t("auth.loginFailed"));
+        params.delete("oauthError");
+        void navigate({ pathname: location.pathname, search: params.toString(), hash: location.hash },
+            { replace: true, state: location.state });
+    }, [location, navigate, t]);
 
     function handleSubmit(event) {
         event.preventDefault();
@@ -81,6 +105,12 @@ function LoginForm() {
             <button type="submit" className="btn btn-primary w-100">
                 {t("auth.signIn")}
             </button>
+
+            {googleEnabled && (
+                <a className="btn btn-outline-primary w-100 mt-3" href={googleLoginUrl}>
+                    {t("auth.signInWithGoogle")}
+                </a>
+            )}
 
             <div className="border-top my-3" />
 
