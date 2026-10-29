@@ -22,6 +22,11 @@ public class GoogleLoginHandlers implements AuthenticationSuccessHandler, Authen
     private static final Logger logger = LoggerFactory.getLogger(GoogleLoginHandlers.class);
     private static final Set<String> PUBLIC_ERRORS = Set.of(
             ErrorCode.GOOGLE_EMAIL_CONFLICT.name(), ErrorCode.GOOGLE_EMAIL_NOT_VERIFIED.name());
+    private final String frontendOrigin;
+
+    public GoogleLoginHandlers(String frontendOrigin) {
+        this.frontendOrigin = frontendOrigin;
+    }
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
@@ -29,7 +34,7 @@ public class GoogleLoginHandlers implements AuthenticationSuccessHandler, Authen
         String target = clearTemporaryState(request);
         var user = (UserAccountDetails) authentication.getPrincipal();
         logger.info("event=googleAuthenticationSucceeded userId={}", user.getId());
-        response.sendRedirect(GoogleLoginConfiguration.FRONTEND_ORIGIN + target);
+        response.sendRedirect(frontendOrigin + target);
     }
 
     @Override
@@ -42,7 +47,7 @@ public class GoogleLoginHandlers implements AuthenticationSuccessHandler, Authen
             code = oauth.getError().getErrorCode();
         }
         logger.warn("event=googleAuthenticationFailed reason={}", code);
-        response.sendRedirect(GoogleLoginConfiguration.FRONTEND_ORIGIN + "/login?oauthError=" + code);
+        response.sendRedirect(frontendOrigin + "/login?oauthError=" + code);
     }
 
     private String clearTemporaryState(HttpServletRequest request) {

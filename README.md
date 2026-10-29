@@ -326,7 +326,7 @@ or 409. URLs that are not explicitly allowed answer 403.
 | Method | Path | Purpose | Access |
 | --- | --- | --- | --- |
 | GET | `/api/csrf` | Get the CSRF token | Public |
-| GET | `/api/auth/methods` | Available login methods (`googleEnabled`) | Public |
+| GET | `/api/auth/methods` | Available login methods (`googleEnabled`, `googleLoginUrl`) | Public |
 | GET | `/api/auth/oauth2/authorization/google` | Start Google login, when configured | Public |
 | GET | `/api/auth/oauth2/code/google` | Google callback handled by Spring Security | OAuth state required |
 | POST | `/api/auth/login` | Sign in (form fields `username` = email, `password`) | Public |
@@ -667,7 +667,19 @@ Database constraints protect concurrent registration and email updates. A failed
 Google-only accounts cannot use password login. There is no password setup/reset endpoint in this iteration.
 Successful login restores a validated application route when available, otherwise `/`; errors return to `/login`
 with an English/Czech message. Logout ends only the application session. Google may still remember its own login.
-The frontend origin and callback are intentionally fixed to `http://localhost:5173` for this development setup.
+The Google URLs are configured in `application.yml` under `app.auth.google`:
+
+```yaml
+frontend-origin: http://localhost:5173
+authorization-base: /api/auth/oauth2/authorization
+callback-base: /api/auth/oauth2/code
+```
+
+`frontend-origin` must be an HTTP(S) origin without credentials, a path, query or fragment (a trailing slash is accepted).
+The two distinct endpoint bases must stay under `/api`, with no trailing slash, so Vite can proxy them.
+Google's registered redirect URI must match `<frontend-origin><callback-base>/google`.
+If the frontend origin changes, also update `app.cors.allowed-origins` to match the deployed frontend.
+`/api/auth/methods` supplies the configured `googleLoginUrl` to the frontend; it is null when Google login is disabled.
 Real Google/browser verification must be performed manually; automated tests stub provider communication.
 
 ### Backend properties
@@ -687,6 +699,9 @@ overridden with a Spring environment variable (dots become underscores, upper ca
 | `spring.mail.host` / `port` | `mailpit` / `1025` | SMTP server for notification emails |
 | `app.cors.allowed-origins` | `http://localhost:5173` | Origins allowed to call the API (CORS), comma-separated |
 | `app.auth.google.client-id` / `client-secret` | empty | Optional backend-only Google credentials |
+| `app.auth.google.frontend-origin` | `http://localhost:5173` | Frontend origin for OAuth callbacks and browser redirects |
+| `app.auth.google.authorization-base` | `/api/auth/oauth2/authorization` | Base path for starting Google login |
+| `app.auth.google.callback-base` | `/api/auth/oauth2/code` | Base path for the Google callback |
 | `app.mail.from-address` | `no-reply@bugreport.local` | Sender address of notification emails |
 | `messaging.destinations.bug-report-event` | `bug-report-event` | Queue name for report events |
 | `server.port` | not set, so Spring Boot's default `8080` | HTTP port of the backend |

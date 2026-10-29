@@ -22,15 +22,20 @@ function LoginForm() {
     const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
-    const [googleEnabled, setGoogleEnabled] = useState(false);
+    const [googleLoginPath, setGoogleLoginPath] = useState(null);
     const consumedError = useRef(null);
     const from = location.state?.from;
     const returnTo = from?.pathname ? `${from.pathname}${from.search ?? ""}${from.hash ?? ""}` : "/";
-    const googleLoginUrl = `/api/auth/oauth2/authorization/google?${new URLSearchParams({ returnTo })}`;
+    const googleLoginUrl = `${googleLoginPath}?${new URLSearchParams({ returnTo })}`;
 
     useEffect(() => {
         const request = getAuthenticationMethods()
-            .done((methods) => setGoogleEnabled(methods.googleEnabled === true));
+            .done((methods) => {
+                if (methods.googleEnabled === true && typeof methods.googleLoginUrl === "string"
+                        && /^\/api\/(?:[A-Za-z0-9_-]+\/)*google$/.test(methods.googleLoginUrl)) {
+                    setGoogleLoginPath(methods.googleLoginUrl);
+                }
+            });
         return () => request.abort();
     }, []);
 
@@ -106,7 +111,7 @@ function LoginForm() {
                 {t("auth.signIn")}
             </button>
 
-            {googleEnabled && (
+            {googleLoginPath && (
                 <a className="btn btn-outline-primary w-100 mt-3" href={googleLoginUrl}>
                     {t("auth.signInWithGoogle")}
                 </a>

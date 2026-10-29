@@ -213,12 +213,12 @@ public class SecurityConfig {
                         .accessDeniedHandler(apiAccessDeniedHandler));
 
         if (googleLogin.isConfigured()) {
-            var handlers = new GoogleLoginHandlers();
+            var handlers = new GoogleLoginHandlers(googleLogin.getFrontendOrigin());
             http.oauth2Login(oauth -> oauth
                     .clientRegistrationRepository(googleLogin.registrations())
                     .authorizationEndpoint(endpoint -> endpoint.authorizationRequestResolver(
-                            new GoogleAuthorizationRequestResolver(googleLogin.registrations())))
-                    .redirectionEndpoint(endpoint -> endpoint.baseUri(GoogleLoginConfiguration.CALLBACK_BASE + "/*"))
+                            new GoogleAuthorizationRequestResolver(googleLogin.registrations(), googleLogin.getAuthorizationBase())))
+                    .redirectionEndpoint(endpoint -> endpoint.baseUri(googleLogin.getCallbackBase() + "/*"))
                     .userInfoEndpoint(endpoint -> endpoint.oidcUserService(googleUsers.getObject()))
                     .successHandler(handlers).failureHandler(handlers));
         }

@@ -84,8 +84,13 @@ import org.slf4j.LoggerFactory;
         CurrentUserAuthenticationFilter.class, ApiAuthenticationEntryPoint.class, ApiAccessDeniedHandler.class,
         AuthController.class, CsrfController.class, GoogleLoginSecurityTest.TestConfig.class})
 @TestPropertySource(properties = {"app.cors.allowed-origins=http://localhost:5173",
-        "app.auth.google.client-id=test-client", "app.auth.google.client-secret=test-secret"})
+        "app.auth.google.client-id=test-client", "app.auth.google.client-secret=test-secret",
+        "app.auth.google.frontend-origin=https://bugs.example.test:9443/",
+        "app.auth.google.authorization-base=/api/sign-in/google-start",
+        "app.auth.google.callback-base=/api/sign-in/google-callback"})
 class GoogleLoginSecurityTest {
+    private static final String AUTHORIZATION_BASE = "/api/sign-in/google-start";
+    private static final String CALLBACK_BASE = "/api/sign-in/google-callback";
     @Autowired private WebApplicationContext context;
     @Autowired private IUserAccountRepository users;
     @Autowired private GoogleAccountService accounts;
@@ -122,7 +127,7 @@ class GoogleLoginSecurityTest {
         var flow = begin("/reports/00000000-0000-0000-0000-000000000001?tab=comments#latest");
         String oldSessionId = flow.session.getId();
         callback(flow).andExpect(status().isFound())
-                .andExpect(redirectedUrl("http://localhost:5173/reports/00000000-0000-0000-0000-000000000001?tab=comments#latest"))
+                .andExpect(redirectedUrl("https://bugs.example.test:9443/reports/00000000-0000-0000-0000-000000000001?tab=comments#latest"))
                 .andExpect(authenticated().withRoles("REPORTER"));
         assertThat(flow.session.getId()).isNotEqualTo(oldSessionId);
         assertThat(flow.session.getAttribute(GoogleAuthorizationRequestResolver.RETURN_TO)).isNull();
@@ -199,7 +204,7 @@ class GoogleLoginSecurityTest {
         logs.start();
         logger.addAppender(logs);
         try {
-            callback(flow).andExpect(redirectedUrl("http://localhost:5173/login?oauthError=GOOGLE_LOGIN_FAILED"))
+            callback(flow).andExpect(redirectedUrl("https://bugs.example.test:9443/login?oauthError=GOOGLE_LOGIN_FAILED"))
                     .andExpect(unauthenticated());
             assertThat(logs.list).singleElement().satisfies(event -> {
                 assertThat(event.getFormattedMessage()).isEqualTo(
@@ -215,9 +220,9 @@ class GoogleLoginSecurityTest {
     @Test
     void callbackRejectsInvalidStateBeforeContactingTokenEndpoint() throws Exception {
         var flow = begin("/");
-        mvc.perform(get(GoogleLoginConfiguration.CALLBACK_BASE + "/google").session(flow.session)
+        mvc.perform(get(CALLBACK_BASE + "/google").session(flow.session)
                         .param("code", "private-code").param("state", "wrong-state"))
-                .andExpect(redirectedUrl("http://localhost:5173/login?oauthError=GOOGLE_LOGIN_FAILED"))
+                .andExpect(redirectedUrl("https://bugs.example.test:9443/login?oauthError=GOOGLE_LOGIN_FAILED"))
                 .andExpect(unauthenticated());
         verifyNoInteractions(tokenClient, accounts);
     }
@@ -231,7 +236,7 @@ class GoogleLoginSecurityTest {
         logs.start();
         logger.addAppender(logs);
         try {
-            callback(flow).andExpect(redirectedUrl("http://localhost:5173/login?oauthError=GOOGLE_LOGIN_FAILED"))
+            callback(flow).andExpect(redirectedUrl("https://bugs.example.test:9443/login?oauthError=GOOGLE_LOGIN_FAILED"))
                     .andExpect(unauthenticated());
             assertThat(logs.list).singleElement().satisfies(event -> {
                 assertThat(event.getFormattedMessage()).isEqualTo("event=googleAuthenticationFailed reason=GOOGLE_LOGIN_FAILED");
@@ -249,7 +254,7 @@ class GoogleLoginSecurityTest {
         var flow = begin("/");
         when(tokenClient.getTokenResponse(any())).thenThrow(new org.springframework.security.oauth2.core.OAuth2AuthorizationException(
                 new org.springframework.security.oauth2.core.OAuth2Error("invalid_grant", "private diagnostic", null)));
-        callback(flow).andExpect(redirectedUrl("http://localhost:5173/login?oauthError=GOOGLE_LOGIN_FAILED"))
+        callback(flow).andExpect(redirectedUrl("https://bugs.example.test:9443/login?oauthError=GOOGLE_LOGIN_FAILED"))
                 .andExpect(unauthenticated());
         verifyNoInteractions(accounts);
     }
@@ -258,7 +263,7 @@ class GoogleLoginSecurityTest {
     void callbackCannotBeReplayedToResolveTheAccountTwice() throws Exception {
         var flow = begin("/");
         callback(flow).andExpect(authenticated());
-        callback(flow).andExpect(redirectedUrl("http://localhost:5173/login?oauthError=GOOGLE_LOGIN_FAILED"));
+        callback(flow).andExpect(redirectedUrl("https://bugs.example.test:9443/login?oauthError=GOOGLE_LOGIN_FAILED"));
         verify(accounts, times(1)).resolve("subject-1", "google@example.com");
     }
 
@@ -266,17 +271,17 @@ class GoogleLoginSecurityTest {
     void nonceMismatchRejectsLoginBeforeAccountResolution() throws Exception {
         var flow = begin("/");
         tokenNonce = "wrong-nonce";
-        callback(flow).andExpect(redirectedUrl("http://localhost:5173/login?oauthError=GOOGLE_LOGIN_FAILED"));
+        callback(flow).andExpect(redirectedUrl("https://bugs.example.test:9443/login?oauthError=GOOGLE_LOGIN_FAILED"));
         verifyNoInteractions(accounts);
     }
 
     @Test
     void googleDenialIsGenericAndClearsReturnTarget() throws Exception {
         var flow = begin("/admin/users");
-        mvc.perform(get(GoogleLoginConfiguration.CALLBACK_BASE + "/google").session(flow.session)
+        mvc.perform(get(CALLBACK_BASE + "/google").session(flow.session)
                         .param("error", "access_denied").param("error_description", "private details")
                         .param("state", flow.authorization.getState()))
-                .andExpect(redirectedUrl("http://localhost:5173/login?oauthError=GOOGLE_LOGIN_FAILED"));
+                .andExpect(redirectedUrl("https://bugs.example.test:9443/login?oauthError=GOOGLE_LOGIN_FAILED"));
         assertThat(flow.session.getAttribute(GoogleAuthorizationRequestResolver.RETURN_TO)).isNull();
         verifyNoInteractions(tokenClient, accounts);
     }
@@ -285,7 +290,7 @@ class GoogleLoginSecurityTest {
     void unverifiedEmailCannotResolveOrCreateAccount() throws Exception {
         var flow = begin("/");
         verified = false;
-        callback(flow).andExpect(redirectedUrl("http://localhost:5173/login?oauthError=GOOGLE_EMAIL_NOT_VERIFIED"))
+        callback(flow).andExpect(redirectedUrl("https://bugs.example.test:9443/login?oauthError=GOOGLE_EMAIL_NOT_VERIFIED"))
                 .andExpect(unauthenticated());
         verifyNoInteractions(accounts);
     }
@@ -295,7 +300,7 @@ class GoogleLoginSecurityTest {
         var flow = begin("/");
         when(accounts.resolve(any(), any())).thenThrow(new BusinessRuleConflictException(
                 ErrorCode.GOOGLE_EMAIL_CONFLICT, "private account details"));
-        callback(flow).andExpect(redirectedUrl("http://localhost:5173/login?oauthError=GOOGLE_EMAIL_CONFLICT"))
+        callback(flow).andExpect(redirectedUrl("https://bugs.example.test:9443/login?oauthError=GOOGLE_EMAIL_CONFLICT"))
                 .andExpect(unauthenticated());
     }
 
@@ -318,7 +323,7 @@ class GoogleLoginSecurityTest {
     @Test
     void methodsExposeOnlyCapabilityAndAnonymousApiStillReturns401() throws Exception {
         mvc.perform(get("/api/auth/methods")).andExpect(status().isOk())
-                .andExpect(content().json("{\"googleEnabled\":true}"));
+                .andExpect(content().json("{\"googleEnabled\":true,\"googleLoginUrl\":\"/api/sign-in/google-start/google\"}"));
         mvc.perform(get("/api/auth/me")).andExpect(status().isUnauthorized())
                 .andExpect(header().doesNotExist("Location"));
     }
@@ -328,19 +333,19 @@ class GoogleLoginSecurityTest {
             "/login", "/%2fevil.example", "/admin/users%0d%0aLocation:evil", "/admin/../users"})
     void unsafeReturnTargetsFallBackToHome(String target) throws Exception {
         var flow = begin(target);
-        callback(flow).andExpect(redirectedUrl("http://localhost:5173/"));
+        callback(flow).andExpect(redirectedUrl("https://bugs.example.test:9443/"));
     }
 
     private Flow begin(String target) throws Exception {
         var session = new MockHttpSession();
-        var result = mvc.perform(get(GoogleLoginConfiguration.AUTHORIZATION_BASE + "/google")
+        var result = mvc.perform(get(AUTHORIZATION_BASE + "/google")
                         .session(session).param("returnTo", target))
                 .andExpect(status().isFound()).andReturn();
         String location = result.getResponse().getRedirectedUrl();
         assertThat(URI.create(location).getHost()).isEqualTo("accounts.google.com");
         var params = UriComponentsBuilder.fromUriString(location).build().getQueryParams();
         assertThat(params.getFirst("redirect_uri")).isEqualTo(
-                "http://localhost:5173/api/auth/oauth2/code/google");
+                "https://bugs.example.test:9443/api/sign-in/google-callback/google");
         var request = new MockHttpServletRequest();
         request.setSession(session);
         request.setParameter("state", URLDecoder.decode(params.getFirst("state"), StandardCharsets.UTF_8));
@@ -350,7 +355,7 @@ class GoogleLoginSecurityTest {
     }
 
     private org.springframework.test.web.servlet.ResultActions callback(Flow flow) throws Exception {
-        return mvc.perform(get(GoogleLoginConfiguration.CALLBACK_BASE + "/google").session(flow.session)
+        return mvc.perform(get(CALLBACK_BASE + "/google").session(flow.session)
                 .param("state", flow.authorization.getState()).param("code", "test-code"));
     }
 

@@ -14,9 +14,8 @@ public class GoogleAuthorizationRequestResolver implements OAuth2AuthorizationRe
     static final String RETURN_TO = GoogleAuthorizationRequestResolver.class.getName() + ".returnTo";
     private final DefaultOAuth2AuthorizationRequestResolver delegate;
 
-    public GoogleAuthorizationRequestResolver(ClientRegistrationRepository registrations) {
-        delegate = new DefaultOAuth2AuthorizationRequestResolver(registrations,
-                GoogleLoginConfiguration.AUTHORIZATION_BASE);
+    public GoogleAuthorizationRequestResolver(ClientRegistrationRepository registrations, String authorizationBase) {
+        delegate = new DefaultOAuth2AuthorizationRequestResolver(registrations, authorizationBase);
     }
 
     @Override

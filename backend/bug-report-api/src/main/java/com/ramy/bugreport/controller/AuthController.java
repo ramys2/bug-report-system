@@ -34,7 +34,7 @@ public class AuthController {
     @Operation(summary = "Get available login methods", description = "Public login capabilities. Password login is always available; no credentials are exposed.")
     @GetMapping("/methods")
     public AuthenticationMethodsResponse methods() {
-        return new AuthenticationMethodsResponse(googleLogin.isConfigured());
+        return new AuthenticationMethodsResponse(googleLogin.isConfigured(), googleLogin.getGoogleLoginUrl());
     }
 
     /**

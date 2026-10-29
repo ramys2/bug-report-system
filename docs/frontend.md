@@ -89,7 +89,7 @@ still reachable when signed in.
 
 The login form also loads public `GET /api/auth/methods`. It displays **Sign in with Google** only
 when `googleEnabled` is true; capability-request failures leave password login available.
-The Google option navigates the browser to `/api/auth/oauth2/authorization/google`, carrying the
+The Google option uses the `googleLoginUrl` returned by this endpoint (default `/api/auth/oauth2/authorization/google`), carrying the
 originally requested route. The backend validates that route, completes OIDC, then redirects to the
 application. On mount, the existing `AuthProvider` loads the local account and a fresh CSRF token,
 so Google login uses the same protected routes and role-based UI. Failure redirects contain only

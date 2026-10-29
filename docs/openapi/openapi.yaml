@@ -2184,6 +2184,12 @@ components:
       properties:
         googleEnabled:
           type: boolean
+        googleLoginUrl:
+          type:
+          - string
+          - "null"
+          description: Application-relative Google login path; null when Google login
+            is disabled.
     BugReportBriefResponse:
       type: object
       description: "A report in the list endpoints (`GET /api/reports`, `/reported`,\
