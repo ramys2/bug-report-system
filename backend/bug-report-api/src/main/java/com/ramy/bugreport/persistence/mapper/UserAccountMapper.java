@@ -21,6 +21,7 @@ public final class UserAccountMapper {
         entity.setEmailAddress(domain.getEmailAddress());
         entity.setPasswordHash(domain.getPasswordHash());
         entity.setRole(domain.getRole());
+        entity.setGoogleSubject(domain.getGoogleSubject());
         return entity;
     }
 
@@ -30,6 +31,6 @@ public final class UserAccountMapper {
         }
         return new UserAccount(
                 entity.getId(), entity.getName(), entity.getEmailAddress(),
-                entity.getPasswordHash(), entity.getRole());
+                entity.getPasswordHash(), entity.getRole(), entity.getGoogleSubject());
     }
 }

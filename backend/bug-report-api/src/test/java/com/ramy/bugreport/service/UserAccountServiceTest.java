@@ -176,18 +176,19 @@ class UserAccountServiceTest {
     void updateRoleChangesAnotherUsersRole() {
         var accountId = UUID.randomUUID();
         var account = new UserAccount("Ramy", "ramy@example.com", "hash", EUserRole.REPORTER);
-        when(userAccountRepository.findById(accountId)).thenReturn(Optional.of(account));
+        when(userAccountRepository.findByIdForUpdate(accountId)).thenReturn(Optional.of(account));
 
         service.updateRole(accountId, new UpdateRoleRequest(EUserRole.DEVELOPER));
 
-        assertThat(account.getRole()).isEqualTo(EUserRole.DEVELOPER);
+        verify(userAccountRepository).updateRole(accountId, EUserRole.DEVELOPER);
+        verify(userAccountRepository, never()).save(any());
     }
 
     @Test
     void updateRoleRejectsDemotingLastAdmin() {
         var accountId = UUID.randomUUID();
         var admin = new UserAccount("Admin", "admin@example.com", "hash", EUserRole.ADMIN);
-        when(userAccountRepository.findById(accountId)).thenReturn(Optional.of(admin));
+        when(userAccountRepository.findByIdForUpdate(accountId)).thenReturn(Optional.of(admin));
         when(userAccountRepository.findAllByRole(EUserRole.ADMIN)).thenReturn(List.of(admin));
 
         assertThatThrownBy(() -> service.updateRole(accountId, new UpdateRoleRequest(EUserRole.REPORTER)))
@@ -199,7 +200,7 @@ class UserAccountServiceTest {
     void updateRoleRejectsDemotingDeveloperWithOpenAssignments() {
         var accountId = UUID.randomUUID();
         var developer = new UserAccount("Dev", "dev@example.com", "hash", EUserRole.DEVELOPER);
-        when(userAccountRepository.findById(accountId)).thenReturn(Optional.of(developer));
+        when(userAccountRepository.findByIdForUpdate(accountId)).thenReturn(Optional.of(developer));
         when(bugReportRepository.existsByAssigneeIdAndStatusNot(accountId, EBugStatus.CLOSED)).thenReturn(true);
 
         assertThatThrownBy(() -> service.updateRole(accountId, new UpdateRoleRequest(EUserRole.REPORTER)))

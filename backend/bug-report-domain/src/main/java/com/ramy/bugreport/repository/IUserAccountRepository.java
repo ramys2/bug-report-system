@@ -15,7 +15,7 @@ public interface IUserAccountRepository {
      * @return the user account, or empty if none exists
      */
     Optional<UserAccount> findById(UUID id);
-    /** Locks the account until the surrounding transaction completes, for role-change approval. */
+    /** Locks the account until the surrounding transaction completes, for role or contact-email changes. */
     Optional<UserAccount> findByIdForUpdate(UUID id);
     /** Returns all stored user account objects, in no guaranteed order. */
     List<UserAccount> findAll();
@@ -48,6 +48,12 @@ public interface IUserAccountRepository {
      * @return the account, or empty if none has this address
      */
     Optional<UserAccount> findByEmailAddress(String emailAddress);
+    /** Finds an account by its exact, case-sensitive Google identity, never by email. */
+    Optional<UserAccount> findByGoogleSubject(String googleSubject);
+    /** Changes only the contact email, preserving concurrent changes to other account fields. */
+    int updateEmailAddress(UUID id, String emailAddress);
+    /** Changes only the role, preserving concurrent contact-email updates. */
+    int updateRole(UUID id, EUserRole role);
     /** Returns whether an account with this exact email address exists. */
     boolean existsByEmailAddress(String emailAddress);
     /** Whether a username exists, using the same database collation as the unique constraint. */

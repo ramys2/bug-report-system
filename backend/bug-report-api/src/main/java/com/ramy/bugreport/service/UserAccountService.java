@@ -186,7 +186,8 @@ public class UserAccountService {
     @Transactional
     @PreAuthorize("hasRole('ADMIN') and @userAccountAuthorizer.canUpdateRole(#userId, authentication)")
     public UpdateUserAccountResponse updateRole(UUID userId, UpdateRoleRequest request) {
-        UserAccount account = userAccountRepository.findById(userId)
+        // Lock before taking a transaction snapshot, so a concurrent Google email update can finish safely.
+        UserAccount account = userAccountRepository.findByIdForUpdate(userId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         ErrorCode.USER_NOT_FOUND,
                         "User with id=%s does not exist!".formatted(userId)));
@@ -209,8 +210,7 @@ public class UserAccountService {
 
         logger.info("event=userRoleChangeRequested userId={} fromRole={} toRole={}",
                 userId, account.getRole(), request.role());
-        account.setRole(request.role());
-        userAccountRepository.save(account);
+        userAccountRepository.updateRole(userId, request.role());
         return new UpdateUserAccountResponse(userId, "User role updated successfully!");
     }
 

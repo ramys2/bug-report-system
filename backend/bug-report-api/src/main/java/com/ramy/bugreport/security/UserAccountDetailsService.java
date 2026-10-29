@@ -27,6 +27,7 @@ public class UserAccountDetailsService implements UserDetailsService {
 	@Override
 	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
 		UserAccount account = this.userRepository.findByEmailAddress(normalizeEmail(username))
+				.filter(user -> user.getPasswordHash() != null && !user.getPasswordHash().isBlank())
 				.orElseThrow(() -> new UsernameNotFoundException("User not found"));
 		
 		return new UserAccountDetails(account);

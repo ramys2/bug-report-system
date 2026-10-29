@@ -36,9 +36,12 @@ public class UserAccountEntity {
     @Column(name = "email_address", nullable = false, length = 255, unique = true)
     private String emailAddress;
 
-    /** BCrypt password hash, never the plain password. Not null. */
-    @Column(name = "password_hash", nullable = false)
+    /** BCrypt password hash; null when no local password has been established. */
+    @Column(name = "password_hash")
     private String passwordHash;
+
+    @Column(name = "google_subject", length = 255, unique = true)
+    private String googleSubject;
 
     /** Role, stored as the enum name (VARCHAR). Not null; a database CHECK restricts allowed values. */
     @Enumerated(EnumType.STRING)
@@ -76,6 +79,14 @@ public class UserAccountEntity {
 
     public void setPasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
+    }
+
+    public String getGoogleSubject() {
+        return googleSubject;
+    }
+
+    public void setGoogleSubject(String googleSubject) {
+        this.googleSubject = googleSubject;
     }
 
     public EUserRole getRole() {

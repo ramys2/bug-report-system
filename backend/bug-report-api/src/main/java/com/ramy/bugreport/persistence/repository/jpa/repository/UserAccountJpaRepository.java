@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -25,6 +26,17 @@ public interface UserAccountJpaRepository extends JpaRepository<UserAccountEntit
 
     /** Account with exactly this email address (comparison is left to the database collation). */
     Optional<UserAccountEntity> findByEmailAddress(String emailAddress);
+
+    Optional<UserAccountEntity> findByGoogleSubject(String googleSubject);
+
+    // Update only the requested field. Clearing discards any cached pre-update entity in this transaction.
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("update UserAccountEntity u set u.emailAddress = :email where u.id = :id")
+    int updateEmailAddress(@Param("id") UUID id, @Param("email") String email);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("update UserAccountEntity u set u.role = :role where u.id = :id")
+    int updateRole(@Param("id") UUID id, @Param("role") EUserRole role);
     /** Whether an account with exactly this email address exists. */
     boolean existsByEmailAddress(String emailAddress);
     /** Whether a username exists, using the database collation. */
