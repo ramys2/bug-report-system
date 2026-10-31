@@ -100,7 +100,23 @@ Implemented in [SecurityConfig](../backend/bug-report-api/src/main/java/com/ramy
   creates a session cookie. Success and failure only set the status (200 or 401); there are no
   redirects.
 - **Passwords.** Checked and hashed with `BCryptPasswordEncoder`. `UserAccountDetailsService`
-  loads the account by lower-cased email address; the authority is `ROLE_` + the role name.
+  loads the account by lower-cased email address and excludes accounts without a password hash;
+  the authority is `ROLE_` + the local role name.
+- **Optional Google OIDC.** `GoogleLoginConfiguration` enables Google only when both credentials are present.
+  `GoogleOidcUserService` delegates provider communication to Spring, requires verified email, and resolves
+  the account through `GoogleAccountService` using its Google subject. `GoogleUserAccountDetails` keeps the
+  existing principal contract while also implementing `OidcUser`. The refresh filter preserves the OAuth token type.
+  `GET /api/auth/methods` exposes `{googleEnabled, googleLoginUrl}`, with a null URL when disabled.
+  The frontend origin, authorization base and callback base are configured under `app.auth.google` in `application.yml`.
+  The default login path is `/api/auth/oauth2/authorization/google`; the default callback is `/api/auth/oauth2/code/google`.
+- **Google account transactions.** Flyway V7 permits a null password hash and adds a case-sensitive unique Google subject.
+  Existing name/email uniqueness remains in force. Failed inserts roll back before race recovery reads; existing
+  accounts are locked before email updates. Role and email writes update only their own field. Existing-account
+  write transactions lock the account before taking a snapshot to avoid MariaDB snapshot conflicts.
+  A conflicting email rejects authentication without linking accounts or changing roles.
+- **Browser redirects.** `GoogleAuthorizationRequestResolver` stores only validated application routes.
+  `GoogleLoginHandlers` redirects to the configured frontend origin and exposes only allowlisted error codes.
+  Password login keeps its JSON/status behavior. Logout invalidates only the application session.
 - **Fresh user on every request.** `CurrentUserAuthenticationFilter` reloads the account from the
   database on each request, so a role change applies immediately. If the account no longer exists,
   the security context is cleared and the request continues as anonymous (so it answers 401).

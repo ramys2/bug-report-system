@@ -1,6 +1,11 @@
 import $ from "jquery";
 import { cleanCsrfToken, getCsrfToken, loadCsrfToken } from "./csrf";
 
+/** Public capabilities; the server never returns OAuth client credentials. */
+export function getAuthenticationMethods() {
+    return $.ajax({ method: "GET", url: "/api/auth/methods" });
+}
+
 /**
  * Signs the user in: loads a CSRF token, posts the credentials to `POST /api/auth/login` (form-encoded), then loads a fresh CSRF token
  * because the session changes on login.

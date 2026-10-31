@@ -100,6 +100,23 @@ public class UserAccountRepositoryJpaAdapter implements IUserAccountRepository {
     }
 
     @Override
+    public Optional<UserAccount> findByGoogleSubject(String googleSubject) {
+        return repository.findByGoogleSubject(googleSubject).map(UserAccountMapper::toDomain);
+    }
+
+    @Override
+    @Transactional
+    public int updateEmailAddress(UUID id, String emailAddress) {
+        return repository.updateEmailAddress(id, emailAddress);
+    }
+
+    @Override
+    @Transactional
+    public int updateRole(UUID id, EUserRole role) {
+        return repository.updateRole(id, role);
+    }
+
+    @Override
     public boolean existsByEmailAddress(String emailAddress) {
         return repository.existsByEmailAddress(emailAddress);
     }

@@ -46,6 +46,30 @@ Endpoint summary: see the [table in the README](../README.md#rest-api).
 
 ## Authentication and CSRF
 
+### Optional Google OIDC
+
+`GET /api/auth/methods` is public and returns
+`{ "googleEnabled": true, "googleLoginUrl": "/api/auth/oauth2/authorization/google" }` with the default configuration.
+When disabled, it returns `{ "googleEnabled": false, "googleLoginUrl": null }`.
+Password login is always available. No credentials are included in this response.
+
+When configured, navigate the browser to `/api/auth/oauth2/authorization/google?returnTo=...`.
+`returnTo` is an encoded application path; invalid destinations fall back to `/`.
+Spring Security processes `/api/auth/oauth2/code/google` using the saved OAuth state. With the default
+configuration, register `http://localhost:5173/api/auth/oauth2/code/google` in Google Cloud.
+Configure `app.auth.google.frontend-origin`, `authorization-base`, and `callback-base` in `application.yml`.
+The registered redirect URI must match `<frontend-origin><callback-base>/google`, and the frontend uses
+the returned `googleLoginUrl` to stay synchronized with the configured authorization path.
+Success creates the ordinary application session and redirects to the validated route.
+Failure redirects to `/login?oauthError=GOOGLE_EMAIL_CONFLICT`, `GOOGLE_EMAIL_NOT_VERIFIED`, or
+`GOOGLE_LOGIN_FAILED`. These browser endpoints do not return the password-login JSON response.
+
+Google login requires verified email and identifies the account by Google subject. New identities
+receive a passwordless Reporter account; existing identities retain their local role and username.
+Changed verified emails update transactionally only when not used by another account. Conflicts
+reject authentication without linking accounts. `/api/auth/me` keeps its existing response shape.
+Logout remains CSRF-protected and invalidates only the application session.
+
 ### Sequence
 
 ```mermaid

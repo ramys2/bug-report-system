@@ -316,7 +316,7 @@ diagram, and the startup and seeding flow, are in the [backend reference](docs/b
 ## REST API
 
 The backend serves a JSON REST API under `/api` (default port 8080). Fields are camelCase.
-Authentication is a session cookie from `POST /api/auth/login`. Every `POST`, `PATCH` and
+Authentication uses a session cookie from password login or optional Google OIDC login. Every `POST`, `PATCH` and
 `DELETE` request, including login, must send the CSRF token from `GET /api/csrf` in the
 `X-CSRF-TOKEN` header. Errors have the body `{"code": "...", "message": "..."}` with status 400, 401, 403, 404
 or 409. URLs that are not explicitly allowed answer 403.
@@ -326,6 +326,9 @@ or 409. URLs that are not explicitly allowed answer 403.
 | Method | Path | Purpose | Access |
 | --- | --- | --- | --- |
 | GET | `/api/csrf` | Get the CSRF token | Public |
+| GET | `/api/auth/methods` | Available login methods (`googleEnabled`, `googleLoginUrl`) | Public |
+| GET | `/api/auth/oauth2/authorization/google` | Start Google login, when configured | Public |
+| GET | `/api/auth/oauth2/code/google` | Google callback handled by Spring Security | OAuth state required |
 | POST | `/api/auth/login` | Sign in (form fields `username` = email, `password`) | Public |
 | POST | `/api/auth/logout` | Sign out | Signed in |
 | GET | `/api/auth/me` | Current user | Signed in |
@@ -640,6 +643,47 @@ Notes:
 
 ## Configuration reference
 
+### Optional Google sign-in (localhost Docker Compose)
+
+1. In Google Cloud, configure the OAuth consent screen and create an OAuth client of type **Web application**.
+   If the app is in testing mode, add the Google accounts that will test it as test users.
+2. Register this exact **Authorized redirect URI**:
+   `http://localhost:5173/api/auth/oauth2/code/google`.
+3. Copy `.env.example` to `.env` and fill in `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
+   `.env` is ignored by Git. Keep credentials out of frontend variables, source files, screenshots, and logs.
+4. Run `docker compose up --build` and open `http://localhost:5173/login`.
+   The Google option appears only when both backend credentials are nonblank.
+
+With absent or incomplete credentials, password login and registration remain available. Backend properties are
+`app.auth.google.client-id` and `app.auth.google.client-secret`; Compose forwards the two environment variables.
+Only `openid` and `email` scopes are requested. Spring handles the OIDC protocol and validates tokens.
+
+First-time Google login requires a verified, valid email and creates a passwordless Reporter with a unique
+`google-<UUID>` username. Accounts are identified by the case-sensitive Google subject, never by email.
+There is no account linking: an email already used by another account rejects Google login. Returning users keep
+their username and locally assigned role; a changed verified email is updated transactionally only when available.
+Database constraints protect concurrent registration and email updates. A failed update leaves the account unchanged.
+
+Google-only accounts cannot use password login. There is no password setup/reset endpoint in this iteration.
+Successful login restores a validated application route when available, otherwise `/`; errors return to `/login`
+with an English/Czech message. Logout ends only the application session. Google may still remember its own login.
+The Google URLs are configured in `application.yml` under `app.auth.google`:
+
+```yaml
+frontend-origin: http://localhost:5173
+authorization-base: /api/auth/oauth2/authorization
+callback-base: /api/auth/oauth2/code
+```
+
+`frontend-origin` must be an HTTP(S) origin without credentials, a path, query or fragment (a trailing slash is accepted).
+The two distinct endpoint bases must stay under `/api`, with no trailing slash, so Vite can proxy them.
+Google's registered redirect URI must match `<frontend-origin><callback-base>/google`.
+If the frontend origin changes, also update `app.cors.allowed-origins` to match the deployed frontend.
+`/api/auth/methods` supplies the configured `googleLoginUrl` to the frontend; it is null when Google login is disabled.
+Real Google/browser verification must be performed manually; automated tests stub provider communication.
+
+### Backend properties
+
 The backend is configured in
 [application.yml](backend/bug-report-api/src/main/resources/application.yml). Any property can be
 overridden with a Spring environment variable (dots become underscores, upper case), for example
@@ -654,6 +698,10 @@ overridden with a Spring environment variable (dots become underscores, upper ca
 | `spring.artemis.user` / `password` | `artemis` / `artemis` | Broker login |
 | `spring.mail.host` / `port` | `mailpit` / `1025` | SMTP server for notification emails |
 | `app.cors.allowed-origins` | `http://localhost:5173` | Origins allowed to call the API (CORS), comma-separated |
+| `app.auth.google.client-id` / `client-secret` | empty | Optional backend-only Google credentials |
+| `app.auth.google.frontend-origin` | `http://localhost:5173` | Frontend origin for OAuth callbacks and browser redirects |
+| `app.auth.google.authorization-base` | `/api/auth/oauth2/authorization` | Base path for starting Google login |
+| `app.auth.google.callback-base` | `/api/auth/oauth2/code` | Base path for the Google callback |
 | `app.mail.from-address` | `no-reply@bugreport.local` | Sender address of notification emails |
 | `messaging.destinations.bug-report-event` | `bug-report-event` | Queue name for report events |
 | `server.port` | not set, so Spring Boot's default `8080` | HTTP port of the backend |
@@ -675,7 +723,7 @@ Docker Compose ([docker-compose.yml](docker-compose.yml)) sets:
 | `database` | `MARIADB_ROOT_PASSWORD=root`, `MARIADB_DATABASE=bug_report`, `MARIADB_USER=bug_report`, `MARIADB_PASSWORD=bug_report`; port 3306; volume `mariadb-data`; `./database/init` mounted read-only |
 | `artemis` | `ARTEMIS_USER=artemis`, `ARTEMIS_PASSWORD=artemis`; console on 8161 |
 | `mailpit` | Web UI on 8025; `MP_DATABASE=/data/mailpit.db`, `MP_MAX_MESSAGES=5000`, accepts any SMTP login; volume `mailpit-data` |
-| `backend` | Port 8080; no environment variables (uses `application.yml`) |
+| `backend` | Port 8080; optional `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` from `.env` |
 | `frontend` | Port 5173 |
 
 All passwords above are development defaults. Do not use them in production.
@@ -685,8 +733,8 @@ All passwords above are development defaults. Do not use them in production.
 Nothing below is hidden from the code; this is the honest current state. More detailed
 findings are in [Oddities.md](Oddities.md).
 
-- **Email/password session login only.** Session cookie and CSRF token, with three fixed roles.
-  There is no password-strength policy, password reset, email verification or account lockout.
+- **Password login and optional Google OIDC.** Session cookie and CSRF token, with three locally managed roles.
+  There is no password-strength policy, password setup/reset, local-registration email verification, account linking or account lockout.
 - **Demo passwords are hard-coded** in the development seed data.
 - **Support listing is not paginated.** The administrator page displays all stored requests.
 - **Attachments are not implemented.** An `Attachment` domain class exists, but there is no

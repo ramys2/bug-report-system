@@ -44,6 +44,7 @@
         "email": "E-mail",
         "password": "Heslo",
         "signIn": "Přihlásit se",
+        "signInWithGoogle": "Přihlásit se přes Google",
         "noAccount": "Nemáte účet?",
         "register": "Zaregistrovat se",
         "loginFailed": "Přihlášení se nezdařilo",
@@ -61,6 +62,9 @@
         "hideRepeatPassword": "Skrýt zopakované heslo"
     },
     "errors": {
+        "GOOGLE_EMAIL_CONFLICT": "Tento e-mail Google už používá jiný účet. Přihlaste se původním způsobem tohoto účtu.",
+        "GOOGLE_EMAIL_NOT_VERIFIED": "Pro přihlášení musí Google poskytnout ověřenou e-mailovou adresu.",
+        "GOOGLE_LOGIN_FAILED": "Přihlášení přes Google se nepodařilo dokončit. Zkuste to prosím znovu.",
         "pageNotFound": "Stránka nenalezena",
         "pageNotFoundDescription": "Hledaná stránka neexistuje.",
         "loadReportsTitle": "Nelze načíst hlášení",

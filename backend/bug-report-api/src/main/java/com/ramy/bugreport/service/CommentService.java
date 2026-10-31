@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,7 +58,7 @@ public class CommentService {
     */
 
     /**
-     * Returns the comments of a report, newest first, with each author's details.
+     * Returns the comments of a report, newest first, with authors loaded in one bulk lookup.
      *
      * @param reportId id of the report
      * @throws ResourceNotFoundException if the report or a comment's author does not exist
@@ -69,15 +71,27 @@ public class CommentService {
                     "Report with id: %s".formatted(reportId));
         }
 
-        return commentRepository.findByBugReportId(reportId)
-                .stream()
+        var comments = commentRepository.findByBugReportId(reportId);
+        if (comments.isEmpty()) {
+            return List.of();
+        }
+
+        var authorIds = comments.stream()
+                .map(Comment::getAuthorId)
+                .distinct()
+                .toList();
+        var authorsById = userAccountRepository.findAllById(authorIds).stream()
+                .collect(Collectors.toMap(UserAccount::getId, Function.identity()));
+
+        return comments.stream()
                 .sorted(Comparator.comparing(Comment::getCreatedAt).reversed())
                 .map(comment -> {
-                    UserAccount author = userAccountRepository.findById(comment.getAuthorId())
-                            .orElseThrow(() -> new ResourceNotFoundException(
-                                    ErrorCode.USER_NOT_FOUND,
-                                    "User with id=%s does not exist!".formatted(comment.getAuthorId())
-                            ));
+                    UserAccount author = authorsById.get(comment.getAuthorId());
+                    if (author == null) {
+                        throw new ResourceNotFoundException(
+                                ErrorCode.USER_NOT_FOUND,
+                                "User with id=%s does not exist!".formatted(comment.getAuthorId()));
+                    }
                     return CommentResponse.from(comment, author);
                 })
                 .toList();

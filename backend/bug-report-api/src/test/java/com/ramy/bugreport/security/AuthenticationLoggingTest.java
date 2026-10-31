@@ -60,6 +60,7 @@ import tools.jackson.databind.ObjectMapper;
 @WebAppConfiguration
 @ContextConfiguration(classes = {
         SecurityConfig.class,
+        GoogleLoginConfiguration.class,
         CurrentUserAuthenticationFilter.class,
         ApiAuthenticationEntryPoint.class,
         ApiAccessDeniedHandler.class,
@@ -67,7 +68,10 @@ import tools.jackson.databind.ObjectMapper;
         RequestLoggingFilter.class,
         AuthenticationLoggingTest.TestConfig.class
 })
-@TestPropertySource(properties = "app.cors.allowed-origins=http://localhost:5173")
+@TestPropertySource(properties = {"app.cors.allowed-origins=http://localhost:5173",
+        "app.auth.google.frontend-origin=http://localhost:5173",
+        "app.auth.google.authorization-base=/api/auth/oauth2/authorization",
+        "app.auth.google.callback-base=/api/auth/oauth2/code"})
 class AuthenticationLoggingTest {
 
     private static final String EMAIL = "reporter@example.com";

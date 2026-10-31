@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
@@ -25,6 +26,7 @@ import com.ramy.bugreport.domain.EBugStatus;
 import com.ramy.bugreport.domain.UserAccount;
 import com.ramy.bugreport.dto.comment.CreateCommentRequest;
 import com.ramy.bugreport.exception.BusinessRuleConflictException;
+import com.ramy.bugreport.exception.ErrorCode;
 import com.ramy.bugreport.exception.ResourceNotFoundException;
 import com.ramy.bugreport.repository.IBugReportRepository;
 import com.ramy.bugreport.repository.ICommentRepository;
@@ -60,23 +62,80 @@ class CommentServiceTest {
                 UUID.randomUUID(),
                 "Latest comment.",
                 LocalDateTime.of(2026, 1, 1, 11, 0));
+        var oldestAuthor = org.mockito.Mockito.mock(UserAccount.class);
+        var newestAuthor = org.mockito.Mockito.mock(UserAccount.class);
+        when(bugReportRepository.existsById(reportId)).thenReturn(true);
+        when(commentRepository.findByBugReportId(reportId)).thenReturn(List.of(oldestComment, newestComment));
+        when(userAccountRepository.findAllById(List.of(oldestComment.getAuthorId(), newestComment.getAuthorId())))
+                .thenReturn(List.of(newestAuthor, oldestAuthor));
+        when(oldestAuthor.getId()).thenReturn(oldestComment.getAuthorId());
+        when(oldestAuthor.getName()).thenReturn("Ramy");
+        when(newestAuthor.getId()).thenReturn(newestComment.getAuthorId());
+        when(newestAuthor.getName()).thenReturn("Alex");
+
+        var result = service.getComments(reportId);
+
+        assertThat(result)
+                .extracting(response -> response.content(), response -> response.authorId(), response -> response.authorName())
+                .containsExactly(
+                        org.assertj.core.groups.Tuple.tuple("Latest comment.", newestComment.getAuthorId(), "Alex"),
+                        org.assertj.core.groups.Tuple.tuple("First comment.", oldestComment.getAuthorId(), "Ramy"));
+        verify(commentRepository).findByBugReportId(reportId);
+        verify(userAccountRepository).findAllById(List.of(oldestComment.getAuthorId(), newestComment.getAuthorId()));
+        verifyNoMoreInteractions(userAccountRepository);
+    }
+
+    @Test
+    void getCommentsLoadsRepeatedAuthorOnlyOnce() {
+        var reportId = UUID.randomUUID();
+        var authorId = UUID.randomUUID();
+        var oldestComment = new Comment(
+                reportId, authorId, "First comment.", LocalDateTime.of(2026, 1, 1, 10, 0));
+        var newestComment = new Comment(
+                reportId, authorId, "Latest comment.", LocalDateTime.of(2026, 1, 1, 11, 0));
         var author = org.mockito.Mockito.mock(UserAccount.class);
         when(bugReportRepository.existsById(reportId)).thenReturn(true);
         when(commentRepository.findByBugReportId(reportId)).thenReturn(List.of(oldestComment, newestComment));
-        when(userAccountRepository.findById(oldestComment.getAuthorId())).thenReturn(Optional.of(author));
-        when(userAccountRepository.findById(newestComment.getAuthorId())).thenReturn(Optional.of(author));
+        when(userAccountRepository.findAllById(List.of(authorId))).thenReturn(List.of(author));
+        when(author.getId()).thenReturn(authorId);
         when(author.getName()).thenReturn("Ramy");
 
         var result = service.getComments(reportId);
 
         assertThat(result)
-                .extracting(response -> response.id(), response -> response.authorName())
+                .extracting(response -> response.content(), response -> response.authorName())
                 .containsExactly(
-                        org.assertj.core.groups.Tuple.tuple(newestComment.getId(), "Ramy"),
-                        org.assertj.core.groups.Tuple.tuple(oldestComment.getId(), "Ramy"));
-        verify(commentRepository).findByBugReportId(reportId);
-        verify(userAccountRepository).findById(oldestComment.getAuthorId());
-        verify(userAccountRepository).findById(newestComment.getAuthorId());
+                        org.assertj.core.groups.Tuple.tuple("Latest comment.", "Ramy"),
+                        org.assertj.core.groups.Tuple.tuple("First comment.", "Ramy"));
+        verify(userAccountRepository).findAllById(List.of(authorId));
+        verifyNoMoreInteractions(userAccountRepository);
+    }
+
+    @Test
+    void getCommentsReturnsEmptyListWithoutLoadingAuthors() {
+        var reportId = UUID.randomUUID();
+        when(bugReportRepository.existsById(reportId)).thenReturn(true);
+        when(commentRepository.findByBugReportId(reportId)).thenReturn(List.of());
+
+        assertThat(service.getComments(reportId)).isEmpty();
+
+        verifyNoInteractions(userAccountRepository);
+    }
+
+    @Test
+    void getCommentsThrowsWhenAuthorIsMissingFromBulkLookup() {
+        var reportId = UUID.randomUUID();
+        var comment = comment(reportId);
+        when(bugReportRepository.existsById(reportId)).thenReturn(true);
+        when(commentRepository.findByBugReportId(reportId)).thenReturn(List.of(comment));
+        when(userAccountRepository.findAllById(List.of(comment.getAuthorId()))).thenReturn(List.of());
+
+        assertThatThrownBy(() -> service.getComments(reportId))
+                .isInstanceOfSatisfying(ResourceNotFoundException.class,
+                        exception -> assertThat(exception.getCode()).isEqualTo(ErrorCode.USER_NOT_FOUND))
+                .hasMessage("User with id=%s does not exist!".formatted(comment.getAuthorId()));
+        verify(userAccountRepository).findAllById(List.of(comment.getAuthorId()));
+        verifyNoMoreInteractions(userAccountRepository);
     }
 
     @Test
@@ -87,7 +146,7 @@ class CommentServiceTest {
         assertThatThrownBy(() -> service.getComments(reportId))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessage("Report with id: %s".formatted(reportId));
-        verifyNoInteractions(commentRepository);
+        verifyNoInteractions(commentRepository, userAccountRepository);
     }
 
     @Test

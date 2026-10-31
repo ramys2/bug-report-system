@@ -15,6 +15,13 @@ spring:
     port: 1025
 
 app:
+  auth:
+    google:
+      client-id: ${GOOGLE_CLIENT_ID:}
+      client-secret: ${GOOGLE_CLIENT_SECRET:}
+      frontend-origin: http://localhost:5173
+      authorization-base: /api/auth/oauth2/authorization
+      callback-base: /api/auth/oauth2/code
   logging:
     # Warn when synchronous request processing takes at least five seconds.
     slow-request-ms: 5000
