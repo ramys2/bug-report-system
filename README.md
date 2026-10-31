@@ -94,8 +94,8 @@ uses `PATCH /api/reports/{reportId}/status`, which rejects `ASSIGNED`, `CLOSED` 
 
 ## Architecture overview
 
-The browser talks only to the frontend dev server, which forwards `/api` requests to the
-backend. The backend keeps its data in MariaDB and publishes report events to ActiveMQ
+The browser talks only to the frontend server (Vite by default, Nginx with the production
+override), which forwards `/api` requests to the backend. The backend keeps its data in MariaDB and publishes report events to ActiveMQ
 Artemis; a listener in the same application turns the events into emails sent to Mailpit.
 
 ```mermaid
@@ -154,6 +154,7 @@ bug-report-system/
 ├── .github/workflows/            CI check that the committed OpenAPI spec is up to date
 ├── redocly.yaml                  Lint rules for the OpenAPI spec
 ├── docker-compose.yml            Development environment: backend, frontend, MariaDB, Artemis, Mailpit
+├── docker-compose.prod.yml       Override that serves the production frontend with Nginx
 ├── build-backend.sh              Builds the backend with Maven
 ├── run-backend.sh                Starts the backend with Maven
 ├── db-entity-description.txt     Original plain-text sketch of the database tables
@@ -449,7 +450,8 @@ every request that changes data.
 
 There is no automated frontend test suite; use `npm run lint` for static checks and the
 [support-request guide](docs/support-requests.md#manual-checks) for browser verification. The frontend is
-run as a Vite development server; the Docker image does not build a production bundle.
+run as a Vite development server by default; the production Compose override builds a bundle
+and serves it with Nginx (see [Production frontend](#production-frontend)).
 
 More details, including the route and session diagrams, are in the
 [frontend reference](docs/frontend.md).
@@ -510,6 +512,47 @@ start again with fresh demo data, run `docker compose down -v`.
 
 To start only the infrastructure (for example to work on the backend), run
 `docker compose up -d database mailpit artemis`.
+
+### Production frontend
+
+From the repository root, add the production override:
+
+```shell
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build
+```
+
+The second file overrides the frontend build target from `development` to `production`.
+The multi-stage [Dockerfile](frontend/Dockerfile) runs `npm ci` and `npm run build` in a
+Node build stage, then copies only the generated `dist/` files into an Nginx runtime image.
+Node, npm and the Vite dev server are not needed in the running production container.
+The image is tagged `bug-report-frontend:production`, separately from the development image.
+
+Open <http://localhost:5173> as before. [Nginx](frontend/nginx.conf) serves the frontend and
+forwards `/api/` requests, including Google login callbacks, to `http://backend:8080`.
+It preserves the request path, query string and browser Host header (including port 5173).
+For frontend routes such as `/login` or `/reports/1`, it returns `index.html` so React Router
+can render the page when opened directly or refreshed. The existing frontend origin and
+Google redirect URI stay the same.
+
+Production serves files generated at image build time: rebuild after frontend changes.
+Development keeps the Vite server and its hot module replacement support, but the current
+Compose setup copies source into the image without a bind mount, so host edits also require
+a rebuild to reach that container.
+
+To switch back to development, run the original command:
+
+```shell
+docker compose up --build
+```
+
+To stop the production configuration:
+
+```shell
+docker compose -f docker-compose.yml -f docker-compose.prod.yml down
+```
+
+This override changes only frontend serving. The backend, infrastructure, exposed ports and
+demo credentials retain their development settings; it is not a full public deployment setup.
 
 ### Run the backend on your machine
 
@@ -742,7 +785,8 @@ findings are in [Oddities.md](Oddities.md).
 - **Every signed-in user sees every report** (no per-project visibility).
 - **Hard-coded development settings.** Database, broker and mail credentials are plain
   defaults in `application.yml`.
-- **The frontend runs as a Vite development server**, not as a production build.
+- **The frontend defaults to the Vite development server.** The production override serves a built
+  frontend with Nginx; other services still use development settings.
 - **No license file** is part of the repository.
 
 ## Task board

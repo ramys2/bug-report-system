@@ -18,7 +18,8 @@ frontend/
 ├── vite.config.js        React plugin and the /api proxy
 ├── package.json          Scripts and dependencies
 ├── eslint.config.js      ESLint rules
-├── Dockerfile            Node image that runs the Vite dev server
+├── Dockerfile            Development (Vite), build, and production (Nginx) stages
+├── nginx.conf            Production static files, /api/ proxy and React route fallback
 └── src/
     ├── main.jsx          Loads global CSS (Bootstrap, Bootstrap Icons) and renders <App />
     ├── App.jsx           Router, AuthProvider, Navbar, Toast and the route table
@@ -141,6 +142,9 @@ All requests go to relative `/api/...` URLs. In development, Vite proxies `/api`
 `http://backend:8080` ([vite.config.js](../frontend/vite.config.js)), so the browser only talks
 to `http://localhost:5173` and no CORS handling is needed. The host name `backend` exists only in
 the Docker Compose network (see [Getting started](../README.md#getting-started)).
+In production, [Nginx](../frontend/nginx.conf) takes over the `/api/` proxy at the same browser
+origin, preserving paths, query strings, session cookies and CSRF headers. Google authorization
+and callback requests also pass through this proxy.
 
 ```mermaid
 flowchart LR
@@ -195,7 +199,7 @@ picking an assignee) or `CLOSED` (set through the resolution form), and it is di
 | --- | --- |
 | `npm ci` | Install the exact versions from `package-lock.json` |
 | `npm run dev` | Vite dev server on port 5173 (`--host 0.0.0.0` in the Docker image) |
-| `npm run build` | Production build into `dist/` (not used by Docker Compose) |
+| `npm run build` | Production build into `dist/` (used by the production Docker target) |
 | `npm run lint` | ESLint (React hooks and refresh rules) |
 | `npm run preview` | Serve the production build locally |
 
@@ -207,3 +211,27 @@ The dev server on the host does not reach a backend at `http://backend:8080` (th
 resolves only inside the Compose network), so run the frontend through Docker Compose; the
 Compose setup was verified: the page is served on port 5173 and `/api/...` requests are proxied
 to the backend.
+
+The [Dockerfile](../frontend/Dockerfile) shares dependency installation and source copying in
+the `base` stage. The `development` target runs Vite; the `build` stage generates `dist/`;
+the `production` target copies that bundle into Nginx, without the Node build tools.
+Compose selects `development` by default. From the repository root:
+
+```shell
+# Development: Vite on http://localhost:5173
+docker compose up --build
+
+# Production frontend: Nginx on http://localhost:5173
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build
+```
+
+The override selects `production`, uses a separate image tag, and starts the backend before
+Nginx so its upstream host can resolve. Nginx forwards `/api/` unchanged to `backend:8080`.
+Other paths use `try_files` to serve an existing file or fall back to `index.html`, allowing
+direct navigation and refresh on React routes. API errors are returned by the backend rather
+than converted into frontend HTML.
+
+Rebuild the production image after source changes; it has no Vite server or hot updates.
+Development retains Vite, but there is no source bind mount in Compose, so host edits require
+rebuilding the development image too. Switching back uses `docker compose up --build`.
+See [Production frontend](../README.md#production-frontend) for shutdown and configuration scope.

@@ -1,0 +1,10 @@
+# Use with: docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build
+# Only the frontend serving mode changes; infrastructure retains development settings.
+services:
+  frontend:
+    build:
+      target: production
+    image: bug-report-frontend:production
+    depends_on:
+      backend:
+        condition: service_started
